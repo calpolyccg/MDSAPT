@@ -1,5 +1,5 @@
 """
-MDSAPT
+mdsapt
 An MDA-kit for calcuating quantum interactions in psi4.
 """
 import sys
@@ -21,7 +21,7 @@ except:
 
 setup(
     # Self-descriptive entries which should always be present
-    name='MDSAPT',
+    name='mdsapt',
     author='alescoulie',
     author_email='alescoul@calpoly.edu',
     description=short_description,

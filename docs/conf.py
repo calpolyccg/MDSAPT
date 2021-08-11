@@ -17,12 +17,12 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-import MDSAPT
+import mdsapt
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'MDSAPT'
+project = 'mdsapt'
 copyright = ("2021, alescoulie. Project structure based on the "
              "Computational Molecular Science Python Cookiecutter version 1.6")
 author = 'alescoulie'
@@ -144,8 +144,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'MDSAPT.tex', 'MDSAPT Documentation',
-     'MDSAPT', 'manual'),
+    (master_doc, 'mdsapt.tex', 'mdsapt Documentation',
+     'mdsapt', 'manual'),
 ]
 
 
@@ -154,7 +154,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'MDSAPT', 'MDSAPT Documentation',
+    (master_doc, 'mdsapt', 'mdsapt Documentation',
      [author], 1)
 ]
 
@@ -165,8 +165,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'MDSAPT', 'MDSAPT Documentation',
-     author, 'MDSAPT', 'An MDA-kit for calcuating quantum interactions in psi4.',
+    (master_doc, 'mdsapt', 'mdsapt Documentation',
+     author, 'mdsapt', 'An MDA-kit for calcuating quantum interactions in psi4.',
      'Miscellaneous'),
 ]
 
