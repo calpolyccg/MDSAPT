@@ -5,7 +5,7 @@ MDSAPT
 [![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/MDSAPT/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/MDSAPT/branch/master)
 
 
-An MDA-kit for calcuating quantum interactions in psi4.
+An MDA-kit for calculating quantum interactions in psi4.
 
 ### Copyright
 

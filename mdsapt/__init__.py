@@ -1,7 +1,7 @@
 """An MDA-kit for calcuating quantum interactions in psi4."""
 
 # Add imports here
-from .SAPTbase import *
+from .sapt import *
 
 # Handle versioneer
 from ._version import get_versions
