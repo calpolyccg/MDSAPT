@@ -4,6 +4,7 @@ from typing import List, Optional
 import yaml
 
 import MDAnalysis as mda
+from MDAnalysis.analysis.base import AnalysisBase
 
 import logging
 logger = logging.getLogger('mdsapt.config')
@@ -21,7 +22,8 @@ class CoordsReader(object):
         if not selections is None:
             self._sel = selections
 
-    def write_xyz(self, selection: mda.AtomGroup, time: int, pathname: str) -> None:
+    @staticmethod
+    def write_xyz(selection: mda.AtomGroup, time: int, pathname: str) -> None:
         pathname += '.xyz'
         with mda.Writer(pathname, selection[time].n_atoms) as coords:
             coords.write(selection)
@@ -33,7 +35,14 @@ class CoordsReader(object):
         resid_list: str = ''
 
         resid_list += f'{sel1.total_charge()} 1\n'
+        for l in self.read_xyz('res1'):
+            resid_list += l
 
+        resid_list += f'--\n 1 {sel2.total_charge()}'
+        for l in self.read_xyz('res2'):
+            resid_list += l
+        resid_list += 'units angstrom'
+        return resid_list
 
     @staticmethod
     def read_xyz(xyz_path: str) -> List[str]:
@@ -52,46 +61,6 @@ class CoordsReader(object):
             os.remove(pathname)
         except IOError:
             pass
-
-    def save_sapt_in(self, path: str, coords0: List[str], coords1: List[str], molecule_name: str,
-                     memory: str, char0: str, char1: str) -> None:
-
-        coord_data = 'molecule %s {\n' % molecule_name
-        coord_data += f'{char0}\n'
-
-        for line0 in coords0:
-            items = line0.split()
-            line0 = items[0][0]
-            for item in items[1:]:
-                line0 += ('\t' + item)
-            coord_data += (line0 + '\n')
-
-        coord_data += '--\n'
-        coord_data += f'{char1}\n'
-
-        for line1 in coords1:
-            items = line1.split()
-            line1 = items[0][0]
-            for item in items[1:]:
-                line1 += ('\t' + item)
-            coord_data += (line1 + '\n')
-
-        coord_data += '\nunits angstrom\n' \
-                      '\n' \
-                      '}\n' \
-                      '\nset {\n' \
-                      'basis jun-cc-pVDZ\n' \
-                      'scf_type DF\n' \
-                      'freeze_core True\n' \
-                      '}\n'
-
-        coord_data += '\n' + 'memory ' + str(memory) + ' GB\n'
-
-        coord_data += "\nenergy('sapt0')\n"
-
-        with open(path, 'w+') as input_file:
-            for line in coord_data:
-                input_file.write(line)
 
 
 class InputReader(object):
@@ -138,7 +107,8 @@ class InputReader(object):
             logger.fatal('Invalid YAML file')
 
         try:
-            unv = mda.Universe(top_path, trj_path)
+            if os.path.exists(top_path) and [os.path.exists(x) for x in trj_path]:
+                unv = mda.Universe(top_path, trj_path)
         except mda.exceptions.NoDataError:
             logger.fatal('MD file error')
 
