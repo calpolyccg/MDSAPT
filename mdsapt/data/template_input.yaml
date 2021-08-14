@@ -1,0 +1,18 @@
+topology_path:
+trajectory_paths:
+  -
+selection_resid_num:
+  -
+selection_names:
+  -
+int_pairs:
+  # Place pair of names defined about in list in a list
+  - []
+trajectory_settings:
+  start:
+  stop:
+  step:
+system_settings:
+  ncpus:
+  memory:
+  time:
