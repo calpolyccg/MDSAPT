@@ -1,0 +1,20 @@
+topology_path: mdsapt/tests/testing_resources/testtop.psf
+trajectory_paths:
+  - mdsapt/tests/testing_resources/testtraj.dcd
+selection_resid_num:
+  - 1
+  - 2
+selection_names:
+  - met1
+  - arg2
+int_pairs:
+  # Place pair of names defined about in list in a list
+  - [met1, arg2]
+trajectory_settings:
+  start: 0
+  stop: 5
+  step: 1
+system_settings:
+  ncpus: 10
+  memory: 12GB
+  time: '24:00:00'
