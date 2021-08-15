@@ -9,12 +9,13 @@ def create(logname: str, logfile: str):
 
     logfile = logging.FileHandler(logfile)
     logger_formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-    logfile.setHandler(logger_formatter)
+    logfile.setFormatter(logger_formatter)
     logger.addHandler(logfile)
 
     console = logging.StreamHandler()
-    console.setFormatter(logging.INFO)
+    console.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-    logger.addHandler(formatter)
+    console.setFormatter(formatter)
+    logger.addHandler(console)
 
     return logger
