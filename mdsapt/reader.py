@@ -66,7 +66,6 @@ class CoordsReader(object):
 class InputReader(object):
     """Reader for yaml inputs"""
     def __init__(self, path):
-        self.load_input(path)
         self.top_path: Optional[str]
         self.trj_path: Optional[List[str]]
         self.ag_sel: Optional[List[int]]
@@ -74,20 +73,21 @@ class InputReader(object):
         self.ag_pair: Optional[List[List[str]]]
         self.trj_settings: Optional[dict]
         self.sys_settings: Optional[dict]
+        self.load_input(path)
 
     def load_input(self, path: str) -> None:
         """Reads yaml file"""
         try:
-            in_cfg = yaml.safe_load(path)
+            in_cfg = yaml.safe_load(open(path))
             self.check_inputs(in_cfg)
-            self.save_params()
-        except IOError:
+            self.save_params(in_cfg)
+        except IOError or InputError:
             logger.warning('error loading file')
 
     def save_params(self, yaml_dict: dict) -> None:
         self.top_path = yaml_dict['topology_path']
-        self.trj_path = yaml_dict['trajectory_path']
-        self.ag_sel = yaml_dict['selection_resid_nums']
+        self.trj_path = yaml_dict['trajectory_paths']
+        self.ag_sel = yaml_dict['selection_resid_num']
         self.ag_names = yaml_dict['selection_names']
         self.ag_pair = yaml_dict['int_pairs']
         self.trj_settings = yaml_dict['trajectory_settings']
@@ -97,30 +97,34 @@ class InputReader(object):
     def check_inputs(yaml_dict: dict) -> None:
         try:
             top_path = yaml_dict['topology_path']
-            trj_path = yaml_dict['trajectory_path']
-            ag_sel = yaml_dict['selection_resid_nums']
+            trj_path = yaml_dict['trajectory_paths']
+            ag_sel = yaml_dict['selection_resid_num']
             ag_names = yaml_dict['selection_names']
             ag_pair = yaml_dict['int_pairs']
             trj_settings = yaml_dict['trajectory_settings']
             sys_settings = yaml_dict['system_settings']
         except KeyError:
             logger.fatal('Invalid YAML file')
+            assert InputError
 
         try:
-            if os.path.exists(top_path) and [os.path.exists(x) for x in trj_path]:
-                unv = mda.Universe(top_path, trj_path)
-        except mda.exceptions.NoDataError:
+            if not os.path.exists(os.path.join(os.getcwd(), top_path)):
+                raise InputError
+            for f in trj_path:
+                if not os.path.exists(os.path.join(os.getcwd(), f)):
+                    raise InputError
+            unv = mda.Universe(os.path.join(os.getcwd(), top_path), [os.path.join(os.getcwd(), x) for x in trj_path])
+        except mda.exceptions.NoDataError or InputError:
             logger.fatal('MD file error')
+            raise InputError
 
         # Testing names and selections
-        if len(ag_sel) > len(ag_names):
-            raise InputError('Not all selections are named')
-        elif len(ag_sel) < len(ag_names):
-            raise InputError('Too many selection names for number of selections')
+        if len(ag_sel) != len(ag_names):
+            raise InputError('Incorrect number of AtomGroup names')
 
         for sel in ag_sel:
             try:
-                ag = unv.select_atoms(sel)
+                ag = unv.select_atoms(f'resid {sel}')
             except mda.SelectionError:
                 raise InputError('Error in selection: {}'.format(sel))
 
@@ -155,10 +159,10 @@ class InputReader(object):
                     raise InputError('Step cannot be 0')
 
                 if len(unv.trajectory) < stop:
-                    raise InputError(f'Stop exceeds length of trajectory, trajectory is '
-                                     f'{len(unv.trajectory)} frames')
+                    raise InputError('Stop exceeds length of trajectory.')
 
         except KeyError or InputError as err:
             logger.fatal(f'{err} Error in trajectory settings')
+            assert InputError
 
         logger.info('Input Parameters Accepted')
