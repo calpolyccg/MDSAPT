@@ -2,7 +2,7 @@ import pytest
 
 import os
 
-from ..reader import CoordsReader, InputReader, InputError
+from ..reader import InputReader, InputError
 
 
 class TestInputReader(object):
@@ -10,8 +10,7 @@ class TestInputReader(object):
         'topology_path': 'mdsapt/tests/testing_resources/testtop.psf',
         'trajectory_path': ['mdsapt/tests/testing_resources/testtraj.dcd'],
         'selection_resid_num': [1, 2],
-        'selection_names': ['met1', 'arg2'],
-        'int_pairs': [['met1', 'arg2']],
+        'int_pairs': [[1, 2]],
         'trajectory_settings': {
             'start': 0,
             'stop': 5,
@@ -42,8 +41,3 @@ class TestInputReader(object):
         alt_set[key_pair[0]] = key_pair[1]
         with pytest.raises(InputError):
             settings.check_inputs(alt_set)
-
-
-
-class TestCoordReader(object):
-    pass
