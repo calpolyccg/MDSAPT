@@ -12,7 +12,7 @@ del get_versions, versions
 
 
 def create_logger(logfile='mdsapt.log'):
-    logger = log.create('mdpow', logfile)
+    logger = log.create('MDSAPT', logfile)
     return logger
 
 def log_banner():
