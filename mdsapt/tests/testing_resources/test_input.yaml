@@ -4,12 +4,9 @@ trajectory_paths:
 selection_resid_num:
   - 1
   - 2
-selection_names:
-  - met1
-  - arg2
 int_pairs:
-  # Place pair of names defined about in list in a list
-  - [met1, arg2]
+  # Place pair of  selections defined above in a list of lists
+  - [1, 2]
 trajectory_settings:
   start: 0
   stop: 5

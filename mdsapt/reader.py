@@ -4,7 +4,6 @@ from typing import List, Optional
 import yaml
 
 import MDAnalysis as mda
-from MDAnalysis.analysis.base import AnalysisBase
 
 import logging
 logger = logging.getLogger('mdsapt.config')
@@ -14,63 +13,13 @@ class InputError(Exception):
     pass
 
 
-class CoordsReader(object):
-    """"""
-    def __init__(self, universe: Optional[mda.Universe] = None, selections: Optional[List[mda.AtomGroup]] = None, **kwargs) -> None:
-        if not universe is None:
-            self._unv = universe
-        if not selections is None:
-            self._sel = selections
-
-    @staticmethod
-    def write_xyz(selection: mda.AtomGroup, time: int, pathname: str) -> None:
-        pathname += '.xyz'
-        with mda.Writer(pathname, selection[time].n_atoms) as coords:
-            coords.write(selection)
-
-    def get_int_pair(self, sel1: mda.AtomGroup, sel2: mda.AtomGroup, time_step: int) -> List[str]:
-        self.write_xyz(sel1, time_step, 'res1')
-        self.write_xyz(sel2, time_step, 'res2')
-
-        resid_list: str = ''
-
-        resid_list += f'{sel1.total_charge()} 1\n'
-        for l in self.read_xyz('res1'):
-            resid_list += l
-
-        resid_list += f'--\n 1 {sel2.total_charge()}'
-        for l in self.read_xyz('res2'):
-            resid_list += l
-        resid_list += 'units angstrom'
-        return resid_list
-
-    @staticmethod
-    def read_xyz(xyz_path: str) -> List[str]:
-        with open(xyz_path, 'r') as coord_file:
-            xyz_data = []
-            coord_data = coord_file.readlines()[2:]
-
-            for line in coord_data:
-                if '.' in line:
-                    xyz_data.append(line)
-            return xyz_data
-
-    @staticmethod
-    def remove_xyz(pathname: str) -> None:
-        try:
-            os.remove(pathname)
-        except IOError:
-            pass
-
-
 class InputReader(object):
     """Reader for yaml inputs"""
     def __init__(self, path):
         self.top_path: Optional[str]
         self.trj_path: Optional[List[str]]
         self.ag_sel: Optional[List[int]]
-        self.ag_names: Optional[List[str]]
-        self.ag_pair: Optional[List[List[str]]]
+        self.ag_pair: Optional[List[List[int]]]
         self.trj_settings: Optional[dict]
         self.sys_settings: Optional[dict]
         self.load_input(path)
@@ -88,7 +37,6 @@ class InputReader(object):
         self.top_path = yaml_dict['topology_path']
         self.trj_path = yaml_dict['trajectory_paths']
         self.ag_sel = yaml_dict['selection_resid_num']
-        self.ag_names = yaml_dict['selection_names']
         self.ag_pair = yaml_dict['int_pairs']
         self.trj_settings = yaml_dict['trajectory_settings']
         self.sys_settings = yaml_dict['system_settings']
@@ -99,7 +47,6 @@ class InputReader(object):
             top_path = yaml_dict['topology_path']
             trj_path = yaml_dict['trajectory_paths']
             ag_sel = yaml_dict['selection_resid_num']
-            ag_names = yaml_dict['selection_names']
             ag_pair = yaml_dict['int_pairs']
             trj_settings = yaml_dict['trajectory_settings']
             sys_settings = yaml_dict['system_settings']
@@ -119,9 +66,6 @@ class InputReader(object):
             raise InputError
 
         # Testing names and selections
-        if len(ag_sel) != len(ag_names):
-            raise InputError('Incorrect number of AtomGroup names')
-
         for sel in ag_sel:
             try:
                 ag = unv.select_atoms(f'resid {sel}')
@@ -141,7 +85,7 @@ class InputReader(object):
                     raise InputError('Pairs must be a python list of string with 4 items')
                 found0 = False
                 found1 = False
-                for name in ag_names:
+                for name in ag_sel:
                     if pair[0] == name:
                         found0 = True
                     if pair[1] == name:
