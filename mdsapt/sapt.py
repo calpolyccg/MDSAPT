@@ -1,13 +1,11 @@
 """Provide the primary functions."""
 
-from typing import List, Optional, Dict
-import os
+from typing import Dict
 
 import pandas as pd
 
 import MDAnalysis as mda
 from MDAnalysis.analysis.base import AnalysisBase
-from MDAnalysis.coordinates.XYZ import XYZWriter
 import psi4
 from rdkit import Chem
 from rdkit.Chem.rdmolops import AddHs
@@ -19,14 +17,14 @@ class TrajectorySAPT(AnalysisBase):
     """"""
     def __init__(self, config: InputReader, **universe_kwargs):
         self._unv: mda.Universe = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
-        self._sel: Dict[mda.AtomGroup] = {x :self._unv.select_atoms(f'resid {x}') for x in config.ag_sel}
+        self._sel: Dict[mda.AtomGroup] = {x: self._unv.select_atoms(f'resid {x}') for x in config.ag_sel}
         self._sel_pairs = config.ag_pair
         self._mem = config.sys_settings['memory']
         self._cfg = config
         super(TrajectorySAPT, self).__init__(self._unv.trajectory)
 
     def _prepare(self):
-        self._col = ['residues', 'time', 'SAPT_energy']
+        self._col = ['residues', 'time', 'energy']
         self.results = pd.DataFrame(columns=self._col)
         self._res_dict = {x: [] for x in self._col}
 
@@ -52,7 +50,7 @@ class TrajectorySAPT(AnalysisBase):
             xyz_dict[k] = self.get_psi_mol(mol2)
 
         for pair in self._sel_pairs:
-            coords = xyz_dict[pair[0]] + '\n -- \n' + xyz_dict[pair[1]] + '\nunits angstrom'
+            coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
             dimer = psi4.geometry(coords)
             psi4.set_options({'scf_type': 'df',
                               'freeze_core': 'true'})
