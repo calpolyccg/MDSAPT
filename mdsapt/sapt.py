@@ -7,8 +7,14 @@ import pandas as pd
 import MDAnalysis as mda
 from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.topology.guessers import guess_types
+
 import psi4
+
 from rdkit import Chem
+
+from pdbfixer import PDBFixer
+
+from openmm.app import PDBFile
 
 from .reader import InputReader
 
@@ -32,11 +38,20 @@ class TrajectorySAPT(AnalysisBase):
         self._res_dict = {x: [] for x in self._col}
 
     @staticmethod
-    def get_psi_mol(molecule: Chem.Mol):
+    def get_psi_mol(molecule: mda.AtomGroup, ph: float=7.0):
         # Based on instructions in https://linuxtut.com/en/30aa73dd6bb949d4858b/
-        conf = molecule.GetConformer()
+
+        molecule.write('resid.pdb', file_format='PDB')
+        fixer = PDBFixer(filename='resid.pbd')
+        fixer.findMissingAtoms()
+        fixer.addMissingAtoms()
+        fixer.addMissingHydrogens(ph)
+        PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
+
+        mol = Chem.MolFromMolFile('resid_fixed.pdb')
+        conf = mol.GetConformer()
         mol_coords = ''
-        for atom in molecule.GetAtoms():
+        for atom in mol.GetAtoms():
             mol_coords += (f'\n {atom.GetSymbol()} '
                            f'{conf.GetAtomPosition(atom.GetIdx()).x} '
                            f'{conf.GetAtomPosition(atom.GetIdx()).y} '
@@ -44,17 +59,15 @@ class TrajectorySAPT(AnalysisBase):
 
         psi_mol: psi4.core.Molecule = psi4.geometry(mol_coords)
         coords = psi_mol.save_string_xyz()
+        coord_header = f'{mol.getFormalCharge(), psi_mol.get_fragment_multiplicities()}'
         coords = coords.split('\n')
-        coords = ''.join(['\n' + coord for coord in coords[1:]])
+        coords = coord_header.join(['\n' + coord for coord in coords[1:]])
         return psi_mol.save_string_xyz()
 
     def _single_frame(self):
-        xyz_dict = {}
-        for k in self._sel.keys():
-            mol = self._sel[k].convert_to('RDKIT')
-            mol = Chem.AddHs(mol)
-            xyz_dict[k] = self.get_psi_mol(mol)
-
+        xyz_dict = {k: self.get_psi_mol(self._sel[k]) for k in self._sel.keys()}
+        with open('test.xyz', 'w+') as r:
+            r.write(xyz_dict[2])
         for pair in self._sel_pairs:
             coords = xyz_dict[pair[0]] + '--\n' + xyz_dict[pair[1]] + 'units angstrom'
             dimer = psi4.geometry(coords)

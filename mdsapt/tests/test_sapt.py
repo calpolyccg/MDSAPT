@@ -46,9 +46,7 @@ class TestSAPT(object):
 
     def test_psi4_in(self):
         res1 = self.Unv.select_atoms('resid 1')
-        mol1 = res1.convert_to('RDKIT')
-        mol1 = chem.AddHs(mol1)
-        mol1_in = TrajectorySAPT.get_psi_mol(mol1)
+        mol1_in = TrajectorySAPT.get_psi_mol(res1)
         assert mol1_in.split('\n') == self.met1.split('\n')
 
     def test_sapt_run(self):
