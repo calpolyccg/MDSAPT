@@ -10,19 +10,13 @@ from MDAnalysis.topology.guessers import guess_types
 
 import psi4
 
-from rdkit import Chem
-
-from pdbfixer import PDBFixer
-
-from openmm.app import PDBFile
-
 from .reader import InputReader
 
 
 class TrajectorySAPT(AnalysisBase):
     """Calculates the <SAPT>`` for individual frames of a trajectory.
     """
-    def __init__(self, config: InputReader, **universe_kwargs):
+    def __init__(self, config: InputReader, **universe_kwargs) -> None:
         self._unv: mda.Universe = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
         elements = guess_types(self._unv.atoms.names)
         self._unv.add_TopologyAttr('elements', elements)
@@ -32,39 +26,12 @@ class TrajectorySAPT(AnalysisBase):
         self._cfg = config
         super(TrajectorySAPT, self).__init__(self._unv.trajectory)
 
-    def _prepare(self):
+    def _prepare(self) -> None:
         self._col = ['residues', 'time', 'energy']
         self.results = pd.DataFrame(columns=self._col)
         self._res_dict = {x: [] for x in self._col}
 
-    @staticmethod
-    def get_psi_mol(molecule: mda.AtomGroup, ph: float=7.0):
-        # Based on instructions in https://linuxtut.com/en/30aa73dd6bb949d4858b/
-
-        molecule.write('resid.pdb', file_format='PDB')
-        fixer = PDBFixer(filename='resid.pbd')
-        fixer.findMissingAtoms()
-        fixer.addMissingAtoms()
-        fixer.addMissingHydrogens(ph)
-        PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
-
-        mol = Chem.MolFromMolFile('resid_fixed.pdb')
-        conf = mol.GetConformer()
-        mol_coords = ''
-        for atom in mol.GetAtoms():
-            mol_coords += (f'\n {atom.GetSymbol()} '
-                           f'{conf.GetAtomPosition(atom.GetIdx()).x} '
-                           f'{conf.GetAtomPosition(atom.GetIdx()).y} '
-                           f'{conf.GetAtomPosition(atom.GetIdx()).z}')
-
-        psi_mol: psi4.core.Molecule = psi4.geometry(mol_coords)
-        coords = psi_mol.save_string_xyz()
-        coord_header = f'{mol.getFormalCharge(), psi_mol.get_fragment_multiplicities()}'
-        coords = coords.split('\n')
-        coords = coord_header.join(['\n' + coord for coord in coords[1:]])
-        return psi_mol.save_string_xyz()
-
-    def _single_frame(self):
+    def _single_frame(self) -> None:
         xyz_dict = {k: self.get_psi_mol(self._sel[k]) for k in self._sel.keys()}
         with open('test.xyz', 'w+') as r:
             r.write(xyz_dict[2])
@@ -80,6 +47,6 @@ class TrajectorySAPT(AnalysisBase):
             for r in range(len(result)):
                 self._res_dict[self._col[r]].append(result[r])
 
-    def _conclude(self):
+    def _conclude(self) -> None:
         for k in self._col:
             self.results[k] = self._res_dict[k]

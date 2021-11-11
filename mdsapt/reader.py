@@ -15,13 +15,15 @@ class InputError(Exception):
 
 class InputReader(object):
     """Reader for yaml inputs"""
-    def __init__(self, path):
-        self.top_path: Optional[str]
-        self.trj_path: Optional[List[str]]
-        self.ag_sel: Optional[List[int]]
-        self.ag_pair: Optional[List[List[int]]]
-        self.trj_settings: Optional[dict]
-        self.sys_settings: Optional[dict]
+
+    top_path: Optional[str]
+    trj_path: Optional[List[str]]
+    ag_sel: Optional[List[int]]
+    ag_pair: Optional[List[List[int]]]
+    trj_settings: Optional[dict]
+    sys_settings: Optional[dict]
+
+    def __init__(self, path) -> None:
         self.load_input(path)
 
     def load_input(self, path: str) -> None:
