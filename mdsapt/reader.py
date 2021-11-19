@@ -10,16 +10,17 @@ logger = logging.getLogger('mdsapt.config')
 
 
 class InputError(Exception):
+    """Raised when error is found in the yaml input"""
     pass
 
 
 class InputReader(object):
     """Reader for yaml inputs"""
 
-    top_path: Optional[str]
-    trj_path: Optional[List[str]]
-    ag_sel: Optional[List[int]]
-    ag_pair: Optional[List[List[int]]]
+    top_path: str
+    trj_path: str
+    ag_sel: List[int]
+    ag_pair: List[List[int]]
     trj_settings: Optional[dict]
     sys_settings: Optional[dict]
 
@@ -27,7 +28,7 @@ class InputReader(object):
         self.load_input(path)
 
     def load_input(self, path: str) -> None:
-        """Reads yaml file"""
+        # Load yaml file
         try:
             in_cfg = yaml.safe_load(open(path))
             self.check_inputs(in_cfg)
@@ -45,6 +46,7 @@ class InputReader(object):
 
     @staticmethod
     def check_inputs(yaml_dict: dict) -> None:
+        # Checking inputs of yaml file
         try:
             top_path = yaml_dict['topology_path']
             trj_path = yaml_dict['trajectory_paths']
@@ -78,6 +80,7 @@ class InputReader(object):
             start = trj_settings['start']
             step = trj_settings['step']
             stop = trj_settings['stop']
+            pH = trj_settings['pH']
             cpu = sys_settings['ncpu']
             mem = sys_settings['memory']
             time = sys_settings['time']

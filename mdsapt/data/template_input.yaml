@@ -6,12 +6,13 @@ selection_resid_num:
 selection_names:
   -
 int_pairs:
-  # Place pair of names defined about in list in a list
+  # Place pair names defined above in list in a list
   - []
 trajectory_settings:
   start:
   stop:
   step:
+  pH: 7.0 # Default is 7 used for replacing missing protons
 system_settings:
   ncpus:
   memory:
