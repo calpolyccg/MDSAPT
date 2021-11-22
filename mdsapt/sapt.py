@@ -1,6 +1,6 @@
 """Provide the primary functions."""
 
-from typing import Dict
+from typing import Dict, List
 
 import pandas as pd
 
@@ -11,19 +11,30 @@ from MDAnalysis.topology.guessers import guess_types
 import psi4
 
 from .reader import InputReader
+from .optimizer import Optimizer
 
 
 class TrajectorySAPT(AnalysisBase):
     """Calculates the <SAPT>`` for individual frames of a trajectory.
     """
+
+    _unv: mda.Universe
+    _sel: Dict[mda.AtomGroup]
+    _sel_pairs: List[List[int]]
+    _mem: str
+    _cfg: InputReader
+    _opt: Optimizer
+    results: pd.DataFrame
+
     def __init__(self, config: InputReader, **universe_kwargs) -> None:
-        self._unv: mda.Universe = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
+        self._unv = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
         elements = guess_types(self._unv.atoms.names)
         self._unv.add_TopologyAttr('elements', elements)
-        self._sel: Dict[mda.AtomGroup] = {x: self._unv.select_atoms(f'resid {x}') for x in config.ag_sel}
+        self._sel = {x: self._unv.select_atoms(f'resid {x}') for x in config.ag_sel}
         self._sel_pairs = config.ag_pair
         self._mem = config.sys_settings['memory']
         self._cfg = config
+        self._opt = Optimizer(self._cfg)
         super(TrajectorySAPT, self).__init__(self._unv.trajectory)
 
     def _prepare(self) -> None:
