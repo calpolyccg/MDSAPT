@@ -1,4 +1,4 @@
-from .reader import InputReader
+"""Prepares AtomGroups for SAPT calculations by adding protons and replacing missing atoms"""
 
 from typing import Dict
 
@@ -8,6 +8,8 @@ import psi4
 
 from pdbfixer import PDBFixer
 from simtk.openmm.app import PDBFile
+
+from .reader import InputReader
 
 
 class Optimizer(object):
@@ -21,34 +23,27 @@ class Optimizer(object):
         self._settings = settings
         self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
         self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
+        self.fix_protons(settings.trj_settings['pH'])
+
+    def fix_protons(self, ph: float) -> None:
+        for k in self._resids:
+            res = self._resids[k]
+            res.write('resid.pdb', file_format='PDB')
+            fixer = PDBFixer(filename='resid.pdb')
+            fixer.findMissingResidues()
+            fixer.findMissingAtoms()
+            fixer.addMissingHydrogens(ph)
+            PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
+            res_fixed = mda.Universe('resid_fixed.pdb')
+            resid = mda.Universe.select_atoms('resid *')
+            resid.guess_bonds()
+            self._resids[k] = resid
+
+    def fix_peptide_carbon(self) -> None:
+        res: mda.AtomGroup
+        for k in self._resids:
+            res = self._resids[k]
 
 
-    @staticmethod
-    def get_psi_mol(molecule: mda.AtomGroup, ph: float = 7.0) -> str:
-        # Based on instructions in https://linuxtut.com/en/30aa73dd6bb949d4858b/
-
-        molecule.write('resid.pdb', file_format='PDB')
-        fixer = PDBFixer(filename='resid.pdb')
-        fixer.findMissingResidues()
-
-        fixer.addMissingHydrogens(ph)
-        PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
-
-        mol_fixed = mda.Universe('resid_fixed.pdf')
-        mol = mol_fixed.select_atoms('resid 1')
-
-        conf = mol.GetConformer()
-        mol_coords = ''
-        for atom in mol.GetAtoms():
-            mol_coords += (f'\n {atom.GetSymbol()} '
-                           f'{conf.GetAtomPosition(atom.GetIdx()).x} '
-                           f'{conf.GetAtomPosition(atom.GetIdx()).y} '
-                           f'{conf.GetAtomPosition(atom.GetIdx()).z}')
-
-        psi_mol: psi4.core.Molecule = psi4.geometry(mol_coords)
-        coords = psi_mol.save_string_xyz()
-        coord_header = f'{mol.getFormalCharge(), psi_mol.get_fragment_multiplicities()}'
-        coords = coords.split('\n')
-        coords = coord_header.join(['\n' + coord for coord in coords[1:]])
-        return psi_mol.save_string_xyz()
-
+    def __getitem__(self, item: int) -> mda.AtomGroup:
+        return self._resids[item]
