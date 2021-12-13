@@ -32,18 +32,21 @@ class Optimizer(object):
 
     def _prepare_resids(self) -> None:
         for k in self._resids:
-            step0: mda.AtomGroup = self._resids[k]
-            step1: mda.AtomGroup = self._fix_amino(step0)
-            step2: mda.Universe = self._protonate_backbone(step1)
-            lenght: float = self._opt_geometry(step2)
-            self._bond_lenghts[k] = lenght
+            step0: mda.AtomGroup = self._resids[k]  # Get resid for optimization
+            step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
+            step2: mda.Universe = self._protonate_backbone(step1)  # Add proton to backbone
+            lenght: float = self._opt_geometry(step2)  # Get optimized new C-H bond
+            self._bond_lenghts[k] = lenght  # Hash new bond length
 
-    def _fix_amino(self, resid: mda.AtomGroup, ph: float) -> mda.AtomGroup:
+    def _rebuild_resid(self, key: int) -> None:
+        pass
+
+    def _fix_amino(self, resid: mda.AtomGroup) -> mda.AtomGroup:
         resid.write('resid.pdb', file_format='PDB')  # Saving residue
         fixer = PDBFixer(filename='resid.pdb')
         fixer.findMissingResidues()
         fixer.findMissingAtoms()
-        fixer.addMissingHydrogens(ph)  # Adding protons at pH value
+        fixer.addMissingHydrogens(self._settings.trj_settings['pH'])  # Adding protons at pH value
         PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
 
         res_fixed = mda.Universe('resid_fixed.pdb')
@@ -51,7 +54,8 @@ class Optimizer(object):
         resid.guess_bonds()
         return resid
 
-    def _protonate_backbone(self, resid: mda.AtomGroup, lenght: float = 1.128) -> mda.Universe:
+    @staticmethod
+    def _protonate_backbone(resid: mda.AtomGroup, lenght: float = 1.128) -> mda.Universe:
         backbone = resid.select_atoms('backbone')
         carbon = backbone.select_atoms('name C')
         c_pos = carbon.positions
@@ -64,19 +68,34 @@ class Optimizer(object):
                                                                      c_pos[2])))
         return h_backbone
 
-    def _opt_geometry(self, system: mda.Universe, basis: str = 'scf/cc-pvdz') -> float:
-        tmp_settings: Dict[str, str] = self._opt_set.copy()
+    def _opt_geometry(self, system: mda.Universe, basis: str = 'scf/dz') -> float:
         coords: str = ''
+        freeze_list: str = ''
         for n in range(len(system.atoms)):
-            atom: mda.Atom = system.atoms[n]
+            atom = system.atoms[n]
             coords += f'\n{atom.name[0]} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
-            if not atom.name == 'H':
-                tmp_settings['freeze_list'] += f'\n{n + 1} xyz'
+            if atom.name != 'H':
+                freeze_list += f'\n{n + 1} xyz'
+            elif atom.name == 'CA':
+                ca_ind = n
 
-        mol = psi4.geometry(coords)
+        mol: psi4.core.Molecule = psi4.geometry(coords)
         psi4.set_memory(self._settings.sys_settings['memory'])
-        psi4.optimize(basis, molecule=mol)
+        psi4.set_options(self._opt_set)
+        psi4.optimize(basis, freeze_list=freeze_list, opt_cooridnates='cartesian',  molecule=mol)
+        opt_coords = mol.create_psi4_string_from_molecule()
 
+        for line in opt_coords:
+            if 'H' in line:
+                line = line.split()
+                h_coord = [float(line[1]), float(line[2]), float(line[3])]
+
+        c_line = opt_coords[ca_ind].split()
+        c_coord = [float(c_line[1]), float(c_line[2]), float(c_line[3])]
+        return np.sqrt((c_coord[0] - h_coord[0])**2 + (c_coord[1] - h_coord[1])**2 + (c_coord[2] - h_coord[1])**2)
 
     def __getitem__(self, item: int) -> mda.AtomGroup:
         return self._resids[item]
+
+    def set_opt_setting(self, opt_settings: Dict[str, str]) -> None:
+        self._opt_set = opt_settings
