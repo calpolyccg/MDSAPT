@@ -17,10 +17,10 @@ from .reader import InputReader
 class Optimizer(object):
     """Prepares residues for SAPT"""
 
-    _resids: Dict[int: mda.AtomGroup]
+    _resids: Dict[int, mda.AtomGroup]
     _unv: mda.Universe
     _settings: InputReader
-    _bond_lenghts: Dict[int: np.ndarray]
+    _bond_lenghts: Dict[int, np.ndarray]
     _opt_set: Dict[str, str]
 
     def __init__(self, settings: InputReader) -> None:
@@ -35,15 +35,14 @@ class Optimizer(object):
             step0: mda.AtomGroup = self._resids[k]  # Get resid for optimization
             step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
             step2: mda.Universe = self._protonate_backbone(step1)  # Add proton to backbone
-            lenght: float = self._opt_geometry(step2)  # Get optimized new C-H bond
-            self._bond_lenghts[k] = lenght  # Hash new bond length
+            length: float = self._opt_geometry(step2)  # Get optimized new C-H bond
+            self._bond_lenghts[k] = length  # Hash new bond length
 
     def _rebuild_resid(self, key: int) -> mda.AtomGroup:
         resid: mda.AtomGroup = self._resids[key]
         step0: mda.AtomGroup = self._fix_amino(resid)
         step1: mda.Universe = self._protonate_backbone(step0, lenght=self._bond_lenghts[key], just_backbone=False)
         return step1.select_atoms(f"resid {key}")
-
 
     def _fix_amino(self, resid: mda.AtomGroup) -> mda.AtomGroup:
         resid.write('resid.pdb', file_format='PDB')  # Saving residue
@@ -59,7 +58,20 @@ class Optimizer(object):
         return resid
 
     @staticmethod
-    def _protonate_backbone(resid: mda.AtomGroup, lenght=1.128, just_backbone=True) -> mda.Universe:
+    def get_new_pos(backbone: mda.AtomGroup, length: float):
+        c_pos = backbone.select_atoms('name C').positions[0]
+        o_pos = backbone.select_atoms('name O').positions[0]
+        a_pos = backbone.select_atoms('name CA').positions[0]
+        o_pos = o_pos - c_pos  # Translate coords such that C in at origin
+        a_pos = a_pos - c_pos
+        o_norm = o_pos/np.linalg.norm(o_pos)
+        a_norm = a_pos/np.linalg.norm(a_pos)
+        h_pos = -(o_norm + a_norm)
+        h_norm = h_pos/np.linalg.norm(h_pos)
+        h_norm = (h_norm * length) + c_pos
+        return h_norm
+
+    def _protonate_backbone(self, resid: mda.AtomGroup, lenght: float = 1.128, just_backbone=True) -> mda.Universe:
         new_resid: mda.AtomGroup
         backbone = resid.select_atoms('backbone')
         carbon = backbone.select_atoms('name C')
@@ -68,14 +80,12 @@ class Optimizer(object):
         else:
             new_resid = resid
 
-        c_pos = carbon.positions
-        protonated = mda.Universe.empty(n_atoms=new_resid + 1, trajectory=True)
+        protonated = mda.Universe.empty(n_atoms=new_resid.n_atoms + 1, trajectory=True)
         protonated.add_TopologyAttr('masses', [x for x in new_resid.masses] + [1])
         protonated.add_TopologyAttr('name', [x for x in new_resid.names] + ['H'])
-        back_bone_pos = new_resid.positions
-        protonated.positions = np.row_stack(back_bone_pos, np.array((c_pos[0] - lenght * np.cos(np.pi / 6),
-                                                                     c_pos[1] - lenght * np.sin(np.pi / 6),
-                                                                     c_pos[2])))
+        new_pos = new_resid.positions
+        h_pos = self.get_new_pos(backbone, lenght)
+        protonated.positions = np.row_stack((new_pos, h_pos))
         return protonated
 
     def _opt_geometry(self, system: mda.Universe, basis: str = 'scf/dz') -> float:
