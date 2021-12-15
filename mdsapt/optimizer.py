@@ -28,6 +28,7 @@ class Optimizer(object):
         self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
         self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
         self._bond_lenghts = {}
+        self._opt_set = {'reference':'rhf'}
         self._prepare_resids()
 
     def _prepare_resids(self) -> None:
@@ -80,12 +81,12 @@ class Optimizer(object):
         else:
             new_resid = resid
 
-        protonated = mda.Universe.empty(n_atoms=new_resid.n_atoms + 1, trajectory=True)
+        protonated: mda.Universe = mda.Universe.empty(n_atoms=new_resid.n_atoms + 1, trajectory=True)
         protonated.add_TopologyAttr('masses', [x for x in new_resid.masses] + [1])
         protonated.add_TopologyAttr('name', [x for x in new_resid.names] + ['H'])
         new_pos = new_resid.positions
         h_pos = self.get_new_pos(backbone, lenght)
-        protonated.positions = np.row_stack((new_pos, h_pos))
+        protonated.atoms.positions = np.row_stack((new_pos, h_pos))
         return protonated
 
     def _opt_geometry(self, system: mda.Universe, basis: str = 'scf/dz') -> float:
