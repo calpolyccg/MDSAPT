@@ -42,12 +42,19 @@ class TrajectorySAPT(AnalysisBase):
         self.results = pd.DataFrame(columns=self._col)
         self._res_dict = {x: [] for x in self._col}
 
+    def get_psi_mol(self, key: int):
+        resid: mda.AtomGroup = self._opt[key]
+        coords: str = ''
+        for atom in resid.atoms:
+            coords += f'\n{atom.name[0]} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
+        return coords
+
     def _single_frame(self) -> None:
-        xyz_dict = {k: self.get_psi_mol(self._sel[k]) for k in self._sel.keys()}
+        xyz_dict = {k: self.get_psi_mol(k) for k in self._sel.keys()}
         with open('test.xyz', 'w+') as r:
             r.write(xyz_dict[2])
         for pair in self._sel_pairs:
-            coords = xyz_dict[pair[0]] + '--\n' + xyz_dict[pair[1]] + 'units angstrom'
+            coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
             dimer = psi4.geometry(coords)
             psi4.set_options({'scf_type': 'df',
                               'freeze_core': 'true'})
