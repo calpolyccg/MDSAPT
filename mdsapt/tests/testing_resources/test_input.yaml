@@ -11,6 +11,7 @@ trajectory_settings:
   start: 0
   stop: 5
   step: 1
+  pH: 7.0
 system_settings:
   ncpus: 10
   memory: 12GB
