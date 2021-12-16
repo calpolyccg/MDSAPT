@@ -28,7 +28,7 @@ class Optimizer(object):
         self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
         self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
         self._bond_lenghts = {}
-        self._opt_set = {'reference':'rhf'}
+        self._opt_set = {'reference': 'rhf'}
         self._prepare_resids()
 
     def _prepare_resids(self) -> None:
@@ -75,7 +75,6 @@ class Optimizer(object):
     def _protonate_backbone(self, resid: mda.AtomGroup, lenght: float = 1.128, just_backbone=True) -> mda.Universe:
         new_resid: mda.AtomGroup
         backbone = resid.select_atoms('backbone')
-        carbon = backbone.select_atoms('name C')
         if just_backbone:
             new_resid = backbone
         else:
