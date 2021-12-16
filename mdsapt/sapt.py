@@ -30,6 +30,10 @@ import psi4
 from .reader import InputReader
 from .optimizer import Optimizer
 
+import logging
+
+logger = logging.getLogger('mdsapt')
+
 
 class TrajectorySAPT(AnalysisBase):
     """Handles iterating over MD trajectory frames,
@@ -93,6 +97,8 @@ class TrajectorySAPT(AnalysisBase):
             psi4.set_options({'scf_type': 'df',
                               'freeze_core': 'true'})
             psi4.set_memory(self._mem)
+
+            logger.info(f'Starting SAPT for {pair}')
 
             sapt = psi4.energy('sapt0/jun-cc-pvdz', molecule=dimer)
             result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt]
