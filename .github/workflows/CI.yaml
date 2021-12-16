@@ -7,11 +7,9 @@ on:
   push:
     branches:
       - "master"
-      - "main"
   pull_request:
     branches:
       - "master"
-      - "main"
   schedule:
     # Nightly tests run on master by default:
     #   Scheduled workflows run on the latest commit on the default or base branch.
@@ -24,30 +22,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macOS-latest, ubuntu-latest, windows-latest]
+        os: [macOS-latest, ubuntu-latest]
         python-version: [3.7, 3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v1
-
-    - name: Additional info about the build
-      shell: bash
-      run: |
-        uname -a
-        df -h
-        ulimit -a
-
+    - uses: actions/checkout@v2
 
     # More info on options: https://github.com/conda-incubator/setup-miniconda
     - uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: devtools/conda-envs/test_env.yaml
-
-        channels: defaults
-
+        channels: conda-forge,omnia,psi4,defaults
         activate-environment: test
-        auto-update-conda: false
+        auto-update-conda: true
         auto-activate-base: false
         show-channel-urls: true
 
@@ -66,7 +54,7 @@ jobs:
       shell: bash -l {0}
 
       run: |
-        pytest -v --cov=MDSAPT --cov-report=xml --color=yes MDSAPT/tests/
+        pytest -v --cov=mdsapt --cov-report=xml --color=yes ./mdsapt/tests/
 
     - name: CodeCov
       uses: codecov/codecov-action@v1
