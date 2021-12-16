@@ -1,3 +1,19 @@
+r"""
+:mod:`mdsapt.reader` -- Reads input file and saves configuration
+================================================================
+
+MDSAPT uses an yaml file to get user's configurations for SAPT calculations
+class`mdsapt.reader.InputReader` is responsible for reading the yaml file and
+returning the information from it. If a yaml file is needed it can be generated
+using the included *mdsapt_get_runinput* script.
+
+.. autoexception:: InputError
+
+.. autoclass:: InputReader
+    :members:
+    :inherited-members:
+"""
+
 import os
 from typing import List, Optional
 
@@ -25,18 +41,30 @@ class InputReader(object):
     sys_settings: Optional[dict]
 
     def __init__(self, path) -> None:
+        """Reads input file, checks it for validity,
+         and saves its data as instance variables.
+
+         Errors in run input will result in
+         :class`mdsapt.reader.InputError` being
+         raised."""
         self.load_input(path)
 
     def load_input(self, path: str) -> None:
-        # Load yaml file
+        """Loads input file from path and records settings.
+         If an error is found :class:`mdsapt.reader.InputError`
+         is raised.
+
+         :Arguments:
+            *path*
+                Path to yaml input file."""
         try:
             in_cfg = yaml.safe_load(open(path))
-            self.check_inputs(in_cfg)
-            self.save_params(in_cfg)
+            self._check_inputs(in_cfg)
+            self._save_params(in_cfg)
         except IOError or InputError:
             logger.warning('error loading file')
 
-    def save_params(self, yaml_dict: dict) -> None:
+    def _save_params(self, yaml_dict: dict) -> None:
         self.top_path = yaml_dict['topology_path']
         self.trj_path = yaml_dict['trajectory_paths']
         self.ag_sel = yaml_dict['selection_resid_num']
@@ -45,7 +73,7 @@ class InputReader(object):
         self.sys_settings = yaml_dict['system_settings']
 
     @staticmethod
-    def check_inputs(yaml_dict: dict) -> None:
+    def _check_inputs(yaml_dict: dict) -> None:
         # Checking inputs of yaml file
         try:
             top_path = yaml_dict['topology_path']

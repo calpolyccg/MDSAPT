@@ -40,4 +40,4 @@ class TestInputReader(object):
         alt_set = self.reference
         alt_set[key_pair[0]] = key_pair[1]
         with pytest.raises(InputError):
-            settings.check_inputs(alt_set)
+            settings._check_inputs(alt_set)
