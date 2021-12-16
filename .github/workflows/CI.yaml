@@ -53,7 +53,7 @@ jobs:
       shell: bash -l {0}
 
       run: |
-        pytest -v --cov=mdsapt --cov-report=xml --color=yes ./mdsapt/tests/
+        pytest -v --cov=MDSAPT --cov-report=xml --color=yes ./MDSAPT/tests/
 
     - name: CodeCov
       uses: codecov/codecov-action@v1
