@@ -35,7 +35,7 @@ jobs:
         environment-file: devtools/conda-envs/test_env.yaml
         channels: conda-forge,omnia,psi4,defaults
         activate-environment: mdsapt
-        auto-update-conda: true
+        auto-update-conda: false
         auto-activate-base: false
 
     - name: Install package
