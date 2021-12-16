@@ -19,7 +19,7 @@ class TrajectorySAPT(AnalysisBase):
     """
 
     _unv: mda.Universe
-    _sel: Dict[mda.AtomGroup]
+    _sel: Dict[int, mda.AtomGroup]
     _sel_pairs: List[List[int]]
     _mem: str
     _cfg: InputReader
