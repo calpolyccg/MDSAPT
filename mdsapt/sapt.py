@@ -77,7 +77,7 @@ class TrajectorySAPT(AnalysisBase):
         self._res_dict = {x: [] for x in self._col}
 
     def _get_psi_mol(self, key: int):
-        resid: mda.AtomGroup = self._opt[key]
+        resid: mda.AtomGroup = self._opt.rebuild_resid(key, self._sel[key])
         coords: str = ''
         for atom in resid.atoms:
             coords += f'\n{atom.name[0]} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
