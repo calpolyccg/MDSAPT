@@ -1,4 +1,21 @@
-"""Provide the primary functions."""
+r"""
+:mod:`mdsapt.sapt` -- Calculate SAPT energy between selections
+==============================================================
+
+Sets up and runs `SAPT <https://psicode.org/psi4manual/master/sapt.html>`_
+calculations between the residues selected in the input file.
+
+Required Input:
+
+- :class:`-mdsapt.reader.InputReader
+- :class:`-mdsapt.optimizer.Optimizer
+
+
+
+.. autoclass:: TrajectorySAPT
+    :members:
+    :inherited-members:
+"""
 
 from typing import Dict, List
 
@@ -15,7 +32,11 @@ from .optimizer import Optimizer
 
 
 class TrajectorySAPT(AnalysisBase):
-    """Calculates the <SAPT>`` for individual frames of a trajectory.
+    """Handles iterating over MD trajectory frames,
+    setting up SAPT calculations, and processing results.
+
+    Results are stored in a Pandas :class:`DataFrame` following the
+    `"tidy dataframe" <>`_ convention.
     """
 
     _unv: mda.Universe
@@ -26,7 +47,19 @@ class TrajectorySAPT(AnalysisBase):
     _opt: Optimizer
     results: pd.DataFrame
 
-    def __init__(self, config: InputReader, **universe_kwargs) -> None:
+    def __init__(self, config: InputReader, optimizer: Optimizer, **universe_kwargs) -> None:
+        """Sets up Trajectory and residue selections.
+
+        :Arguments:
+            *config*
+                :class:`mdsapt.reader.InputReader containing data for running calculations
+            *optimizer*
+                :class:`mdsapt.optimizer.Optimizer` for preparing residues by replacing missing protons
+                and providing a balanced spin state.
+            *universe_arguments*
+                keyword arguments for loading the trajectory into a MDAnalysis :class:`Universe`
+        """
+
         self._unv = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
         elements = guess_types(self._unv.atoms.names)
         self._unv.add_TopologyAttr('elements', elements)
@@ -34,7 +67,7 @@ class TrajectorySAPT(AnalysisBase):
         self._sel_pairs = config.ag_pair
         self._mem = config.sys_settings['memory']
         self._cfg = config
-        self._opt = Optimizer(self._cfg)
+        self._opt = optimizer
         super(TrajectorySAPT, self).__init__(self._unv.trajectory)
 
     def _prepare(self) -> None:
@@ -42,7 +75,7 @@ class TrajectorySAPT(AnalysisBase):
         self.results = pd.DataFrame(columns=self._col)
         self._res_dict = {x: [] for x in self._col}
 
-    def get_psi_mol(self, key: int):
+    def _get_psi_mol(self, key: int):
         resid: mda.AtomGroup = self._opt[key]
         coords: str = ''
         for atom in resid.atoms:
