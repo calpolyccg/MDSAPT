@@ -74,10 +74,16 @@ class Optimizer(object):
             length: float = self._opt_geometry(step2)  # Get optimized new C-H bond
             self._bond_lenghts[k] = length  # Hash new bond length
 
-    def _rebuild_resid(self, key: int) -> mda.AtomGroup:
-        resid: mda.AtomGroup = self._resids[key]
+    def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
+        """Rebuilds residue by replacing missing protons and adding a new proton
+        with the bond length determined by the optimization. Raises key error if class
+        has no value for that optimization."""
+        try:
+            length = self._bond_lenghts[key]
+        except KeyError:
+            return resid  # Temporary
         step0: mda.AtomGroup = self._fix_amino(resid)
-        step1: mda.Universe = self._protonate_backbone(step0, lenght=self._bond_lenghts[key], just_backbone=False)
+        step1: mda.Universe = self._protonate_backbone(step0, length=length, just_backbone=False)
         return step1.select_atoms(f"resid {key}")
 
     def _fix_amino(self, resid: mda.AtomGroup) -> mda.AtomGroup:
@@ -107,7 +113,7 @@ class Optimizer(object):
         h_norm = (h_norm * length) + c_pos
         return h_norm
 
-    def _protonate_backbone(self, resid: mda.AtomGroup, lenght: float = 1.128, just_backbone=True) -> mda.Universe:
+    def _protonate_backbone(self, resid: mda.AtomGroup, length: float = 1.128, just_backbone=True) -> mda.Universe:
         new_resid: mda.AtomGroup
         backbone = resid.select_atoms('backbone')
         if just_backbone:
@@ -119,7 +125,7 @@ class Optimizer(object):
         protonated.add_TopologyAttr('masses', [x for x in new_resid.masses] + [1])
         protonated.add_TopologyAttr('name', [x for x in new_resid.names] + ['H'])
         new_pos = new_resid.positions
-        h_pos = self._get_new_pos(backbone, lenght)
+        h_pos = self._get_new_pos(backbone, length)
         protonated.atoms.positions = np.row_stack((new_pos, h_pos))
         return protonated
 
@@ -148,9 +154,6 @@ class Optimizer(object):
         c_line = opt_coords[ca_ind].split()
         c_coord = [float(c_line[1]), float(c_line[2]), float(c_line[3])]
         return np.sqrt((c_coord[0] - h_coord[0])**2 + (c_coord[1] - h_coord[1])**2 + (c_coord[2] - h_coord[1])**2)
-
-    def __getitem__(self, item: int) -> mda.AtomGroup:
-        return self._rebuild_resid(item)
 
     def set_opt_setting(self, opt_settings: Dict[str, str]) -> None:
         """Changes `Psi4 <https.psicode.org>` optimization settings.
