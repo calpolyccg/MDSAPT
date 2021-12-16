@@ -1,4 +1,22 @@
-"""Prepares AtomGroups for SAPT calculations by adding protons and replacing missing atoms"""
+r"""
+:mod:`mdsapt.optimizer` -- Prepare residues for SAPT calculations
+=================================================================
+
+Prepares residues for SAPT calculations by adding protons and replacing missing atoms
+
+When pulled out of the peptide backbone residues are missing protons on both the C and N
+terminus giving an unbalanced spin multiplicity. This causes SAPT calculations to fail.
+
+Required Input:
+
+- :class:`mdsapt.reader.InputReader`
+
+
+.. autoclass:: Optimizer
+    :members:
+    :inherited-members:
+
+"""
 
 from typing import Dict
 
@@ -15,7 +33,16 @@ from .reader import InputReader
 
 
 class Optimizer(object):
-    """Prepares residues for SAPT"""
+    """Prepares amino acid residues from the peptide backbone
+    for sapt calculations. This requires selecting the residues
+    given in :class:`mdsapt.reader.InputReader`, adding protons
+    to the N terminus, then adding a proton to the C terminus and
+    optimizing the bond length.
+
+    For after the length has been determined once for a residue
+    the proton can be added again without needing to preform a
+    bond optimization. This is so that while running the SAPT
+    calculation getting valid coordinates is faster."""
 
     _resids: Dict[int, mda.AtomGroup]
     _unv: mda.Universe
@@ -24,6 +51,14 @@ class Optimizer(object):
     _opt_set: Dict[str, str]
 
     def __init__(self, settings: InputReader) -> None:
+        """Prepares selected residues for SAPT calculations
+        by adding missing protons. Obtains new bond lengths
+        for protons added to C terminus of the amino acids.
+
+        :Arguments:
+            *settings*
+                :class:`mdsapt.reader.InputReader`
+        """
         self._settings = settings
         self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
         self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
@@ -59,7 +94,7 @@ class Optimizer(object):
         return resid
 
     @staticmethod
-    def get_new_pos(backbone: mda.AtomGroup, length: float):
+    def _get_new_pos(backbone: mda.AtomGroup, length: float):
         c_pos = backbone.select_atoms('name C').positions[0]
         o_pos = backbone.select_atoms('name O').positions[0]
         a_pos = backbone.select_atoms('name CA').positions[0]
@@ -84,7 +119,7 @@ class Optimizer(object):
         protonated.add_TopologyAttr('masses', [x for x in new_resid.masses] + [1])
         protonated.add_TopologyAttr('name', [x for x in new_resid.names] + ['H'])
         new_pos = new_resid.positions
-        h_pos = self.get_new_pos(backbone, lenght)
+        h_pos = self._get_new_pos(backbone, lenght)
         protonated.atoms.positions = np.row_stack((new_pos, h_pos))
         return protonated
 
@@ -118,4 +153,10 @@ class Optimizer(object):
         return self._rebuild_resid(item)
 
     def set_opt_setting(self, opt_settings: Dict[str, str]) -> None:
+        """Changes `Psi4 <https.psicode.org>` optimization settings.
+        The optimization must be rerun for this to take effect."""
         self._opt_set = opt_settings
+
+    def re_run_optimizations(self) -> None:
+        """Reruns optimization of bond lengths."""
+        self._prepare_resids()
