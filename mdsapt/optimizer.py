@@ -31,6 +31,10 @@ import numpy as np
 
 from .reader import InputReader
 
+import logging
+
+logger = logging.getLogger('mdsapt')
+
 
 class Optimizer(object):
     """Prepares amino acid residues from the peptide backbone
@@ -71,6 +75,7 @@ class Optimizer(object):
             step0: mda.AtomGroup = self._resids[k]  # Get resid for optimization
             step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
             step2: mda.Universe = self._protonate_backbone(step1)  # Add proton to backbone
+            logger.info(f'Optimizing new bond for residue {k}')
             length: float = self._opt_geometry(step2)  # Get optimized new C-H bond
             self._bond_lenghts[k] = length  # Hash new bond length
 
@@ -81,7 +86,9 @@ class Optimizer(object):
         try:
             length = self._bond_lenghts[key]
         except KeyError:
-            return resid  # Temporary
+            logger.error(f'No bond length for {key}')
+            raise KeyError
+
         step0: mda.AtomGroup = self._fix_amino(resid)
         step1: mda.Universe = self._protonate_backbone(step0, length=length, just_backbone=False)
         return step1.select_atoms(f"resid {key}")
@@ -162,4 +169,5 @@ class Optimizer(object):
 
     def re_run_optimizations(self) -> None:
         """Reruns optimization of bond lengths."""
+        logger.info('Rerunning optimization')
         self._prepare_resids()
