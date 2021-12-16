@@ -1,4 +1,19 @@
-"""Viewer for inputted selections"""
+r"""
+:mod:`mdsapt.viewer` -- Visualize residues and interaction pairs
+================================================================
+
+Allows for visualization of trajectories using `NGLView <http://nglviewer.org>`_
+in a Jupyter Notebook.
+
+Required Input:
+
+- :class:`-mdsapt.reader.InputReader
+- :class:`-mdsapt.optimizer.Optimizer
+
+.. autoclass:: Viewer
+    :members:
+    :inherited-members:
+"""
 
 from typing import Union
 
@@ -19,6 +34,7 @@ class Viewer(object):
     _opt: Optimizer
 
     def __init__(self, settings: InputReader) -> None:
+        """Sets up visualizations for selected residues"""
         self._unv = mda.Universe(settings.top_path, settings.trj_path)
         self._opt = Optimizer(settings)
 
@@ -27,25 +43,58 @@ class Viewer(object):
         nv.show_mdanalysis(system, **nglview_kwargs)
 
     def view_system(self, **nglview_kwargs) -> None:
+        """Shows entire trajectory"""
         self._launch_viewer(self._unv, **nglview_kwargs)
 
     def view_residue(self, resid: int, **nglview_kwargs) -> None:
+        """Shows selected residue.
+
+        :Arguments:
+            *resid*
+                number of selected residue in polypeptide chain
+            *nglview_kwargs*
+                arguments passed to the viewer"""
         resid: mda.AtomGroup = self._unv.select_atoms(f'resid {resid}')
         self._launch_viewer(resid, **nglview_kwargs)
 
     def view_interaction_pair(self, resid1: int, resid2: int, **nglview_kwargs) -> None:
+        """Shows selected pair of residues.
+
+        :Arguments:
+            *resid1*
+                number of first selected residue in polypeptide chain
+            *resid2*
+                number of second selected residue in polypeptide chain
+            *nglview_kwargs*
+                arguments passed to the viewer"""
         r1: mda.AtomGroup = self._unv.select_atoms(f'resid {resid1}')
         r2: mda.AtomGroup = self._unv.select_atoms(f'resid {resid2}')
         r_pair: mda.AtomGroup = r1 + r2
         self._launch_viewer(r_pair, **nglview_kwargs)
 
     def view_optimized_residue(self, resid: int, **nglview_kwargs) -> None:
-        resid = self._opt[resid]
+        """Shows selected residue after prepared for SAPT by
+        :class:`mdsapt.optimizer.
+
+        :Arguments:
+            *resid*
+                number of selected residue in polypeptide chain
+            *nglview_kwargs*
+                arguments passed to the viewer"""
+        resid = self._opt.rebuild_resid(resid, self._unv.select_atoms(f'resid {resid}'))
         self._launch_viewer(resid, **nglview_kwargs)
 
     def view_optimized_interaction_pair(self, resid1: int, resid2: int, **nglview_kwargs) -> None:
-        r1 = self._opt[resid1]
-        r2 = self._opt[resid2]
+        """Shows selected pair of residues after prepared for SAPT by
+        :class:`mdsapt.optimizer.
+
+        :Arguments:
+            *resid*
+                number of selected residue in polypeptide chain
+            *nglview_kwargs*
+                arguments passed to the viewer"""
+        r1 = self._opt.rebuild_resid(resid1, self._unv.select_atoms(f'resid {resid1}'))
+        r2 = self._opt.rebuild_resid(resid2, self._unv.select_atoms(f'resid {resid2}'))
         r_pair: mda.Universe = mda.Universe.empty(n_atoms=(r1.n_atoms + r2.n_atoms), trajectory=True)
         r_pair.add_TopologyAttr('masses', [x for x in r1.mases] + [x for x in r2.masses])
         r_pair.add_TopologyAttr('name', [x for x in r1.names] + [x for x in r2.names])
