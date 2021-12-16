@@ -6,7 +6,6 @@ channels:
   - defaults
 dependencies:
   - ambit=0.5.1
-  - appnope=0.1.2
   - argon2-cffi=21.1.0
   - async_generator
   - attrs=21.2.0
