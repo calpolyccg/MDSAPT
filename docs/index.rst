@@ -1,23 +1,22 @@
-.. MDSAPT documentation master file, created by
-   sphinx-quickstart on Thu Mar 15 13:55:56 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to MDSAPT's documentation!
+MDSAPT Documentation
 =========================================================
 
+:Release: |release|
+:Date: |today|
+
+**MDSAPT** is a Python package and `MDAnalysis <https://www.mdanalysis.org>`_ Kit.
+
+
+
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 4
+   :numbered:
+   :hidden:
 
-   getting_started
-   api
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   install
+   quick
+   sapt
+   optimizer
+   reader
+   viewer
+   scripts

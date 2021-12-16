@@ -23,9 +23,9 @@ import mdsapt
 # -- Project information -----------------------------------------------------
 
 project = 'mdsapt'
-copyright = ("2021, alescoulie. Project structure based on the "
+copyright = ("2021, Alia Lescoulie. Project structure based on the "
              "Computational Molecular Science Python Cookiecutter version 1.6")
-author = 'alescoulie'
+author = 'Alia Lescoulie'
 
 # The short X.Y version
 version = ''
