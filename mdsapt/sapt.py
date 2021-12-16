@@ -36,7 +36,8 @@ class TrajectorySAPT(AnalysisBase):
     setting up SAPT calculations, and processing results.
 
     Results are stored in a Pandas :class:`DataFrame` following the
-    `"tidy dataframe" <>`_ convention.
+    `"tidy dataframe" <https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html>`_
+    convention.
     """
 
     _unv: mda.Universe
@@ -57,7 +58,7 @@ class TrajectorySAPT(AnalysisBase):
                 :class:`mdsapt.optimizer.Optimizer` for preparing residues by replacing missing protons
                 and providing a balanced spin state.
             *universe_arguments*
-                keyword arguments for loading the trajectory into a MDAnalysis :class:`Universe`
+                keyword arguments for loading the trajectory into a MDAnalysis :class:`Universe <MDAnalysis.core.groups.universe.Universe>`
         """
 
         self._unv = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
@@ -83,7 +84,7 @@ class TrajectorySAPT(AnalysisBase):
         return coords
 
     def _single_frame(self) -> None:
-        xyz_dict = {k: self.get_psi_mol(k) for k in self._sel.keys()}
+        xyz_dict = {k: self._get_psi_mol(k) for k in self._sel.keys()}
         with open('test.xyz', 'w+') as r:
             r.write(xyz_dict[2])
         for pair in self._sel_pairs:
