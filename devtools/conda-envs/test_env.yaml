@@ -6,7 +6,7 @@ channels:
   - defaults
 dependencies:
   - ambit=0.5.1
-  - appnope=0.1.2
+  - appnope=0.1
   - argon2-cffi=21.1.0
   - async_generator
   - attrs=21.2.0
@@ -91,7 +91,7 @@ dependencies:
   - libedit=3.1.20191231
   - libev=4.33
   - libffi=3.4.2
-  - libgfortran=3.0.1
+  - libgfortran=3.0
   - libglib=2.70.0
   - libiconv=1.16
   - libint2=2.6.0
