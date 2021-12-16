@@ -18,7 +18,7 @@ Required Input:
 
 """
 
-from typing import Dict
+from typing import Dict, Optional
 
 import MDAnalysis as mda
 
@@ -53,6 +53,7 @@ class Optimizer(object):
     _settings: InputReader
     _bond_lenghts: Dict[int, np.ndarray]
     _opt_set: Dict[str, str]
+    _basis: str
 
     def __init__(self, settings: InputReader) -> None:
         """Prepares selected residues for SAPT calculations
@@ -68,6 +69,7 @@ class Optimizer(object):
         self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
         self._bond_lenghts = {}
         self._opt_set = {'reference': 'rhf'}
+        self._basis = 'scf/cc-pvdz'
         self._prepare_resids()
 
     def _prepare_resids(self) -> None:
@@ -76,8 +78,9 @@ class Optimizer(object):
             step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
             step2: mda.Universe = self._protonate_backbone(step1)  # Add proton to backbone
             logger.info(f'Optimizing new bond for residue {k}')
-            length: float = self._opt_geometry(step2)  # Get optimized new C-H bond
-            self._bond_lenghts[k] = length  # Hash new bond length
+            length: float = self._opt_geometry(step2)
+            if length is not None:  # Get optimized new C-H bond
+                self._bond_lenghts[k] = length  # Hash new bond length
 
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
         """Rebuilds residue by replacing missing protons and adding a new proton
@@ -136,8 +139,9 @@ class Optimizer(object):
         protonated.atoms.positions = np.row_stack((new_pos, h_pos))
         return protonated
 
-    def _opt_geometry(self, system: mda.Universe, basis: str = 'scf/dz') -> float:
-        coords: str = ''
+    def _opt_geometry(self, system: mda.Universe, basis: str = 'scf/cc-pvdz') -> Optional[float]:
+        system.select_atoms('resid *')
+        coords: str = f''
         freeze_list: str = ''
         for n in range(len(system.atoms)):
             atom = system.atoms[n]
@@ -150,7 +154,12 @@ class Optimizer(object):
         mol: psi4.core.Molecule = psi4.geometry(coords)
         psi4.set_memory(self._settings.sys_settings['memory'])
         psi4.set_options(self._opt_set)
-        psi4.optimize(basis, freeze_list=freeze_list, opt_cooridnates='cartesian',  molecule=mol)
+        try:
+            psi4.optimize(basis, freeze_list=freeze_list, opt_cooridnates='cartesian',  molecule=mol)
+        except psi4.PsiException:
+            logger.warning(f'Optimization failed on {system.residues[0].name}')
+            return None
+
         opt_coords = mol.create_psi4_string_from_molecule()
 
         for line in opt_coords:
@@ -163,9 +172,24 @@ class Optimizer(object):
         return np.sqrt((c_coord[0] - h_coord[0])**2 + (c_coord[1] - h_coord[1])**2 + (c_coord[2] - h_coord[1])**2)
 
     def set_opt_setting(self, opt_settings: Dict[str, str]) -> None:
-        """Changes `Psi4 <https.psicode.org>` optimization settings.
-        The optimization must be rerun for this to take effect."""
+        """Changes `Psi4 <https.psicode.org>`_ optimization settings.
+        The optimization must be rerun for this to take effect.
+
+        :Arguments:
+            *opt_settings*
+                Setting applied before optimization
+            """
         self._opt_set = opt_settings
+
+    def set_basis(self, basis: str) -> None:
+        """Changes basis used in optimizations see `Psi4 <https.psicode.org>`_
+        docs for information of available basis sets
+
+       :Arguments:
+            *basis*
+                Changes basis set used in optimization
+        """
+        self._basis = basis
 
     def re_run_optimizations(self) -> None:
         """Reruns optimization of bond lengths."""
