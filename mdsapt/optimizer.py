@@ -12,6 +12,8 @@ Required Input:
 - :class:`mdsapt.reader.InputReader`
 
 
+.. autofunction:: get_spin_multiplicity
+
 .. autoclass:: Optimizer
     :members:
     :inherited-members:
@@ -22,7 +24,13 @@ from typing import Dict, Optional
 
 import MDAnalysis as mda
 
+
+from MDAnalysis.converters.RDKit import atomgroup_to_mol
+from MDAnalysis.topology.guessers import guess_types, guess_atom_element
+
 import psi4
+
+from rdkit import Chem
 
 from pdbfixer import PDBFixer
 from simtk.openmm.app import PDBFile
@@ -34,6 +42,24 @@ from .reader import InputReader
 import logging
 
 logger = logging.getLogger('mdsapt')
+
+
+def get_spin_multiplicity(molecule: Chem.Mol) -> int:
+    """Returns the spin multiplicity of a :class:`RDKit.Mol`.
+    Based on method in http://www.mayachemtools.org/docs/modules/html/code/RDKitUtil.py.html .
+
+    :Arguments:
+        *molecule*
+            :class:`RDKit.Mol` object
+    """
+    radical_electrons: int = 0
+
+    for atom in molecule.GetAtoms():
+        radical_electrons += atom.GetNumRadicalElectrons()
+
+    total_spin: int = radical_electrons // 2
+    spin_mult: int = total_spin + 1
+    return spin_mult
 
 
 class Optimizer(object):
@@ -78,8 +104,8 @@ class Optimizer(object):
             step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
             step2: mda.Universe = self._protonate_backbone(step1)  # Add proton to backbone
             logger.info(f'Optimizing new bond for residue {k}')
-            length: float = self._opt_geometry(step2)
-            if length is not None:  # Get optimized new C-H bond
+            length: Optional[float] = self._opt_geometry(step2, k)
+            if length is not None:  # Check if value for length obtained
                 self._bond_lenghts[k] = length  # Hash new bond length
 
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
@@ -133,20 +159,23 @@ class Optimizer(object):
 
         protonated: mda.Universe = mda.Universe.empty(n_atoms=new_resid.n_atoms + 1, trajectory=True)
         protonated.add_TopologyAttr('masses', [x for x in new_resid.masses] + [1])
-        protonated.add_TopologyAttr('name', [x for x in new_resid.names] + ['H'])
+        protonated.add_TopologyAttr('name', [x for x in new_resid.names] + ['H*'])
+        protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
+        protonated.add_TopologyAttr('elements', [guess_atom_element(atom) for atom in protonated.atoms.names])
         new_pos = new_resid.positions
         h_pos = self._get_new_pos(backbone, length)
         protonated.atoms.positions = np.row_stack((new_pos, h_pos))
         return protonated
 
-    def _opt_geometry(self, system: mda.Universe, basis: str = 'scf/cc-pvdz') -> Optional[float]:
-        system.select_atoms('resid *')
-        coords: str = f''
+    def _opt_geometry(self, system: mda.Universe, key: int, basis: str = 'scf/cc-pvdz') -> Optional[float]:
+        resid: mda.AtomGroup = system.select_atoms('all')
+        rd_mol: Chem.Mol = atomgroup_to_mol(resid)
+        coords: str = f'{Chem.GetFormalCharge(rd_mol)} {get_spin_multiplicity(rd_mol)}'
         freeze_list: str = ''
         for n in range(len(system.atoms)):
             atom = system.atoms[n]
             coords += f'\n{atom.name[0]} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
-            if atom.name != 'H':
+            if atom.name != 'H*':
                 freeze_list += f'\n{n + 1} xyz'
             elif atom.name == 'CA':
                 ca_ind = n
@@ -157,7 +186,7 @@ class Optimizer(object):
         try:
             psi4.optimize(basis, freeze_list=freeze_list, opt_cooridnates='cartesian',  molecule=mol)
         except psi4.PsiException:
-            logger.warning(f'Optimization failed on {system.residues[0].name}')
+            logger.warning(f'Optimization failed on resid {key}')
             return None
 
         opt_coords = mol.create_psi4_string_from_molecule()
@@ -183,7 +212,7 @@ class Optimizer(object):
 
     def set_basis(self, basis: str) -> None:
         """Changes basis used in optimizations see `Psi4 <https.psicode.org>`_
-        docs for information of available basis sets
+        docs for information of available basis sets. Default is scf/cc-pvdz.
 
        :Arguments:
             *basis*
