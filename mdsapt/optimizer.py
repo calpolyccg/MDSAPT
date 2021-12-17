@@ -77,7 +77,7 @@ class Optimizer(object):
     _resids: Dict[int, mda.AtomGroup]
     _unv: mda.Universe
     _settings: InputReader
-    _bond_lenghts: Dict[int, np.ndarray]
+    _bond_lengths: Dict[int, float]
     _opt_set: Dict[str, str]
     _basis: str
 
@@ -93,7 +93,7 @@ class Optimizer(object):
         self._settings = settings
         self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
         self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
-        self._bond_lenghts = {}
+        self._bond_lengths = {}
         self._opt_set = {'reference': 'rhf'}
         self._basis = 'scf/cc-pvdz'
         self._prepare_resids()
@@ -106,21 +106,21 @@ class Optimizer(object):
             logger.info(f'Optimizing new bond for residue {k}')
             length: Optional[float] = self._opt_geometry(step2, k)
             if length is not None:  # Check if value for length obtained
-                self._bond_lenghts[k] = length  # Hash new bond length
+                self._bond_lengths[k] = length  # Hash new bond length
 
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
         """Rebuilds residue by replacing missing protons and adding a new proton
         with the bond length determined by the optimization. Raises key error if class
         has no value for that optimization."""
         try:
-            length = self._bond_lenghts[key]
+            length = self._bond_lengths[key]
         except KeyError:
             logger.error(f'No bond length for {key}')
             raise KeyError
 
         step0: mda.AtomGroup = self._fix_amino(resid)
         step1: mda.Universe = self._protonate_backbone(step0, length=length, just_backbone=False)
-        return step1.select_atoms(f"resid {key}")
+        return step1.select_atoms("all")
 
     def _fix_amino(self, resid: mda.AtomGroup) -> mda.AtomGroup:
         resid.write('resid.pdb', file_format='PDB')  # Saving residue

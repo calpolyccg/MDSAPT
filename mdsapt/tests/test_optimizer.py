@@ -15,3 +15,4 @@ class TestOptimizer(object):
     def test_prepare_resids(self):
         settings = InputReader(os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
         opt: Optimizer = Optimizer(settings)
+        assert len(opt._bond_lengths) == len(settings.ag_sel)
