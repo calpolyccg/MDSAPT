@@ -24,11 +24,14 @@ import pandas as pd
 import MDAnalysis as mda
 from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.topology.guessers import guess_types
+from MDAnalysis.converters.RDKit import atomgroup_to_mol
 
 import psi4
 
+from rdkit import Chem
+
 from .reader import InputReader
-from .optimizer import Optimizer
+from .optimizer import Optimizer, get_spin_multiplicity
 
 import logging
 
@@ -82,15 +85,15 @@ class TrajectorySAPT(AnalysisBase):
 
     def _get_psi_mol(self, key: int):
         resid: mda.AtomGroup = self._opt.rebuild_resid(key, self._sel[key])
-        coords: str = ''
+        rd_mol = atomgroup_to_mol(resid)
+
+        coords: str = f'{Chem.GetFormalCharge(rd_mol)} {get_spin_multiplicity(rd_mol)}'
         for atom in resid.atoms:
             coords += f'\n{atom.name[0]} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
         return coords
 
     def _single_frame(self) -> None:
         xyz_dict = {k: self._get_psi_mol(k) for k in self._sel.keys()}
-        with open('test.xyz', 'w+') as r:
-            r.write(xyz_dict[2])
         for pair in self._sel_pairs:
             coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
             dimer = psi4.geometry(coords)
