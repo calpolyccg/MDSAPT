@@ -3,6 +3,12 @@
 # Add imports here
 from . import log
 
+# Import core classes
+from .reader import InputReader
+from .optimizer import Optimizer
+from .sapt import TrajectorySAPT
+from .viewer import Viewer
+
 # Handle versioneer
 from ._version import get_versions
 versions = get_versions()
