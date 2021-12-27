@@ -20,7 +20,7 @@ Required Input:
 
 """
 
-from typing import Dict, Optional, KeysView
+from typing import Dict, Optional, KeysView, List
 
 import MDAnalysis as mda
 
@@ -101,17 +101,20 @@ class Optimizer(object):
     def _prepare_resids(self) -> None:
         logger.info('Running optimiztions of residues')
         logger.info(f'Attempting optimization with {self._basis} basis, \n and {self._settings} settings')
-        self._run_opt_steps(self._resids.keys())
+        self._run_opts(self._resids.keys())
 
-    def _run_opt_steps(self, resid_list: KeysView[int]) -> None:
+    def _run_opts(self, resid_list: KeysView[int]) -> None:
         for k in resid_list:  # List of residue numbers should be obtained from keys
-            step0: mda.AtomGroup = self._resids[k]  # Get resid for optimization
-            step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
-            step2: mda.Universe = self._protonate_backbone(step1)  # Add proton to backbone
-            logger.info(f'Optimizing new bond for residue {k}')
-            length: Optional[float] = self._opt_geometry(step2, k)
-            if length is not None:  # Check if value for length obtained
-                self._bond_lengths[k] = length  # Hash new bond length
+            self._run_opt_steps(k)
+
+    def _run_opt_steps(self, key: int) -> None:
+        step0: mda.AtomGroup = self._resids[key]  # Get resid for optimization
+        step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
+        step2: mda.Universe = self._protonate_backbone(step1)  # Add proton to backbone
+        logger.info(f'Optimizing new bond for residue {key}')
+        length: Optional[float] = self._opt_geometry(step2, key)
+        if length is not None:  # Check if value for length obtained
+            self._bond_lengths[key] = length  # Hash new bond length
 
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
         """Rebuilds residue by replacing missing protons and adding a new proton
@@ -232,8 +235,18 @@ class Optimizer(object):
 
     def rerun_failed_optimizations(self) -> None:
         """Reruns failed optimizations, allowing for new
-        settings to attempt to fix the issue."""
+        for running optimization with new settings."""
         logger.info('Rerunning optimization of failed residues')
         logger.info(f'Attempting optimization with {self._basis} basis, \n and {self._settings} settings')
-        self._run_opt_steps(self._bond_lengths.keys())
+        self._run_opts(self._bond_lengths.keys())
 
+    def rerun_residue(self, residue_id: int) -> None:
+        """Reruns failed optimization on specified residue allowing
+        for optimization with new settings.
+
+        :Arguments:
+            *residue_id*
+                Number of the residue in the polypeptide chain"""
+        logger.info(f'Rerunning optimization of failed residues {residue_id}')
+        logger.info(f'Attempting optimization with {self._basis} basis, \n and {self._settings} settings')
+        self._run_opt_steps(residue_id)
