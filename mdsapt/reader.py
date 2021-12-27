@@ -39,6 +39,13 @@ class InputReader(object):
     ag_pair: List[List[int]]
     trj_settings: Optional[dict]
     sys_settings: Optional[dict]
+    start: int
+    stop: int
+    step: int
+    pH: float
+    ncpus: int
+    memory: int
+    walltime: str
 
     def __init__(self, path) -> None:
         """Reads input file, checks it for validity,
@@ -71,6 +78,13 @@ class InputReader(object):
         self.ag_pair = yaml_dict['int_pairs']
         self.trj_settings = yaml_dict['trajectory_settings']
         self.sys_settings = yaml_dict['system_settings']
+        self.start = yaml_dict['trajectory_settings']['start']
+        self.stop = yaml_dict['trajectory_settings']['stop']
+        self.step = yaml_dict['trajectory_settings']['step']
+        self.pH = yaml_dict['trajectory_settings']['pH']
+        self.ncpus = yaml_dict['system_settings']['ncpus']
+        self.memory = yaml_dict['system_settings']['memory']
+        self.walltime = yaml_dict['system_settings']['time']
 
     @staticmethod
     def _check_inputs(yaml_dict: dict) -> None:
@@ -82,6 +96,9 @@ class InputReader(object):
             ag_pair = yaml_dict['int_pairs']
             trj_settings = yaml_dict['trajectory_settings']
             sys_settings = yaml_dict['system_settings']
+
+
+
         except KeyError:
             logger.fatal('Invalid YAML file')
             assert InputError
