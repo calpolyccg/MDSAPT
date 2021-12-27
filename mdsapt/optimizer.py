@@ -94,8 +94,8 @@ class Optimizer(object):
         self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
         self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
         self._bond_lengths = {}
-        self._opt_set = {'reference': 'rhf'}
-        self._basis = 'scf/cc-pvdz'
+        self._opt_set = settings.opt_settings['settings']
+        self._basis = settings.opt_settings['basis']
         self._prepare_resids()
 
     @property
@@ -114,7 +114,9 @@ class Optimizer(object):
     def _run_opt_steps(self, key: int) -> None:
         step0: mda.AtomGroup = self._resids[key]  # Get resid for optimization
         step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
-        step2: mda.Universe = self._protonate_backbone(step1)  # Add proton to backbone
+        # Add proton to backbone
+        step2: mda.Universe = self._protonate_backbone(step1,
+                                                       just_backbone=self._settings.opt_settings['just_back_bone'])
         logger.info(f'Optimizing new bond for residue {key}')
         length: Optional[float] = self._opt_geometry(step2, key)
         if length is not None:  # Check if value for length obtained
