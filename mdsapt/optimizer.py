@@ -20,7 +20,7 @@ Required Input:
 
 """
 
-from typing import Dict, Optional, KeysView, List
+from typing import Dict, Optional, KeysView
 
 import MDAnalysis as mda
 
@@ -41,7 +41,7 @@ from .reader import InputReader
 
 import logging
 
-logger = logging.getLogger('mdsapt')
+logger = logging.getLogger('mdsapt.optimizer')
 
 
 def get_spin_multiplicity(molecule: Chem.Mol) -> int:
