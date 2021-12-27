@@ -20,7 +20,7 @@ Required Input:
 
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, KeysView
 
 import MDAnalysis as mda
 
@@ -99,7 +99,12 @@ class Optimizer(object):
         self._prepare_resids()
 
     def _prepare_resids(self) -> None:
-        for k in self._resids:
+        logger.info('Running optimiztions of residues')
+        logger.info(f'Attempting optimization with {self._basis} basis, \n and {self._settings} settings')
+        self._run_opt_steps(self._resids.keys())
+
+    def _run_opt_steps(self, resid_list: KeysView[int]) -> None:
+        for k in resid_list:  # List of residue numbers should be obtained from keys
             step0: mda.AtomGroup = self._resids[k]  # Get resid for optimization
             step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
             step2: mda.Universe = self._protonate_backbone(step1)  # Add proton to backbone
@@ -220,7 +225,15 @@ class Optimizer(object):
         """
         self._basis = basis
 
-    def re_run_optimizations(self) -> None:
+    def rerun_optimizations(self) -> None:
         """Reruns optimization of bond lengths."""
         logger.info('Rerunning optimization')
         self._prepare_resids()
+
+    def rerun_failed_optimizations(self) -> None:
+        """Reruns failed optimizations, allowing for new
+        settings to attempt to fix the issue."""
+        logger.info('Rerunning optimization of failed residues')
+        logger.info(f'Attempting optimization with {self._basis} basis, \n and {self._settings} settings')
+        self._run_opt_steps(self._bond_lengths.keys())
+
