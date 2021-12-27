@@ -17,3 +17,12 @@ system_settings:
   ncpus:
   memory:
   time:
+opt_settings:
+  basis: 'sfc/dz'
+  settings:
+    reference: 'rhf'
+  just_back_bone: true
+sapt_settings:
+  basis: 'sfc/dz'
+  settings:
+    reference: 'rhf'
