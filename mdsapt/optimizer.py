@@ -98,6 +98,10 @@ class Optimizer(object):
         self._basis = 'scf/cc-pvdz'
         self._prepare_resids()
 
+    @property
+    def num_failed_residue(self) -> int:
+        return len(self._resids.keys()) - len(self._bond_lengths)
+
     def _prepare_resids(self) -> None:
         logger.info('Running optimiztions of residues')
         logger.info(f'Attempting optimization with {self._basis} basis, \n and {self._settings} settings')
