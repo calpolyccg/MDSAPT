@@ -129,7 +129,7 @@ class InputReader(object):
             step = trj_settings['step']
             stop = trj_settings['stop']
             pH = trj_settings['pH']
-            cpu = sys_settings['ncpu']
+            cpu = sys_settings['ncpus']
             mem = sys_settings['memory']
             time = sys_settings['time']
             basis0 = opt_settings['basis']
@@ -164,7 +164,7 @@ class InputReader(object):
                     raise InputError('Stop exceeds length of trajectory.')
 
         except KeyError or InputError as err:
-            logger.fatal(f'{err} Error in trajectory settings')
+            logger.error(f'{err} Error in trajectory settings')
             assert InputError
 
         logger.info('Input Parameters Accepted')
