@@ -1,15 +1,16 @@
 MDSAPT
 ==============================
+SAPT Calculations for MDAnalysis
+
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/MDSAPT/workflows/CI/badge.svg)](https://github.com/REPLACE_WITH_OWNER_ACCOUNT/MDSAPT/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/MDSAPT/branch/master/graph/badge.svg)](https://codecov.io/gh/REPLACE_WITH_OWNER_ACCOUNT/MDSAPT/branch/master)
+[![GitHub Actions Build Status](https://github.com/alescoulie/MDSAPT/workflows/CI/badge.svg)](https://github.com/alescolie/MDSAPT/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/alescoulie/MDSAPT/branch/master/graph/badge.svg)](https://codecov.io/gh/alescoulie/MDSAPT/branch/master)
 
-
-An MDA-kit for calculating quantum interactions in psi4.
+An MDA-kit for calculating quantum interaction energies in psi4.
 
 ### Copyright
 
-Copyright (c) 2021, alescoulie
+Copyright (c) 2021, ALescoulie
 
 
 #### Acknowledgements
