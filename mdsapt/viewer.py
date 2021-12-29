@@ -39,11 +39,11 @@ class Viewer(object):
         self._opt = Optimizer(settings)
 
     @staticmethod
-    def _launch_viewer(system: Union[mda.Universe, mda.AtomGroup], **nglview_kwargs) -> None:
+    def _launch_viewer(system: Union[mda.Universe, mda.AtomGroup], **nglview_kwargs) -> nv.NGLWidget:
         return nv.show_mdanalysis(system, **nglview_kwargs)
 
     def view_system(self, **nglview_kwargs) -> nv.NGLWidget:
-        self._launch_viewer(self._unv, **nglview_kwargs)
+        return self._launch_viewer(self._unv, **nglview_kwargs)
 
     def view_residue(self, resid: int, **nglview_kwargs) -> nv.NGLWidget:
         """Shows selected residue.
