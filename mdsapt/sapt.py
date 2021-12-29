@@ -22,6 +22,7 @@ from typing import Dict, List
 import pandas as pd
 
 import MDAnalysis as mda
+
 from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.topology.guessers import guess_types
 from MDAnalysis.converters.RDKit import atomgroup_to_mol
@@ -53,9 +54,10 @@ class TrajectorySAPT(AnalysisBase):
     _mem: str
     _cfg: InputReader
     _opt: Optimizer
+    _save_psi_out: bool
     results: pd.DataFrame
 
-    def __init__(self, config: InputReader, optimizer: Optimizer, **universe_kwargs) -> None:
+    def __init__(self, config: InputReader, optimizer: Optimizer, save_psi4_out=True, **universe_kwargs) -> None:
         """Sets up Trajectory and residue selections.
 
         :Arguments:
@@ -76,6 +78,7 @@ class TrajectorySAPT(AnalysisBase):
         self._mem = config.sys_settings['memory']
         self._cfg = config
         self._opt = optimizer
+        self._save_psi_out = save_psi4_out
         super(TrajectorySAPT, self).__init__(self._unv.trajectory)
 
     def _prepare(self) -> None:
@@ -102,6 +105,9 @@ class TrajectorySAPT(AnalysisBase):
             psi4.set_memory(self._mem)
 
             logger.info(f'Starting SAPT for {pair}')
+
+            if self._save_psi_out:
+                psi4.set_output_file(f'sapt_{pair[0]}-{pair[1]}_{self._ts.time}.out')  # Saves output file
 
             sapt = psi4.energy('sapt0/jun-cc-pvdz', molecule=dimer)
             result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt]
