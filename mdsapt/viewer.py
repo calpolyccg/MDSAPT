@@ -39,11 +39,11 @@ class Viewer(object):
         self._opt = Optimizer(settings)
 
     @staticmethod
-    def _launch_viewer(system: Union[mda.Universe, mda.AtomGroup], **nglview_kwargs) -> None:
+    def _launch_viewer(system: Union[mda.Universe, mda.AtomGroup], **nglview_kwargs) -> nv.NGLWidget:
         return nv.show_mdanalysis(system, **nglview_kwargs)
 
     def view_system(self, **nglview_kwargs) -> nv.NGLWidget:
-        self._launch_viewer(self._unv, **nglview_kwargs)
+        return self._launch_viewer(self._unv, **nglview_kwargs)
 
     def view_residue(self, resid: int, **nglview_kwargs) -> nv.NGLWidget:
         """Shows selected residue.
@@ -95,7 +95,6 @@ class Viewer(object):
         r1 = self._opt.rebuild_resid(resid1, self._unv.select_atoms(f'resid {resid1}'))
         r2 = self._opt.rebuild_resid(resid2, self._unv.select_atoms(f'resid {resid2}'))
         r_pair: mda.Universe = mda.Universe.empty(n_atoms=(r1.n_atoms + r2.n_atoms), trajectory=True)
-        r_pair.add_TopologyAttr('masses', [x for x in r1.mases] + [x for x in r2.masses])
         r_pair.add_TopologyAttr('name', [x for x in r1.names] + [x for x in r2.names])
-        r_pair.atoms.positions = np.row_stack((r1.positions + r2.positions))
+        r_pair.atoms.positions = np.row_stack((r1.positions, r2.positions))
         return self._launch_viewer(r_pair, **nglview_kwargs)

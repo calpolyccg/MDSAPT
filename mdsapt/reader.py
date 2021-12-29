@@ -139,8 +139,8 @@ class InputReader(object):
             settings1 = sapt_settings['settings']
 
             for pair in ag_pair:
-                if len(pair) != 4:
-                    raise InputError('Pairs must be a python list of string with 4 items')
+                if len(pair) != 2:
+                    raise InputError('Pairs must be a python list of integers with 2 items')
                 found0 = False
                 found1 = False
                 for name in ag_sel:
