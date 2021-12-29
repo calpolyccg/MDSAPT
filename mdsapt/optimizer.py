@@ -115,8 +115,7 @@ class Optimizer(object):
         step0: mda.AtomGroup = self._resids[key]  # Get resid for optimization
         step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
         # Add proton to backbone
-        step2: mda.Universe = self._protonate_backbone(step1,
-                                                       just_backbone=self._settings.opt_settings['just_back_bone'])
+        step2: mda.Universe = self._protonate_backbone(step1)
         logger.info(f'Optimizing new bond for residue {key}')
         length: Optional[float] = self._opt_geometry(step2, key)
         if length is not None:  # Check if value for length obtained
@@ -133,7 +132,7 @@ class Optimizer(object):
             raise KeyError
 
         step0: mda.AtomGroup = self._fix_amino(resid)
-        step1: mda.Universe = self._protonate_backbone(step0, length=length, just_backbone=False)
+        step1: mda.Universe = self._protonate_backbone(step0, length=length)
         return step1.select_atoms("all")
 
     def _fix_amino(self, resid: mda.AtomGroup) -> mda.AtomGroup:
@@ -163,20 +162,15 @@ class Optimizer(object):
         h_norm = (h_norm * length) + c_pos
         return h_norm
 
-    def _protonate_backbone(self, resid: mda.AtomGroup, length: float = 1.128, just_backbone=True) -> mda.Universe:
-        new_resid: mda.AtomGroup
+    def _protonate_backbone(self, resid: mda.AtomGroup, length: float = 1.128) -> mda.Universe:
         backbone = resid.select_atoms('backbone')
-        if just_backbone:
-            new_resid = backbone
-        else:
-            new_resid = resid
 
-        protonated: mda.Universe = mda.Universe.empty(n_atoms=new_resid.n_atoms + 1, trajectory=True)
-        protonated.add_TopologyAttr('masses', [x for x in new_resid.masses] + [1])
-        protonated.add_TopologyAttr('name', [x for x in new_resid.names] + ['H*'])
+        protonated: mda.Universe = mda.Universe.empty(n_atoms=resid.n_atoms + 1, trajectory=True)
+        protonated.add_TopologyAttr('masses', [x for x in resid.masses] + [1])
+        protonated.add_TopologyAttr('name', [x for x in resid.names] + ['H*'])
         protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
         protonated.add_TopologyAttr('elements', [guess_atom_element(atom) for atom in protonated.atoms.names])
-        new_pos = new_resid.positions
+        new_pos = resid.positions
         h_pos = self._get_new_pos(backbone, length)
         protonated.atoms.positions = np.row_stack((new_pos, h_pos))
         return protonated
