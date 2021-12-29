@@ -7,10 +7,8 @@ calculations between the residues selected in the input file.
 
 Required Input:
 
-- :class:`-mdsapt.reader.InputReader
-- :class:`-mdsapt.optimizer.Optimizer
-
-
+- :class:`-mdsapt.reader.InputReader`
+- :class:`-mdsapt.optimizer.Optimizer`
 
 .. autoclass:: TrajectorySAPT
     :members:
@@ -36,7 +34,7 @@ from .optimizer import Optimizer, get_spin_multiplicity
 
 import logging
 
-logger = logging.getLogger('mdsapt')
+logger = logging.getLogger('mdsapt.sapt')
 
 
 class TrajectorySAPT(AnalysisBase):
