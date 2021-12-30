@@ -12,7 +12,6 @@ trajectory_settings:
   start:
   stop:
   step:
-  pH: 7.0 # Default is 7 used for replacing missing protons
 system_settings:
   ncpus:
   memory:
@@ -21,8 +20,9 @@ opt_settings:
   basis: 'sfc/dz'
   settings:
     reference: 'rhf'
-  just_back_bone: true
+  save_psi4_output: true
 sapt_settings:
   basis: 'sfc/dz'
   settings:
     reference: 'rhf'
+  save_psi4_output: true
