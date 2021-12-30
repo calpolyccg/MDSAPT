@@ -24,7 +24,7 @@ def create_logger(logfile='mdsapt.log'):
 def log_banner():
     """Log program name and licence at INFO level"""
     logger.info(f"MDSAPT {__version__} starting")
-    logger.info("Copyright (c) 2021 Alia Lescoulie")
+    logger.info("Copyright (c) 2021 Alia Lescoulie and Ashley Ringer McDonald")
     logger.info("Released under MIT Licence")
 
 logger = create_logger()
