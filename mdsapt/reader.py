@@ -85,7 +85,7 @@ class InputReader(object):
         self.start = yaml_dict['trajectory_settings']['start']
         self.stop = yaml_dict['trajectory_settings']['stop']
         self.step = yaml_dict['trajectory_settings']['step']
-        self.pH = yaml_dict['trajectory_settings']['pH']
+        self.pH = yaml_dict['opt_settings']['pH']
         self.ncpus = yaml_dict['system_settings']['ncpus']
         self.memory = yaml_dict['system_settings']['memory']
         self.walltime = yaml_dict['system_settings']['time']
@@ -104,7 +104,7 @@ class InputReader(object):
             sapt_settings = yaml_dict['sapt_settings']
         except KeyError:
             logger.fatal('Invalid YAML file')
-            assert InputError
+            raise InputError
 
         try:
             if not os.path.exists(os.path.join(os.getcwd(), top_path)):
@@ -128,15 +128,16 @@ class InputReader(object):
             start = trj_settings['start']
             step = trj_settings['step']
             stop = trj_settings['stop']
-            pH = trj_settings['pH']
             cpu = sys_settings['ncpus']
             mem = sys_settings['memory']
             time = sys_settings['time']
             basis0 = opt_settings['basis']
             settings0 = opt_settings['settings']
-            bk_bone = opt_settings['just_back_bone']
+            save_opt_out = opt_settings['save_psi4_output']
+            pH = opt_settings['pH']
             basis1 = sapt_settings['basis']
             settings1 = sapt_settings['settings']
+            save_sapt_out = opt_settings['save_psi4_output']
 
             for pair in ag_pair:
                 if len(pair) != 2:
@@ -165,6 +166,6 @@ class InputReader(object):
 
         except KeyError or InputError as err:
             logger.error(f'{err} Error in trajectory settings')
-            assert InputError
+            raise InputError
 
         logger.info('Input Parameters Accepted')
