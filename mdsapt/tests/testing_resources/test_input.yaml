@@ -2,17 +2,27 @@ topology_path: mdsapt/tests/testing_resources/testtop.psf
 trajectory_paths:
   - mdsapt/tests/testing_resources/testtraj.dcd
 selection_resid_num:
-  - 1
-  - 2
+  - 11
+  - 199
 int_pairs:
   # Place pair of  selections defined above in a list of lists
-  - [1, 2]
+  - [11, 199]
 trajectory_settings:
-  start: 0
-  stop: 5
+  start: 1
+  stop: 2
   step: 1
-  pH: 7.0
 system_settings:
-  ncpus: 10
+  ncpus: 4
   memory: 12GB
   time: '24:00:00'
+opt_settings:
+  pH: 7.0
+  basis: 'scf/cc-pvdz'
+  settings:
+    reference: 'rhf'
+  save_psi4_output: true
+sapt_settings:
+  basis: 'scf/dz'
+  settings:
+    reference: 'rhf'
+  save_psi4_output: true

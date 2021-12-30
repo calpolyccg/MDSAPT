@@ -9,15 +9,15 @@ class TestInputReader(object):
     reference = {
         'topology_path': 'mdsapt/tests/testing_resources/testtop.psf',
         'trajectory_path': ['mdsapt/tests/testing_resources/testtraj.dcd'],
-        'selection_resid_num': [1, 2],
-        'int_pairs': [[1, 2]],
+        'selection_resid_num': [11, 199],
+        'int_pairs': [[11, 199]],
         'trajectory_settings': {
-            'start': 0,
-            'stop': 5,
+            'start': 1,
+            'stop': 2,
             'step': 1
         },
-        'system_settings':{
-            'ncpus': 10,
+        'system_settings': {
+            'ncpus': 4,
             'memory': '12GB',
             'time': '24:00:00'
         }
