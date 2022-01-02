@@ -77,7 +77,24 @@ class Optimizer(object):
     _resids: Dict[int, mda.AtomGroup]
     _unv: mda.Universe
     _settings: InputReader
-    _bond_lengths: Dict[int, float]
+    _bond_lengths: Dict[int, float] = {
+        'ALA': None,
+        'ARG': None,
+        'ASN': None,
+        'ASP': None,
+        'CYS': None,
+        'GLN': None,
+        'ILE': None,
+        'LUE': None,
+        'LYS': None,
+        'MET': None,
+        'PHE': None,
+        'PRO': None,
+        'SER': None,
+        'THR': None,
+        'TYR': None,
+        'VAL': None
+    }
     _opt_set: Dict[str, str]
     _basis: str
 
