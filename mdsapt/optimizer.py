@@ -83,6 +83,7 @@ class Optimizer(object):
         'ASN': None,
         'ASP': None,
         'CYS': None,
+        'GLU': None,
         'GLN': None,
         'ILE': None,
         'LUE': None,
