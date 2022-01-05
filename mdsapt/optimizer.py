@@ -20,7 +20,7 @@ Required Input:
 
 """
 
-from typing import Dict, Optional, KeysView
+from typing import Dict, Optional, KeysView, List
 
 import MDAnalysis as mda
 
@@ -78,24 +78,26 @@ class Optimizer(object):
     _unv: mda.Universe
     _settings: InputReader
     _bond_lengths: Dict[int, float] = {
-        'ALA': None,
-        'ARG': None,
-        'ASN': None,
-        'ASP': None,
-        'CYS': None,
-        'GLU': None,
-        'GLN': None,
-        'ILE': None,
-        'LUE': None,
-        'LYS': None,
-        'MET': None,
-        'PHE': None,
-        'PRO': None,
-        'SER': None,
-        'THR': None,
-        'TYR': None,
-        'VAL': None
+        'ALA': 1.128,
+        'ARG': 1.128,
+        'ASN': 1.128,
+        'ASP': 1.128,
+        'CYS': 1.128,
+        'GLU': 1.128,
+        'GLN': 1.128,
+        'ILE': 1.128,
+        'LUE': 1.128,
+        'LYS': 1.128,
+        'MET': 1.128,
+        'PHE': 1.128,
+        'PRO': 1.128,
+        'SER': 1.128,
+        'THR': 1.128,
+        'TYR': 1.128,
+        'VAL': 1.128
     }
+
+    _std_resids: List[str] = [x for x in _bond_lengths.keys()]
     _opt_set: Dict[str, str]
     _basis: str
 
@@ -114,7 +116,6 @@ class Optimizer(object):
         self._bond_lengths = {}
         self._opt_set = settings.opt_settings['settings']
         self._basis = settings.opt_settings['basis']
-        self._prepare_resids()
 
     @property
     def num_failed_residue(self) -> int:
@@ -135,9 +136,6 @@ class Optimizer(object):
         # Add proton to backbone
         step2: mda.Universe = self._protonate_backbone(step1)
         logger.info(f'Optimizing new bond for residue {key}')
-        length: Optional[float] = self._opt_geometry(step2, key)
-        if length is not None:  # Check if value for length obtained
-            self._bond_lengths[key] = length  # Hash new bond length
 
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
         """Rebuilds residue by replacing missing protons and adding a new proton
