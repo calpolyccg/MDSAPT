@@ -17,10 +17,6 @@ system_settings:
   time: '24:00:00'
 opt_settings:
   pH: 7.0
-  basis: 'scf/cc-pvdz'
-  settings:
-    reference: 'rhf'
-  save_psi4_output: true
 sapt_settings:
   method: 'sapt0'
   basis: 'dz'
