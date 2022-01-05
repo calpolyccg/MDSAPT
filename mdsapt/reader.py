@@ -137,13 +137,10 @@ class InputReader(object):
             cpu = sys_settings['ncpus']
             mem = sys_settings['memory']
             time = sys_settings['time']
-            basis0 = opt_settings['basis']
-            settings0 = opt_settings['settings']
-            save_opt_out = opt_settings['save_psi4_output']
             pH = opt_settings['pH']
             method = sapt_settings['method']
-            basis1 = sapt_settings['basis']
-            settings1 = sapt_settings['settings']
+            basis = sapt_settings['basis']
+            settings = sapt_settings['settings']
             save_sapt_out = opt_settings['save_psi4_output']
 
             for pair in ag_pair:
