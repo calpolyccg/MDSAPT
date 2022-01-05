@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.testing import assert_array_almost_equal
 import pytest
 
 
@@ -14,5 +15,15 @@ class TestOptimizer(object):
 
     def test_prepare_resids(self):
         settings = InputReader(os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
-        opt: Optimizer = Optimizer(settings)
-        assert len(opt._bond_lengths) == len(settings.ag_sel)
+        U = mda.Universe(settings.top_path, settings.trj_path)
+        Opt: Optimizer = Optimizer(settings)
+
+        r11: mda.AtomGroup = U.select_atoms('resid 11')
+
+        r11_fixed: mda.AtomGroup = Opt.rebuild_resid(11, r11)
+        assert_array_almost_equal(r11.select_atoms(f'name CA').positions, r11_fixed.select_atoms(f'name CA').positions, decimal=3)
+        assert_array_almost_equal(r11.select_atoms(f'name N').positions, r11_fixed.select_atoms(f'name N').positions, decimal=3)
+        assert_array_almost_equal(r11.select_atoms(f'name O').positions, r11_fixed.select_atoms(f'name O').positions, decimal=3)
+        assert_array_almost_equal(r11.select_atoms(f'name C').positions, r11_fixed.select_atoms(f'name C').positions, decimal=3)
+
+
