@@ -117,19 +117,6 @@ class Optimizer(object):
         self._opt_set = settings.opt_settings['settings']
         self._basis = settings.opt_settings['basis']
 
-    @property
-    def num_failed_residue(self) -> int:
-        return len(self._resids.keys()) - len(self._bond_lengths)
-
-    def _prepare_resids(self) -> None:
-        logger.info('Running optimiztions of residues')
-        logger.info(f'Attempting optimization with {self._basis} basis, \n and {self._settings} settings')
-        self._run_opts(self._resids.keys())
-
-    def _run_opts(self, resid_list: KeysView[int]) -> None:
-        for k in resid_list:  # List of residue numbers should be obtained from keys
-            self._run_opt_steps(k)
-
     def _run_opt_steps(self, key: int) -> None:
         step0: mda.AtomGroup = self._resids[key]  # Get resid for optimization
         step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
@@ -137,19 +124,20 @@ class Optimizer(object):
         step2: mda.Universe = self._protonate_backbone(step1)
         logger.info(f'Optimizing new bond for residue {key}')
 
+    def _is_amino(self, key: int) -> bool:
+        return self._resids[key].universe._topology.resnames[0] in self._std_resids
+
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
         """Rebuilds residue by replacing missing protons and adding a new proton
         with the bond length determined by the optimization. Raises key error if class
         has no value for that optimization."""
-        try:
+        if self._is_amino(key):
             length = self._bond_lengths[key]
-        except KeyError:
-            logger.error(f'No bond length for {key}')
-            raise KeyError
-
-        step0: mda.AtomGroup = self._fix_amino(resid)
-        step1: mda.Universe = self._protonate_backbone(step0, length=length)
-        return step1.select_atoms("all")
+            step0: mda.AtomGroup = self._fix_amino(resid)
+            step1: mda.Universe = self._protonate_backbone(step0, length=length)
+            return step1.select_atoms("all")
+        else:
+            return resid
 
     def _fix_amino(self, resid: mda.AtomGroup) -> mda.AtomGroup:
         resid.write('resid.pdb', file_format='PDB')  # Saving residue
@@ -179,17 +167,20 @@ class Optimizer(object):
         return h_norm
 
     def _protonate_backbone(self, resid: mda.AtomGroup, length: float = 1.128) -> mda.Universe:
-        backbone = resid.select_atoms('backbone')
-
-        protonated: mda.Universe = mda.Universe.empty(n_atoms=resid.n_atoms + 1, trajectory=True)
-        protonated.add_TopologyAttr('masses', [x for x in resid.masses] + [1])
-        protonated.add_TopologyAttr('name', [x for x in resid.names] + ['H*'])
-        protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
-        protonated.add_TopologyAttr('elements', [guess_atom_element(atom) for atom in protonated.atoms.names])
-        new_pos = resid.positions
-        h_pos = self._get_new_pos(backbone, length)
-        protonated.atoms.positions = np.row_stack((new_pos, h_pos))
-        return protonated
+        mol_resid = atomgroup_to_mol(resid)
+        if get_spin_multiplicity(mol_resid) > 1:
+            backbone = resid.select_atoms('backbone')
+            protonated: mda.Universe = mda.Universe.empty(n_atoms=resid.n_atoms + 1, trajectory=True)
+            protonated.add_TopologyAttr('masses', [x for x in resid.masses] + [1])
+            protonated.add_TopologyAttr('name', [x for x in resid.names] + ['H*'])
+            protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
+            protonated.add_TopologyAttr('elements', [guess_atom_element(atom) for atom in protonated.atoms.names])
+            new_pos = resid.positions
+            h_pos = self._get_new_pos(backbone, length)
+            protonated.atoms.positions = np.row_stack((new_pos, h_pos))
+            return protonated
+        else:
+            return resid
 
     def _opt_geometry(self, system: mda.Universe, key: int, basis: str = 'scf/cc-pvdz') -> Optional[float]:
         resid: mda.AtomGroup = system.select_atoms('all')
@@ -201,8 +192,8 @@ class Optimizer(object):
             coords += f'\n{atom.name[0]} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
             if atom.name != 'H*':
                 freeze_list += f'\n{n + 1} xyz'
-            elif atom.name == 'CA':
-                ca_ind = n
+            if atom.name == 'C':
+                c_ind = n
 
         mol: psi4.core.Molecule = psi4.geometry(coords)
         psi4.set_memory(self._settings.sys_settings['memory'])
@@ -214,13 +205,14 @@ class Optimizer(object):
             return None
 
         opt_coords = mol.create_psi4_string_from_molecule()
+        opt_coords = opt_coords.split('\n')[4:]
 
         for line in opt_coords:
             if 'H' in line:
                 line = line.split()
                 h_coord = [float(line[1]), float(line[2]), float(line[3])]
 
-        c_line = opt_coords[ca_ind].split()
+        c_line = opt_coords[c_ind].split()
         c_coord = [float(c_line[1]), float(c_line[2]), float(c_line[3])]
         return np.sqrt((c_coord[0] - h_coord[0])**2 + (c_coord[1] - h_coord[1])**2 + (c_coord[2] - h_coord[1])**2)
 
