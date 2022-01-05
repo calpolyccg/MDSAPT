@@ -43,6 +43,7 @@ class InputReader(object):
     sapt_settings: dict
     sapt_method: str
     sapt_basis: str
+    sapt_out: bool
     start: int
     stop: int
     step: int
@@ -86,6 +87,7 @@ class InputReader(object):
         self.sapt_settings = yaml_dict['sapt_settings']
         self.sapt_method = yaml_dict['sapt_settings']['method']
         self.sapt_basis = yaml_dict['sapt_settings']['basis']
+        self.sapt_out = yaml_dict['sapt_settings']['save_psi4_output']
         self.start = yaml_dict['trajectory_settings']['start']
         self.stop = yaml_dict['trajectory_settings']['stop']
         self.step = yaml_dict['trajectory_settings']['step']
