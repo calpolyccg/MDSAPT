@@ -26,4 +26,14 @@ class TestOptimizer(object):
         assert_array_almost_equal(r11.select_atoms(f'name O').positions, r11_fixed.select_atoms(f'name O').positions, decimal=3)
         assert_array_almost_equal(r11.select_atoms(f'name C').positions, r11_fixed.select_atoms(f'name C').positions, decimal=3)
 
+    def test_prepare_end(self):
+        settings = InputReader(os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
+        U = mda.Universe(settings.top_path, settings.trj_path)
+        Opt: Optimizer = Optimizer(settings)
+        Opt._resids[214] = U.select_atoms('resid 214')
+
+        r215 = U.select_atoms('resid 214')
+        r215_fixed = Opt.rebuild_resid(214, r215)
+        assert len(r215_fixed.select_atoms('name Hc')) == 0
+
 
