@@ -22,7 +22,8 @@ opt_settings:
     reference: 'rhf'
   save_psi4_output: true
 sapt_settings:
-  basis: 'scf/dz'
+  method: 'sapt0'
+  basis: 'dz'
   settings:
     reference: 'rhf'
   save_psi4_output: true
