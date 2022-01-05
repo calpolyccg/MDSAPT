@@ -37,13 +37,10 @@ class InputReader(object):
     trj_path: str
     ag_sel: List[int]
     ag_pair: List[List[int]]
-    trj_settings: dict
-    sys_settings: dict
-    opt_settings: dict
-    sapt_settings: dict
-    sapt_method: str
-    sapt_basis: str
-    sapt_out: bool
+    trj_settings: Optional[dict]
+    sys_settings: Optional[dict]
+    opt_settings: Optional[dict]
+    sapt_settings: Optional[dict]
     start: int
     stop: int
     step: int
@@ -85,9 +82,6 @@ class InputReader(object):
         self.sys_settings = yaml_dict['system_settings']
         self.opt_settings = yaml_dict['opt_settings']
         self.sapt_settings = yaml_dict['sapt_settings']
-        self.sapt_method = yaml_dict['sapt_settings']['method']
-        self.sapt_basis = yaml_dict['sapt_settings']['basis']
-        self.sapt_out = yaml_dict['sapt_settings']['save_psi4_output']
         self.start = yaml_dict['trajectory_settings']['start']
         self.stop = yaml_dict['trajectory_settings']['stop']
         self.step = yaml_dict['trajectory_settings']['step']
@@ -141,7 +135,6 @@ class InputReader(object):
             settings0 = opt_settings['settings']
             save_opt_out = opt_settings['save_psi4_output']
             pH = opt_settings['pH']
-            method = sapt_settings['method']
             basis1 = sapt_settings['basis']
             settings1 = sapt_settings['settings']
             save_sapt_out = opt_settings['save_psi4_output']

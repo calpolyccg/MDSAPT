@@ -22,8 +22,7 @@ opt_settings:
     reference: 'rhf'
   save_psi4_output: true
 sapt_settings:
-  method: 'sapt'
-  basis: 'jun-cc-pvdz'
+  basis: 'sfc/dz'
   settings:
     reference: 'rhf'
   save_psi4_output: true

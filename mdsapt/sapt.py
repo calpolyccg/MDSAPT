@@ -53,13 +53,9 @@ class TrajectorySAPT(AnalysisBase):
     _cfg: InputReader
     _opt: Optimizer
     _save_psi_out: bool
-    _method: str
-    _basis: str
-    _settings: Dict[str, str]
     results: pd.DataFrame
-    _mht_to_kcalmol: float = 627529
 
-    def __init__(self, config: InputReader, optimizer: Optimizer, **universe_kwargs) -> None:
+    def __init__(self, config: InputReader, optimizer: Optimizer, save_psi4_out=True, **universe_kwargs) -> None:
         """Sets up Trajectory and residue selections.
 
         :Arguments:
@@ -80,11 +76,7 @@ class TrajectorySAPT(AnalysisBase):
         self._mem = config.sys_settings['memory']
         self._cfg = config
         self._opt = optimizer
-        self._save_psi_out = config.sapt_out
-        self._method = config.sapt_method
-        self._basis = config.sapt_basis
-        self._settings = config.sapt_settings['settings']
-
+        self._save_psi_out = save_psi4_out
         super(TrajectorySAPT, self).__init__(self._unv.trajectory)
 
     def _prepare(self) -> None:
@@ -106,7 +98,8 @@ class TrajectorySAPT(AnalysisBase):
         for pair in self._sel_pairs:
             coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
             dimer = psi4.geometry(coords)
-            psi4.set_options(self._settings)
+            psi4.set_options({'scf_type': 'df',
+                              'freeze_core': 'true'})
             psi4.set_memory(self._mem)
 
             logger.info(f'Starting SAPT for {pair}')
@@ -114,9 +107,8 @@ class TrajectorySAPT(AnalysisBase):
             if self._save_psi_out:
                 psi4.set_output_file(f'sapt_{pair[0]}-{pair[1]}_{self._ts.time}.out')  # Saves output file
 
-            psi4.energy(f'{self._method}/{self._basis}', molecule=dimer)
-            sapt = psi4.variable('SAPT TOTAL ENERGY')
-            result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt*self._mht_to_kcalmol]
+            sapt = psi4.energy('sapt0/jun-cc-pvdz', molecule=dimer)
+            result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt]
             for r in range(len(result)):
                 self._res_dict[self._col[r]].append(result[r])
 
