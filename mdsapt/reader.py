@@ -141,7 +141,7 @@ class InputReader(object):
             method = sapt_settings['method']
             basis = sapt_settings['basis']
             settings = sapt_settings['settings']
-            save_sapt_out = opt_settings['save_psi4_output']
+            save_sapt_out = sapt_settings['save_psi4_output']
 
             for pair in ag_pair:
                 if len(pair) != 2:
