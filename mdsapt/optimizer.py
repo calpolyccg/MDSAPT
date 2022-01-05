@@ -109,19 +109,20 @@ class Optimizer(object):
         self._settings = settings
         self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
         self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
-        self._bond_lengths = {}
 
     def _is_amino(self, key: int) -> bool:
-        return self._resids[key].universe._topology.resnames[0] in self._std_resids
+        resname_atr = self._resids[key].universe._topology.resnames
+        return resname_atr.values[key - 1] in self._std_resids
 
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
         """Rebuilds residue by replacing missing protons and adding a new proton
         with the bond length determined by the optimization. Raises key error if class
         has no value for that optimization."""
         if self._is_amino(key):
-            length = self._bond_lengths[key]
+            resname_atr = self._resids[key].universe._topology.resnames
+            resname = resname_atr.values[key - 1]
             step0: mda.AtomGroup = self._fix_amino(resid)
-            step1: mda.Universe = self._protonate_backbone(step0, length=length)
+            step1: mda.Universe = self._protonate_backbone(step0, length=self._bond_lengths[resname])
             return step1.select_atoms("all")
         else:
             return resid
@@ -131,7 +132,7 @@ class Optimizer(object):
         fixer = PDBFixer(filename='resid.pdb')
         fixer.findMissingResidues()
         fixer.findMissingAtoms()
-        fixer.addMissingHydrogens(self._settings.trj_settings['pH'])  # Adding protons at pH value
+        fixer.addMissingHydrogens(self._settings.pH)  # Adding protons at pH value
         PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
 
         res_fixed = mda.Universe('resid_fixed.pdb')
@@ -155,7 +156,11 @@ class Optimizer(object):
 
     def _protonate_backbone(self, resid: mda.AtomGroup, length: float = 1.128) -> mda.Universe:
         mol_resid = atomgroup_to_mol(resid)
-        if get_spin_multiplicity(mol_resid) > 1:
+        i: int = 0
+        for n in mol_resid.GetAtoms():
+            i += n.GetNumRadicalElectrons()
+
+        if i > 0:
             backbone = resid.select_atoms('backbone')
             protonated: mda.Universe = mda.Universe.empty(n_atoms=resid.n_atoms + 1, trajectory=True)
             protonated.add_TopologyAttr('masses', [x for x in resid.masses] + [1])
