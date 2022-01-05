@@ -83,6 +83,8 @@ class Optimizer(object):
         'CYS': 1.128,
         'GLU': 1.128,
         'GLN': 1.128,
+        'GLY': 1.128,
+        'HIS': 1.128,
         'ILE': 1.128,
         'LUE': 1.128,
         'LYS': 1.128,
@@ -91,6 +93,7 @@ class Optimizer(object):
         'PRO': 1.128,
         'SER': 1.128,
         'THR': 1.128,
+        'TRP': 1.128,
         'TYR': 1.128,
         'VAL': 1.128
     }
@@ -164,7 +167,7 @@ class Optimizer(object):
             backbone = resid.select_atoms('backbone')
             protonated: mda.Universe = mda.Universe.empty(n_atoms=resid.n_atoms + 1, trajectory=True)
             protonated.add_TopologyAttr('masses', [x for x in resid.masses] + [1])
-            protonated.add_TopologyAttr('name', [x for x in resid.names] + ['H*'])
+            protonated.add_TopologyAttr('name', [x for x in resid.names] + ['Hc'])
             protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
             protonated.add_TopologyAttr('elements', [guess_atom_element(atom) for atom in protonated.atoms.names])
             new_pos = resid.positions
