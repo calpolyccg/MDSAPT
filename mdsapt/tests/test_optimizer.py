@@ -36,4 +36,12 @@ class TestOptimizer(object):
         r215_fixed = Opt.rebuild_resid(214, r215)
         assert len(r215_fixed.select_atoms('name Hc')) == 0
 
+    def test_non_amino(self):
+        settings = InputReader(os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
+        U = mda.Universe(settings.top_path, settings.trj_path)
+        Opt: Optimizer = Optimizer(settings)
+        Opt._resids[126] = U.select_atoms('resid 126')
 
+        r126 = U.select_atoms('resid 126')
+        r126_fixed = Opt.rebuild_resid(126, r126)
+        assert len(r126_fixed.select_atoms('name Hc')) == 0
