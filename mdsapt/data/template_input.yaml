@@ -17,12 +17,10 @@ system_settings:
   memory:
   time:
 opt_settings:
-  basis: 'sfc/dz'
-  settings:
-    reference: 'rhf'
-  save_psi4_output: true
+  pH: 7.0
 sapt_settings:
-  basis: 'sfc/dz'
+  method: 'sapt'
+  basis: 'jun-cc-pvdz'
   settings:
     reference: 'rhf'
   save_psi4_output: true
