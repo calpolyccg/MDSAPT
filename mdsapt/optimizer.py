@@ -64,14 +64,12 @@ class Optimizer(object):
     """Prepares amino acid residues from the peptide backbone
     for sapt calculations. This requires selecting the residues
     given in :class:`mdsapt.reader.InputReader`, adding protons
-    to the N terminus, then adding a proton to the C terminus and
-    optimizing the bond length.
+    to the N terminus, then adding a proton to the C terminus.
 
-    For after the length has been determined once for a residue
-    the proton can be added again without needing to preform a
-    bond optimization. This is so that while running the SAPT
-    calculation getting valid coordinates is faster."""
-
+    For the standard 20 amino acids they are prepared via the
+    aforementioned process. Selected molecules besides amino
+    acids will pass through without modification.
+    """
     _resids: Dict[int, mda.AtomGroup]
     _unv: mda.Universe
     _settings: InputReader
@@ -102,8 +100,7 @@ class Optimizer(object):
 
     def __init__(self, settings: InputReader) -> None:
         """Prepares selected residues for SAPT calculations
-        by adding missing protons. Obtains new bond lengths
-        for protons added to C terminus of the amino acids.
+        by adding missing protons.
 
         :Arguments:
             *settings*
@@ -119,7 +116,7 @@ class Optimizer(object):
 
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
         """Rebuilds residue by replacing missing protons and adding a new proton
-        with the bond length determined by the optimization. Raises key error if class
+         on the C terminus. Raises key error if class
         has no value for that optimization."""
         if self._is_amino(key):
             resname_atr = self._resids[key].universe._topology.resnames
