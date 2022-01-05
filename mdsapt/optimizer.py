@@ -20,15 +20,13 @@ Required Input:
 
 """
 
-from typing import Dict, Optional, KeysView, List
+from typing import Dict, List
 
 import MDAnalysis as mda
 
 
 from MDAnalysis.converters.RDKit import atomgroup_to_mol
 from MDAnalysis.topology.guessers import guess_types, guess_atom_element
-
-import psi4
 
 from rdkit import Chem
 
@@ -98,8 +96,6 @@ class Optimizer(object):
     }
 
     _std_resids: List[str] = [x for x in _bond_lengths.keys()]
-    _opt_set: Dict[str, str]
-    _basis: str
 
     def __init__(self, settings: InputReader) -> None:
         """Prepares selected residues for SAPT calculations
@@ -114,15 +110,6 @@ class Optimizer(object):
         self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
         self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
         self._bond_lengths = {}
-        self._opt_set = settings.opt_settings['settings']
-        self._basis = settings.opt_settings['basis']
-
-    def _run_opt_steps(self, key: int) -> None:
-        step0: mda.AtomGroup = self._resids[key]  # Get resid for optimization
-        step1: mda.AtomGroup = self._fix_amino(step0)  # Fix amino group
-        # Add proton to backbone
-        step2: mda.Universe = self._protonate_backbone(step1)
-        logger.info(f'Optimizing new bond for residue {key}')
 
     def _is_amino(self, key: int) -> bool:
         return self._resids[key].universe._topology.resnames[0] in self._std_resids
@@ -181,80 +168,3 @@ class Optimizer(object):
             return protonated
         else:
             return resid
-
-    def _opt_geometry(self, system: mda.Universe, key: int, basis: str = 'scf/cc-pvdz') -> Optional[float]:
-        resid: mda.AtomGroup = system.select_atoms('all')
-        rd_mol: Chem.Mol = atomgroup_to_mol(resid)
-        coords: str = f'{Chem.GetFormalCharge(rd_mol)} {get_spin_multiplicity(rd_mol)}'
-        freeze_list: str = ''
-        for n in range(len(system.atoms)):
-            atom = system.atoms[n]
-            coords += f'\n{atom.name[0]} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
-            if atom.name != 'H*':
-                freeze_list += f'\n{n + 1} xyz'
-            if atom.name == 'C':
-                c_ind = n
-
-        mol: psi4.core.Molecule = psi4.geometry(coords)
-        psi4.set_memory(self._settings.sys_settings['memory'])
-        psi4.set_options(self._opt_set)
-        try:
-            psi4.optimize(basis, freeze_list=freeze_list, opt_cooridnates='cartesian',  molecule=mol)
-        except psi4.PsiException:
-            logger.warning(f'Optimization failed on resid {key}')
-            return None
-
-        opt_coords = mol.create_psi4_string_from_molecule()
-        opt_coords = opt_coords.split('\n')[4:]
-
-        for line in opt_coords:
-            if 'H' in line:
-                line = line.split()
-                h_coord = [float(line[1]), float(line[2]), float(line[3])]
-
-        c_line = opt_coords[c_ind].split()
-        c_coord = [float(c_line[1]), float(c_line[2]), float(c_line[3])]
-        return np.sqrt((c_coord[0] - h_coord[0])**2 + (c_coord[1] - h_coord[1])**2 + (c_coord[2] - h_coord[1])**2)
-
-    def set_opt_setting(self, opt_settings: Dict[str, str]) -> None:
-        """Changes `Psi4 <https.psicode.org>`_ optimization settings.
-        The optimization must be rerun for this to take effect.
-
-        :Arguments:
-            *opt_settings*
-                Setting applied before optimization
-            """
-        self._opt_set = opt_settings
-
-    def set_basis(self, basis: str) -> None:
-        """Changes basis used in optimizations see `Psi4 <https.psicode.org>`_
-        docs for information of available basis sets. Default is scf/cc-pvdz.
-
-       :Arguments:
-            *basis*
-                Changes basis set used in optimization
-        """
-        self._basis = basis
-
-    def rerun_optimizations(self) -> None:
-        """Reruns optimization of bond lengths."""
-        logger.info('Rerunning optimization')
-        self._prepare_resids()
-
-    def rerun_failed_optimizations(self) -> None:
-        """Reruns failed optimizations, allowing for new
-        for running optimization with new settings."""
-        logger.info('Rerunning optimization of failed residues')
-        logger.info(f'Attempting optimization with {self._basis} basis, \n and {self._settings} settings')
-        self._run_opts(self._bond_lengths.keys())
-
-    def rerun_residue(self, residue_id: int) -> None:
-        """Reruns failed optimization on specified residue allowing
-        for optimization with new settings.
-
-        :Arguments:
-            *residue_id*
-                Number of the residue in the polypeptide chain"""
-        logger.info(f'Rerunning optimization of failed residues {residue_id}')
-        logger.info(f'Attempting optimization with {self._basis} basis, \n and {self._settings} settings')
-        self._run_opt_steps(residue_id)
