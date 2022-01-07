@@ -1,8 +1,6 @@
 topology_path:
 trajectory_paths:
   -
-selection_resid_num:
-  -
 selection_names:
   -
 int_pairs:

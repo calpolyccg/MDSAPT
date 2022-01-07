@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     filename = vars(parser.parse_args())['filename']
 
-    with open('./mdsapt/data/template_input.yaml', 'r') as template:
+    with open('../mdsapt/data/template_input.yaml', 'r') as template:
         template_data = template.read()
 
     with open(f'{filename}.yaml', 'w+') as new_file:
