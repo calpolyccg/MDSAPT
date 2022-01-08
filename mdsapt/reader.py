@@ -120,7 +120,7 @@ class InputReader(object):
                 if not os.path.exists(os.path.join(os.getcwd(), f)):
                     raise InputError
             unv = mda.Universe(os.path.join(os.getcwd(), top_path), [os.path.join(os.getcwd(), x) for x in trj_path])
-        except mda.exceptions.NoDataError or InputError:
+        except mda.exceptions.NoDataError or InputError or ValueError:
             logger.fatal('MD file error')
             raise InputError
 
