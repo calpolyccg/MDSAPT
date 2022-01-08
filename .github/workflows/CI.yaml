@@ -46,6 +46,14 @@ jobs:
         auto-update-conda: false
         auto-activate-base: false
 
+    - name: Set up Codecov
+      uses: codecov/codecov-actions@v2
+      with:
+        fail_ci_if_error: true
+      shell: bash -l {0}
+      run: |
+        pip install pytest-cov
+
     - name: Install MDSAPT package
       # conda setup requires this special shell
       shell: bash -l {0}
@@ -57,13 +65,13 @@ jobs:
       # conda setup requires this special shell
       shell: bash -l {0}
       run: |
-        pytest -v ./mdsapt
+        pytest -v ./mdsapt --cov=mdsapt --cov-report=xml
 
     # TODO: set up code coverage to work correctly
     - name: Run CodeCov
       uses: codecov/codecov-action@v1
       with:
-        file: ./codecov.yml
+        file: ./coverage.xml
         flags: unittests
         name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
 
