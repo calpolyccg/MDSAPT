@@ -15,14 +15,14 @@ using the included *mdsapt_get_runinput* script.
 """
 
 import os
-from typing import List, Optional
+from typing import List
 
 import yaml
 
 import MDAnalysis as mda
 
 import logging
-logger = logging.getLogger('mdsapt.config')
+logger = logging.getLogger('mdsapt.reader')
 
 
 class InputError(Exception):
@@ -74,7 +74,8 @@ class InputReader(object):
             self._check_inputs(in_cfg)
             self._save_params(in_cfg)
         except IOError or InputError:
-            logger.warning('error loading file')
+            logger.fatal(f'error loading file {path}')
+            raise InputError
 
     def _save_params(self, yaml_dict: dict) -> None:
         self.top_path = yaml_dict['topology_path']
@@ -108,8 +109,8 @@ class InputReader(object):
             sys_settings = yaml_dict['system_settings']
             opt_settings = yaml_dict['opt_settings']
             sapt_settings = yaml_dict['sapt_settings']
-        except KeyError:
-            logger.fatal('Invalid YAML file')
+        except KeyError as err:
+            logger.fatal(f'{err}: missing from YAML file')
             raise InputError
 
         try:
@@ -119,7 +120,7 @@ class InputReader(object):
                 if not os.path.exists(os.path.join(os.getcwd(), f)):
                     raise InputError
             unv = mda.Universe(os.path.join(os.getcwd(), top_path), [os.path.join(os.getcwd(), x) for x in trj_path])
-        except mda.exceptions.NoDataError or InputError:
+        except mda.exceptions.NoDataError or InputError or ValueError:
             logger.fatal('MD file error')
             raise InputError
 
@@ -143,33 +144,41 @@ class InputReader(object):
             settings = sapt_settings['settings']
             save_sapt_out = sapt_settings['save_psi4_output']
 
-            for pair in ag_pair:
-                if len(pair) != 2:
-                    raise InputError('Pairs must be a python list of integers with 2 items')
-                found0 = False
-                found1 = False
-                for name in ag_sel:
-                    if pair[0] == name:
-                        found0 = True
-                    if pair[1] == name:
-                        found1 = True
-                if found0 is False:
-                    raise InputError(f'{pair[0]} in {pair} group_pair_selections is not in defined in atom_group_names')
-                if found1 is False:
-                    raise InputError(f'{pair[1]} in {pair} group_pair_selections is not in defined in atom_group_names')
+        except KeyError as err:
 
-                if start >= stop:
-                    raise InputError('Start is greater than or equal to stop')
-                if step >= stop:
-                    raise InputError('Step is greater than or equal to stop')
-                if step == 0:
-                    raise InputError('Step cannot be 0')
-
-                if len(unv.trajectory) < stop:
-                    raise InputError('Stop exceeds length of trajectory.')
-
-        except KeyError or InputError as err:
-            logger.error(f'{err} Error in trajectory settings')
+            logger.fatal(f'{err}: missing data in input file')
             raise InputError
+
+        for pair in ag_pair:
+            if len(pair) != 2:
+                logger.fatal('Pairs must be a python list of integers with 2 items')
+                raise InputError
+            found0 = False
+            found1 = False
+            for name in ag_sel:
+                if pair[0] == name:
+                    found0 = True
+                if pair[1] == name:
+                    found1 = True
+            if found0 is False:
+                logger.fatal(f'{pair[0]} in {pair} group_pair_selections is not in defined in atom_group_names')
+                raise InputError
+            if found1 is False:
+                logger.fatal(f'{pair[1]} in {pair} group_pair_selections is not in defined in atom_group_names')
+                raise InputError
+
+            if start >= stop:
+                logger.fatal('Start is greater than or equal to stop')
+                raise InputError
+            if step >= stop:
+                logger.fatal('Step is greater than or equal to stop')
+                raise InputError
+            if step == 0:
+                logger.fatal('Step cannot be 0')
+                raise InputError
+
+            if len(unv.trajectory) < stop:
+                logger.fatal('Stop exceeds length of trajectory.')
+                raise InputError
 
         logger.info('Input Parameters Accepted')

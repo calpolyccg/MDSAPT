@@ -1,7 +1,7 @@
 topology_path:
 trajectory_paths:
   -
-selection_names:
+selection_resid_num:
   -
 int_pairs:
   # Place pair names defined above in list in a list

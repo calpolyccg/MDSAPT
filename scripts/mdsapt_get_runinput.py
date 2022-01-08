@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 
 import logging
 
-logger = logging.getLogger('mdsapt')
+logger = logging.getLogger('mdsapt.get_runinput')
 
 if __name__ == '__main__':
     parser = ArgumentParser(usage=__doc__)
