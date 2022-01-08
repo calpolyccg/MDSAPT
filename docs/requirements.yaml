@@ -4,8 +4,11 @@ dependencies:
     # Base depends
   - python
   - pip
+  - sphinx
+  - sphinx_rtd_theme
 
 
   # Pip-only installs
   - pip:
+      - yaml
 
