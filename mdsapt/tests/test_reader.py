@@ -76,3 +76,9 @@ class TestInputReader(object):
         alt_set['trajectory_settings'][key_pair[0]] = key_pair[1]
         with pytest.raises(InputError):
             InputReader._check_inputs(alt_set)
+
+    def test_check_resids(self):
+        alt_set = copy.deepcopy(self.reference)
+        alt_set['selection_resid_num'] = [11, 199, 1000]
+        with pytest.raises(InputError):
+            InputReader._check_inputs(alt_set)
