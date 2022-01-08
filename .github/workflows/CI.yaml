@@ -31,19 +31,19 @@ jobs:
     - name: Cache conda environment
       uses: actions/cache@v2
       env:
-        # Increase this value to reset cache if etc/example-environment.yml has not changed
+        # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 0
       with:
         path: ~/conda_pkgs_dir
         key:
-          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('mdsapt_env.yaml') }}
+          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
 
     # More info on options: https://github.com/conda-incubator/setup-miniconda
     - name: Set up Anaconda environment
       uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        environment-file: devtools/conda-envs/test_env.yaml
+        environment-file: environment.yml
         channels: conda-forge,omnia,psi4,defaults
         activate-environment: mdsapt
         auto-update-conda: false
