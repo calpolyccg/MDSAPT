@@ -1,26 +1,21 @@
 name: CI
 
 on:
-  # GitHub has started calling new repo's first branch "main" https://github.com/github/renaming
-  # Existing codes likely still have "master" as the primary branch
-  # Both are tracked here to keep legacy and new codes working
-  push:
-    branches:
-      - "master"
-  pull_request:
-    branches:
-      - "master"
+  # Run CI on all pushed commits and pull requests.
+  push: {}
+  pull_request: {}
+
+  # Run CI nightly at 03:00 PST (11:00 UTC).
   schedule:
-    # Nightly tests run on master by default:
-    #   Scheduled workflows run on the latest commit on the default or base branch.
-    #   (from https://help.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events-schedule)
-    - cron: "0 0 * * *"
+    - cron: "0 11 * * *"
 
 jobs:
+  # TODO: set up documentation tests/deployment
   test:
-    name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    name: Test MDSAPT on ${{ matrix.os }}, Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: true
       matrix:
         os: [macOS-latest, ubuntu-latest]
         python-version: [3.7, 3.8, 3.9]
@@ -28,36 +23,48 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    # Cache our conda packages.
+    # More info: https://github.com/conda-incubator/setup-miniconda#caching-packages
+    - name: Cache conda environment
+      uses: actions/cache@v2
+      env:
+        # Increase this value to reset cache if environment.yml has not changed
+        CACHE_NUMBER: 0
+      with:
+        path: ~/conda_pkgs_dir
+        key:
+          ${{ runner.os }}-py${{ matrix.python-version }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+
     # More info on options: https://github.com/conda-incubator/setup-miniconda
-    - uses: conda-incubator/setup-miniconda@v2
+    - name: Set up Anaconda environment
+      uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        environment-file: devtools/conda-envs/test_env.yaml
+        environment-file: environment.yml
         channels: conda-forge,omnia,psi4,defaults
         activate-environment: mdsapt
         auto-update-conda: false
         auto-activate-base: false
 
-    - name: Install package
-
+    - name: Install MDSAPT package
       # conda setup requires this special shell
       shell: bash -l {0}
       run: |
         python -m pip install . --no-deps
         conda list
 
-
     - name: Run tests
-
       # conda setup requires this special shell
       shell: bash -l {0}
-
       run: |
-        pytest -v ./MDSAPT
+        pytest -v ./mdsapt
 
-    - name: CodeCov
+    # TODO: set up code coverage to work correctly
+    - name: Run CodeCov
       uses: codecov/codecov-action@v1
       with:
         file: ./coverage.xml
         flags: unittests
         name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
+
+  # TODO: set up deployment job
