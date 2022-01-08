@@ -57,11 +57,11 @@ jobs:
       # conda setup requires this special shell
       shell: bash -l {0}
       run: |
-        pytest -v ./mdsapt
+        pip install pytest-cov
+        pytest -v ./mdsapt --cov=mdsapt --cov-report=xml
 
-    # TODO: set up code coverage to work correctly
-    - name: Run CodeCov
-      uses: codecov/codecov-action@v1
+    - name: Upload CodeCov
+      uses: codecov/codecov-action@v2
       with:
         file: ./coverage.xml
         flags: unittests
