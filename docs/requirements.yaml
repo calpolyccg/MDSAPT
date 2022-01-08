@@ -20,8 +20,6 @@ dependencies:
   - rdkit>=2020.09.3
   - pyyaml
 
-
   # Pip-only installs
   - pip:
-      - pyyaml
 
