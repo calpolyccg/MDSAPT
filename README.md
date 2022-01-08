@@ -5,7 +5,7 @@ SAPT Calculations for MDAnalysis
 [//]: # (Badges)
 [![GitHub Actions Build Status](https://github.com/alescoulie/MDSAPT/workflows/CI/badge.svg)](https://github.com/alescolie/MDSAPT/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/alescoulie/MDSAPT/branch/master/graph/badge.svg)](https://codecov.io/gh/alescoulie/MDSAPT/branch/master)
-![Readthedocs.io](https://readthedocs.org/projects/pip/badge/?version=latest&style=flat)
+[![Documentation Status](https://readthedocs.org/projects/mdsapt/badge/?version=latest)](https://mdsapt.readthedocs.io/en/latest/?badge=latest)
 
 An MDAnalysis-kit for calculating SAPT of molecular dynamics trajectories in psi4.
 
