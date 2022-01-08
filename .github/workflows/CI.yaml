@@ -36,7 +36,7 @@ jobs:
       with:
         path: ~/conda_pkgs_dir
         key:
-          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+          ${{ runner.os }}-py${{ matrix.python-version }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
 
     # More info on options: https://github.com/conda-incubator/setup-miniconda
     - name: Set up Anaconda environment
