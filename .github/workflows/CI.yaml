@@ -50,6 +50,9 @@ jobs:
       uses: codecov/codecov-actions@v2
       with:
         fail_ci_if_error: true
+
+    - name: Install pytest cov
+      # install Codecov for pytest
       shell: bash -l {0}
       run: |
         pip install pytest-cov
