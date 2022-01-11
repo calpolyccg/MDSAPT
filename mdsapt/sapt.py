@@ -98,7 +98,7 @@ class TrajectorySAPT(AnalysisBase):
 
         coords: str = f'{Chem.GetFormalCharge(rd_mol)} {get_spin_multiplicity(rd_mol)}'
         for atom in resid.atoms:
-            coords += f'\n{atom.name[0]} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
+            coords += f'\n{atom.element} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
         return coords
 
     def _single_frame(self) -> None:
