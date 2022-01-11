@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 mdsapt
 An MDA-kit for calcuating quantum interactions in psi4.
