@@ -74,26 +74,26 @@ class Optimizer(object):
     _unv: mda.Universe
     _settings: InputReader
     _bond_lengths: Dict[int, float] = {
-        'ALA': 1.128,
-        'ARG': 1.128,
-        'ASN': 1.128,
-        'ASP': 1.128,
-        'CYS': 1.128,
-        'GLU': 1.128,
-        'GLN': 1.128,
-        'GLY': 1.128,
-        'HIS': 1.128,
-        'ILE': 1.128,
-        'LUE': 1.128,
-        'LYS': 1.128,
-        'MET': 1.128,
-        'PHE': 1.128,
-        'PRO': 1.128,
-        'SER': 1.128,
-        'THR': 1.128,
-        'TRP': 1.128,
-        'TYR': 1.128,
-        'VAL': 1.128
+        'ALA': 1.1,
+        'ARG': 1.1,
+        'ASN': 1.1,
+        'ASP': 1.1,
+        'CYS': 1.1,
+        'GLU': 1.1,
+        'GLN': 1.1,
+        'GLY': 1.1,
+        'HIS': 1.1,
+        'ILE': 1.1,
+        'LUE': 1.1,
+        'LYS': 1.1,
+        'MET': 1.1,
+        'PHE': 1.1,
+        'PRO': 1.1,
+        'SER': 1.1,
+        'THR': 1.1,
+        'TRP': 1.1,
+        'TYR': 1.1,
+        'VAL': 1.1
     }
 
     _std_resids: List[str] = [x for x in _bond_lengths.keys()]
