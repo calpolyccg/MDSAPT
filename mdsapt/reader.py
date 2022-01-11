@@ -127,7 +127,7 @@ class InputReader(object):
         # Testing names and selections
         for sel in ag_sel:
             try:
-                ag = unv.select_atoms(f'resid {sel}')
+                ag = unv.select_atoms(f'resid {sel} and protein')
             except mda.SelectionError:
                 raise InputError('Error in selection: {}'.format(sel))
 

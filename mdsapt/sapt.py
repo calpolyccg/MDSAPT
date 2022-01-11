@@ -75,7 +75,7 @@ class TrajectorySAPT(AnalysisBase):
         self._unv = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
         elements = guess_types(self._unv.atoms.names)
         self._unv.add_TopologyAttr('elements', elements)
-        self._sel = {x: self._unv.select_atoms(f'resid {x}') for x in config.ag_sel}
+        self._sel = {x: self._unv.select_atoms(f'resid {x} and protein') for x in config.ag_sel}
         self._sel_pairs = config.ag_pair
         self._mem = config.sys_settings['memory']
         self._cfg = config

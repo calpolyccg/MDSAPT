@@ -108,7 +108,7 @@ class Optimizer(object):
         """
         self._settings = settings
         self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
-        self._resids = {x: self._unv.select_atoms(f"resid {x}") for x in self._settings.ag_sel}
+        self._resids = {x: self._unv.select_atoms(f"resid {x} and protein") for x in self._settings.ag_sel}
 
     def _is_amino(self, key: int) -> bool:
         resname_atr = self._resids[key].universe._topology.resnames

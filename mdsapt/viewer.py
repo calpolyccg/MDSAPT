@@ -53,7 +53,7 @@ class Viewer(object):
                 number of selected residue in polypeptide chain
             *nglview_kwargs*
                 arguments passed to the viewer"""
-        resid: mda.AtomGroup = self._unv.select_atoms(f'resid {resid}')
+        resid: mda.AtomGroup = self._unv.select_atoms(f'resid {resid} and protein')
         return self._launch_viewer(resid, **nglview_kwargs)
 
     def view_interaction_pair(self, resid1: int, resid2: int, **nglview_kwargs) -> nv.NGLWidget:
@@ -66,8 +66,8 @@ class Viewer(object):
                 number of second selected residue in polypeptide chain
             *nglview_kwargs*
                 arguments passed to the viewer"""
-        r1: mda.AtomGroup = self._unv.select_atoms(f'resid {resid1}')
-        r2: mda.AtomGroup = self._unv.select_atoms(f'resid {resid2}')
+        r1: mda.AtomGroup = self._unv.select_atoms(f'resid {resid1} and protein')
+        r2: mda.AtomGroup = self._unv.select_atoms(f'resid {resid2} and protein')
         r_pair: mda.AtomGroup = r1 + r2
         return self._launch_viewer(r_pair, **nglview_kwargs)
 
@@ -80,7 +80,7 @@ class Viewer(object):
                 number of selected residue in polypeptide chain
             *nglview_kwargs*
                 arguments passed to the viewer"""
-        resid = self._opt.rebuild_resid(resid, self._unv.select_atoms(f'resid {resid}'))
+        resid = self._opt.rebuild_resid(resid, self._unv.select_atoms(f'resid {resid} and protein'))
         return self._launch_viewer(resid, **nglview_kwargs)
 
     def view_optimized_interaction_pair(self, resid1: int, resid2: int, **nglview_kwargs) -> nv.NGLWidget:
@@ -92,8 +92,8 @@ class Viewer(object):
                 number of selected residue in polypeptide chain
             *nglview_kwargs*
                 arguments passed to the viewer"""
-        r1 = self._opt.rebuild_resid(resid1, self._unv.select_atoms(f'resid {resid1}'))
-        r2 = self._opt.rebuild_resid(resid2, self._unv.select_atoms(f'resid {resid2}'))
+        r1 = self._opt.rebuild_resid(resid1, self._unv.select_atoms(f'resid {resid1} and protein'))
+        r2 = self._opt.rebuild_resid(resid2, self._unv.select_atoms(f'resid {resid2} and protein'))
         r_pair: mda.Universe = mda.Universe.empty(n_atoms=(r1.n_atoms + r2.n_atoms), trajectory=True)
         r_pair.add_TopologyAttr('name', [x for x in r1.names] + [x for x in r2.names])
         r_pair.atoms.positions = np.row_stack((r1.positions, r2.positions))
