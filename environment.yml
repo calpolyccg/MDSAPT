@@ -12,5 +12,6 @@ dependencies:
   - pandas
   - pdbfixer=1.6
   - psi4=1.4+9485035
-  - rdkit>=2020.09.3
+  - pytest-cov
   - pyyaml
+  - rdkit>=2020.09.3

@@ -1,17 +1,22 @@
 name: CI
 
 on:
-  # Run CI on all pushed commits.
-  push: {}
+  push: 
+    # Run CI on all pushed branches.
+    branches: "*"
+    # Run CI on all versioned tags.
+    tags: "[0-9]+.[0-9]+.[0-9]+"
 
   # Run CI nightly at 03:00 PST (11:00 UTC).
   schedule:
     - cron: "0 11 * * *"
 
+  # Allow maintainers to manually trigger the build.
+  workflow_dispatch: {}
+
 jobs:
-  # TODO: set up documentation tests/deployment
   test:
-    name: Test MDSAPT on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    name: Test on py${{ matrix.python-version }}/${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -53,6 +58,7 @@ jobs:
         python -m pip install . --no-deps
         conda list
 
+    # TODO: possibly integrate this step with meta.yml?
     - name: Run tests
       # conda setup requires this special shell
       shell: bash -l {0}
@@ -67,4 +73,92 @@ jobs:
         flags: unittests
         name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
 
-  # TODO: set up deployment job
+  package:
+    name: Packaging py${{ matrix.python-version }}/${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: test
+    if: startsWith(github.ref, 'refs/tags')  # only do this on tags
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [macOS-latest, ubuntu-latest]
+        python-version: [3.7, 3.8, 3.9]
+        include:
+          - os: macOS-latest
+            output-folder: osx-64
+          - os: ubuntu-latest
+            output-folder: linux-64
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # Cache our conda packages.
+    # More info: https://github.com/conda-incubator/setup-miniconda#caching-packages
+    - name: Cache conda environment
+      uses: actions/cache@v2
+      env:
+        # Increase this value to reset cache if environment.yml has not changed
+        CACHE_NUMBER: 0
+      with:
+        path: ~/conda_pkgs_dir
+        key:
+          ${{ runner.os }}-py${{ matrix.python-version }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('devtools/deploy/environment.yml') }}
+
+    # More info on options: https://github.com/conda-incubator/setup-miniconda
+    - name: Set up Anaconda environment
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        environment-file: devtools/deploy/environment.yml
+        channels: conda-forge,omnia,psi4,defaults
+        activate-environment: mdsapt-build
+        auto-update-conda: false
+        auto-activate-base: false
+        use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+
+    - name: Build MDSAPT conda package
+      # conda requires this special shell
+      shell: bash -l {0}
+      run: conda build -c psi4 -c conda-forge -c omnia --output-folder . .
+
+    - name: Upload MDSAPT conda package
+      # conda requires this special shell
+      shell: bash -l {0}
+      if: startsWith(github.ref, 'refs/tags')  # only do this on tags
+      env:
+        ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
+      run: anaconda upload --label main ${{ matrix.output-folder }}/*.tar.bz2
+
+  verify:
+    name: Test installing py${{ matrix.python-version }}/${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    if: startsWith(github.ref, 'refs/tags')  # only do this on tags
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macOS-latest, ubuntu-latest]
+        python-version: [3.7, 3.8, 3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # More info on options: https://github.com/conda-incubator/setup-miniconda
+    - name: Create Anaconda environment
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        activate-environment: mdsapt-test
+        auto-update-conda: false
+        auto-activate-base: false
+
+    - name: Install mdsapt from mdsapt-testing
+      shell: bash -l {0}
+      # NOTE: psi4 must be first channel
+      run: >
+        conda install -c psi4 -c defaults -c conda-forge -c omnia -c mdsapt-testing mdsapt 
+
+    - name: Test importing mdsapt
+      shell: bash -l {0}
+      run: >
+        python3 -c "import mdsapt"
