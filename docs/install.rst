@@ -1,7 +1,7 @@
 Installation
 ============
 
-Currently MDSAPT is not available via any packaging system. It must be installed
+Currently MD-SAPT is not available via any packaging system. It must be installed
 by cloning the GitHub repository.
 
 .. code-block:: bash

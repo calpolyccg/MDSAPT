@@ -1,13 +1,13 @@
 Quickstart Guide
 ================
 
-MDSAPT simplifies for the calculation of SAPT interaction energies from MD
+MD-SAPT simplifies for the calculation of SAPT interaction energies from MD
 trajectories. Running it just requires MD simulation files.
 
 Basic work flow
 ===============
 
-MDSAPT can be run as a script or in a notebook. It gives the SAPT energy
+MD-SAPT can be run as a script or in a notebook. It gives the SAPT energy
 between the specified residue pairs.
 
 Setup Process
