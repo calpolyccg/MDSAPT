@@ -108,6 +108,7 @@ class TrajectorySAPT(AnalysisBase):
             dimer = psi4.geometry(coords)
             psi4.set_options(self._settings)
             psi4.set_memory(self._mem)
+            psi4.set_num_threads(self._cfg.ncpus)
 
             logger.info(f'Starting SAPT for {pair}')
 
