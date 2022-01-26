@@ -88,7 +88,8 @@ class TrajectorySAPT(AnalysisBase):
         super(TrajectorySAPT, self).__init__(self._unv.trajectory)
 
     def _prepare(self) -> None:
-        self._col = ['residues', 'time', 'energy']
+        self._col = ['residues', 'time', 'total', 'electrostatic',
+                     'exchange', 'induction', 'dispersion']
         self.results = pd.DataFrame(columns=self._col)
         self._res_dict = {x: [] for x in self._col}
 
@@ -116,8 +117,13 @@ class TrajectorySAPT(AnalysisBase):
                 psi4.set_output_file(f'sapt_{pair[0]}-{pair[1]}_{self._ts.time}.out')  # Saves output file
 
             psi4.energy(f'{self._method}/{self._basis}', molecule=dimer)
-            sapt = psi4.variable('SAPT TOTAL ENERGY')
-            result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt*self._mht_to_kcalmol]
+            sapt_tot = psi4.variable('SAPT TOTAL ENERGY')
+            sapt_col = psi4.variable('SAPT ELECTROSTATICS')
+            sapt_exh = psi4.variable('SAPT EXCHANGE')
+            sapt_ind = psi4.variable('SAPT INDUCTION')
+            sapt_dsp = psi4.variable('SAPT DISPERSION')
+
+            result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt_tot*self._mht_to_kcalmol]
             for r in range(len(result)):
                 self._res_dict[self._col[r]].append(result[r])
 
