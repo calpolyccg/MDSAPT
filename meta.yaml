@@ -1,0 +1,54 @@
+# This file is used in conda-build.
+
+package:
+  name: mdsapt
+  version: "{{ GIT_DESCRIBE_TAG }}"
+
+source:
+  git_url: ./
+
+about:
+  home: https://github.com/ALescoulie/MDSAPT
+  license: GPL-3.0
+  license_file: LICENSE
+  license_family: GPL3
+  summary: SAPT Calculations for MDAnalysis
+  doc_url: https://mdsapt.readthedocs.io/
+  dev_url: https://github.com/ALescoulie/MDSAPT
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - psi4
+    - mdanalysis
+    - nglview
+    - numpy
+    - openmm
+    - pandas
+    - pdbfixer
+    - python
+    - pyyaml
+    - rdkit
+
+test:
+  imports:
+    - mdsapt
+    - mdsapt.tests
+  requires:
+    - pip
+    - pytest
+  commands:
+    - pip check
+    # This is currently disabled because it does not work.
+    # However, tests pass when not building.
+    # - pytest -v .
+
+extra:
+  maintainers:
+   - ALescoulie
+   - astralbijection
+  recipe-maintainers:
+   - ALescoulie
+   - astralbijection

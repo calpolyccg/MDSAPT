@@ -1,0 +1,9 @@
+# The environment used in CI/package building.
+
+name: mdsapt-build
+channels:
+  - defaults
+dependencies:
+  - anaconda-client
+  - conda-build
+  - conda-verify
