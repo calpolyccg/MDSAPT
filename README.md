@@ -17,6 +17,6 @@ Copyright (c) 2021, ALescoulie
 
 This work was supported by the Bill and Linda Frost Fund at Cal Poly San Luis Obispo.
 
-Clemson University is acknowledged for generous allotment of compute time on Palmetto cluster.
+We acknowledge the support of NSF award CHE-2018427.  This award provided the computational resources to support this project through the MERCURY Consortium Skylight cluster on Palmetto. 
 
 Project based on the [Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.6.
