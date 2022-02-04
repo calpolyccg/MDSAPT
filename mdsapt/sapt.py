@@ -57,7 +57,7 @@ class TrajectorySAPT(AnalysisBase):
     _basis: str
     _settings: Dict[str, str]
     results: pd.DataFrame
-    _mht_to_kcalmol: float = 627529
+    _mht_to_kcalmol: float = 627509.0
 
     def __init__(self, config: InputReader, optimizer: Optimizer, **universe_kwargs) -> None:
         """Sets up Trajectory and residue selections.
@@ -116,14 +116,17 @@ class TrajectorySAPT(AnalysisBase):
             if self._save_psi_out:
                 psi4.set_output_file(f'sapt_{pair[0]}-{pair[1]}_{self._ts.time}.out')  # Saves output file
 
+            # Calculating SAPT
             psi4.energy(f'{self._method}/{self._basis}', molecule=dimer)
-            sapt_tot = psi4.variable('SAPT TOTAL ENERGY')
-            sapt_col = psi4.variable('SAPT ELECTROSTATICS')
-            sapt_exh = psi4.variable('SAPT EXCHANGE')
-            sapt_ind = psi4.variable('SAPT INDUCTION')
-            sapt_dsp = psi4.variable('SAPT DISPERSION')
 
-            result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt_tot*self._mht_to_kcalmol]
+            # Getting results
+            sapt_tot = psi4.variable('SAPT TOTAL ENERGY')*self._mht_to_kcalmol
+            sapt_col = psi4.variable('SAPT ELST ENERGY')*self._mht_to_kcalmol
+            sapt_exh = psi4.variable('SAPT EXCH ENERGY')*self._mht_to_kcalmol
+            sapt_ind = psi4.variable('SAPT IND ENERGY')*self._mht_to_kcalmol
+            sapt_dsp = psi4.variable('SAPT DISP ENERGY')*self._mht_to_kcalmol
+
+            result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt_tot, sapt_col, sapt_exh, sapt_ind, sapt_dsp]
             for r in range(len(result)):
                 self._res_dict[self._col[r]].append(result[r])
 
