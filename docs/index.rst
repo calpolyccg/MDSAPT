@@ -1,12 +1,14 @@
-MDSAPT Documentation
+MD-SAPT Documentation
 =========================================================
 
-**MDSAPT** is a Python package and `MDAnalysis <https://www.mdanalysis.org>`_ Kit for preforming
+**MD-SAPT** is a Python package and `MDAnalysis <https://www.mdanalysis.org>`_ Kit for preforming
 Symmetry Adapted Perturbation Theory (SAPT) calculations on molecular dynamics (MD) simulation
 trajectories using `Psi4 <https://psicode.org>`_.
 
-Currently MDSAPT is installable via GitHub and supports measuring interactions between ligands and
+Currently MD-SAPT is installable via GitHub and supports measuring interactions between ligands and
 standard amino acids.
+
+
 
 .. toctree::
    :maxdepth: 4

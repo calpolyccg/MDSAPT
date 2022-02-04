@@ -57,7 +57,7 @@ class TrajectorySAPT(AnalysisBase):
     _basis: str
     _settings: Dict[str, str]
     results: pd.DataFrame
-    _mht_to_kcalmol: float = 627529
+    _mht_to_kcalmol: float = 627.509
 
     def __init__(self, config: InputReader, optimizer: Optimizer, **universe_kwargs) -> None:
         """Sets up Trajectory and residue selections.
@@ -88,7 +88,8 @@ class TrajectorySAPT(AnalysisBase):
         super(TrajectorySAPT, self).__init__(self._unv.trajectory)
 
     def _prepare(self) -> None:
-        self._col = ['residues', 'time', 'energy']
+        self._col = ['residues', 'time', 'total', 'electrostatic',
+                     'exchange', 'induction', 'dispersion']
         self.results = pd.DataFrame(columns=self._col)
         self._res_dict = {x: [] for x in self._col}
 
@@ -108,15 +109,24 @@ class TrajectorySAPT(AnalysisBase):
             dimer = psi4.geometry(coords)
             psi4.set_options(self._settings)
             psi4.set_memory(self._mem)
+            psi4.set_num_threads(self._cfg.ncpus)
 
             logger.info(f'Starting SAPT for {pair}')
 
             if self._save_psi_out:
                 psi4.set_output_file(f'sapt_{pair[0]}-{pair[1]}_{self._ts.time}.out')  # Saves output file
 
+            # Calculating SAPT
             psi4.energy(f'{self._method}/{self._basis}', molecule=dimer)
-            sapt = psi4.variable('SAPT TOTAL ENERGY')
-            result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt*self._mht_to_kcalmol]
+
+            # Getting results
+            sapt_tot = psi4.variable('SAPT TOTAL ENERGY')*self._mht_to_kcalmol
+            sapt_col = psi4.variable('SAPT ELST ENERGY')*self._mht_to_kcalmol
+            sapt_exh = psi4.variable('SAPT EXCH ENERGY')*self._mht_to_kcalmol
+            sapt_ind = psi4.variable('SAPT IND ENERGY')*self._mht_to_kcalmol
+            sapt_dsp = psi4.variable('SAPT DISP ENERGY')*self._mht_to_kcalmol
+
+            result = [f'{pair[0]}-{pair[1]}', self._ts.time, sapt_tot, sapt_col, sapt_exh, sapt_ind, sapt_dsp]
             for r in range(len(result)):
                 self._res_dict[self._col[r]].append(result[r])
 

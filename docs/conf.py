@@ -22,15 +22,15 @@ import mdsapt
 
 # -- Project information -----------------------------------------------------
 
-project = 'mdsapt'
-copyright = ("2021, Alia Lescoulie. Project structure based on the "
+project = 'MD-SAPT'
+copyright = ("2021, Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald. Cal Poly Computational Chemistry Group. Project structure based on the "
              "Computational Molecular Science Python Cookiecutter version 1.6")
 author = 'Alia Lescoulie'
 
 # The short X.Y version
-version = ''
+version = '1.1'
 # The full version, including alpha/beta/rc tags
-release = ''
+release = '1.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -154,7 +154,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'mdsapt', 'mdsapt Documentation',
+    (master_doc, 'MD-SAPT', 'mdsapt Documentation',
      [author], 1)
 ]
 
