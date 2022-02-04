@@ -19,8 +19,8 @@ class TestInputReader(object):
             'step': 1
         },
         'system_settings': {
-            'ncpus': 4,
-            'memory': '12GB',
+            'ncpus': 16,
+            'memory': '48GB',
             'time': '24:00:00'
         },
         'opt_settings': {
