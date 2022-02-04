@@ -28,7 +28,7 @@ The following steps describe how to set up the input yaml file
 Running SAPT
 ____________
 
-With the input done MDSAPT is ready to be run. The settings are read using :class:`mdsapt.reader.InputReader`  which is then passed into :class:`mdsapt.reader.Optimizer` which handles preparing residues. Finally :class:`mdsapt.reader.TrajectorySAPT` is used to run SAPT over the MD data. The results are stored in a :class:`Pandas.DataFrame`.
+With the input done MD-SAPT is ready to be run. The settings are read using :class:`mdsapt.reader.InputReader`  which is then passed into :class:`mdsapt.reader.Optimizer` which handles preparing residues. Finally :class:`mdsapt.reader.TrajectorySAPT` is used to run SAPT over the MD data. The results are stored in a :class:`Pandas.DataFrame`.
 
 .. code-block:: Python
 
