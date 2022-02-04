@@ -57,7 +57,7 @@ class TrajectorySAPT(AnalysisBase):
     _basis: str
     _settings: Dict[str, str]
     results: pd.DataFrame
-    _mht_to_kcalmol: float = 627509.0
+    _mht_to_kcalmol: float = 627.509
 
     def __init__(self, config: InputReader, optimizer: Optimizer, **universe_kwargs) -> None:
         """Sets up Trajectory and residue selections.

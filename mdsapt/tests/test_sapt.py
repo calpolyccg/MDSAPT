@@ -26,3 +26,8 @@ class TestSAPT(object):
     def test_run_sapt(self):
         SAPT12 = TrajectorySAPT(self.settings, self.opt)
         SAPT12.run(self.settings.trj_settings['start'], self.settings.trj_settings['stop'], self.settings.trj_settings['step'])
+        cols_act = SAPT12.results.columns
+        cols_exp = ['residues', 'time', 'total', 'electrostatic', 'exchange', 'induction', 'dispersion']
+        assert (len(cols_act) == len(cols_exp))
+        assert all([cols_act[i] == cols_exp[i] for i in range(len(cols_act))])
+        SAPT12.results.to_csv('sapt_test.csv')
