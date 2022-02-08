@@ -45,7 +45,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: environment.yml
-        channels: conda-forge,omnia,psi4,defaults
+        channels: psi4,conda-forge,defaults
         activate-environment: mdsapt
         auto-update-conda: false
         auto-activate-base: false
@@ -110,7 +110,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: devtools/deploy/environment.yml
-        channels: conda-forge,omnia,psi4,defaults
+        channels: psi4,conda-forge
         activate-environment: mdsapt-build
         auto-update-conda: false
         auto-activate-base: false
@@ -119,7 +119,7 @@ jobs:
     - name: Build MDSAPT conda package
       # conda requires this special shell
       shell: bash -l {0}
-      run: conda build -c psi4 -c conda-forge -c omnia --output-folder . .
+      run: conda build -c psi4 -c conda-forge --output-folder . .
 
     - name: Upload MDSAPT conda package
       # conda requires this special shell
@@ -156,7 +156,7 @@ jobs:
       shell: bash -l {0}
       # NOTE: psi4 must be first channel
       run: >
-        conda install -c psi4 -c defaults -c conda-forge -c omnia -c mdsapt-testing mdsapt 
+        conda install -c psi4 -c defaults -c conda-forge -c mdsapt-testing mdsapt 
 
     - name: Test importing mdsapt
       shell: bash -l {0}
