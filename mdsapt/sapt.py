@@ -177,7 +177,7 @@ class DockingSAPT(SAPT):
 
     def __init__(self, config: InputReader, optimizer: Optimizer) -> None:
         self._ens = Ensemble(config.path)
-        self._sel = {k: self._ens.select_atoms(f'resid {k} and not name (OW or HW)') for k in self._cfg.ag_sel}
+        self._sel = {k: self._ens.select_atoms(f'resid {k} and not (name OH2 or name H1 or name H2') for k in self._cfg.ag_sel}
         super(DockingSAPT, self).__init__(config, optimizer)
 
     def _prepare(self) -> None:
