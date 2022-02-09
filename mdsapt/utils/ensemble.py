@@ -8,12 +8,11 @@ import MDAnalysis as mda
 from MDAnalysis.lib.log import ProgressBar
 from MDAnalysis.exceptions import FileFormatWarning, NoDataError, MissingDataWarning, SelectionError
 
-from gromacs.utilities import in_dir
+from utils import in_dir
 
 import logging
 
-logger = logging.getLogger('mdpow._ensemble')
-
+logger = logging.getLogger('mdsapt.utils')
 
 class Ensemble(object):
     """ Collection of related :class:`MDAnalysis.Universe <MDAnalysis.core.groups.universe.Universe>`
