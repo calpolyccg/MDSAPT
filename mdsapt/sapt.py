@@ -1,18 +1,18 @@
 r"""
-:mod:`mdsapt.sapt` -- Calculate SAPT energy between selections
-==============================================================
+:mod:`mdsapt.sapt` -- Tools for calculating SAPT energy from MD data
+====================================================================
 
 Sets up and runs `SAPT <https://psicode.org/psi4manual/master/sapt.html>`_
 calculations between the residues selected in the input file.
 
-Required Input:
-
-- :class:`-mdsapt.reader.InputReader`
-- :class:`-mdsapt.optimizer.Optimizer`
+ autoclass:: SAPT
+    :members:
+    :inherited-members:
 
 .. autoclass:: TrajectorySAPT
     :members:
     :inherited-members:
+
 """
 
 from typing import Dict, List
@@ -36,8 +36,8 @@ import logging
 
 logger = logging.getLogger('mdsapt.sapt')
 
-class SAPT:
-    """Contains methods for running SAPT calculations of molecular dynamics data."""
+class SAPT(object):
+    """Contains methods for running SAPT calculations on molecular dynamics data. Used as the super class for other SAPT tools in the library."""
 
     _opt: Optimizer
     _cfg: InputReader
@@ -58,6 +58,7 @@ class SAPT:
         self._settings = config.sapt_settings['settings']
 
     def get_psi_mol(self, key: int) -> str:
+        """Generates Psi4 input file the specified residue. Prepares amino acids for SAPT using :class:`mdsapt.optimizer.Optimizer`. Adds charge and spin multiplicity to top of cooridnates."""
         resid: mda.AtomGroup = self._opt.rebuild_resid(key, self._sel[key])
         rd_mol = atomgroup_to_mol(resid)
 
@@ -67,6 +68,15 @@ class SAPT:
         return coords
     
     def calc_SAPT(self, input: str, filename: str) -> Dict[str, float]:
+            """Runs SAPT on the molecules given in the input string. If `save_psi4_output` is set to true the output will be saved as the given filename.
+            
+            Results are returned in a dictionary with the SAPT energy broken down by type with the following keys.
+            
+            1. SAPT TOTAL ENERGY
+            2. SAPT ELST ENERGY
+            3. SAPT EXCH ENERGY
+            4. SAPT IND ENERGY
+            5. SAPT DISP ENERGY"""
             dimer = psi4.geometry(input)
             psi4.set_options(self._settings)
             psi4.set_memory(self._mem)
