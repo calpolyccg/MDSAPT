@@ -70,8 +70,6 @@ class Optimizer(object):
     aforementioned process. Selected molecules besides amino
     acids will pass through without modification.
     """
-    _resids: Dict[int, mda.AtomGroup]
-    _unv: mda.Universe
     _settings: InputReader
     _bond_lengths: Dict[int, float] = {
         'ALA': 1.1,
@@ -107,19 +105,17 @@ class Optimizer(object):
                 :class:`mdsapt.reader.InputReader`
         """
         self._settings = settings
-        self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
-        self._resids = {x: self._unv.select_atoms(f"resid {x} and protein") for x in self._settings.ag_sel}
 
-    def _is_amino(self, key: int) -> bool:
-        resname_atr = self._resids[key].universe._topology.resnames
+    def _is_amino(self, key: int, resid: mda.AtomGroup) -> bool:
+        resname_atr = self.resid.universe._topology.resnames
         return resname_atr.values[key - 1] in self._std_resids
 
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
         """Rebuilds residue by replacing missing protons and adding a new proton
          on the C terminus. Raises key error if class
         has no value for that optimization."""
-        if self._is_amino(key):
-            resname_atr = self._resids[key].universe._topology.resnames
+        resname_atr = self.resid.universe._topology.resnames
+        if resname_atr.values[key - 1] in self._std_resids:
             resname = resname_atr.values[key - 1]
             step0: mda.AtomGroup = self._fix_amino(resid)
             step1: mda.Universe = self._protonate_backbone(step0, length=self._bond_lengths[resname])
