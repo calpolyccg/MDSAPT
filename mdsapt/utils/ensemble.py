@@ -1,3 +1,20 @@
+# Copied from MDPOW
+# Written 2021 by Alia Lescoulie for MDPOW by Oliver Beckstein et al.
+r"""
+:mod"`mdsapt.utils.ensemble` -- Managing collections of MD systems
+==================================================================
+
+A set of objects for manging and analyzing collections of similar MD simulations. Based on work by Alia Lescoulie during SPIDAL REU summer 2021 for `MDPOW <mdpow.readthedocs.io>`_
+
+.. autoclass:: Ensemble
+    :members:
+    :inherited-members:
+
+.. autoclass:: EnsembleAtomGroup
+    :members:
+    :inherited-members:
+
+"""
 import os
 import errno
 from typing import Optional, List
