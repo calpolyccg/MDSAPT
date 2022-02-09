@@ -15,6 +15,7 @@ calculations between the residues selected in the input file.
 
 """
 
+from tkinter.ttk import Progressbar
 from typing import Dict, List
 
 import pandas as pd
@@ -24,6 +25,7 @@ import MDAnalysis as mda
 from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.topology.guessers import guess_types
 from MDAnalysis.converters.RDKit import atomgroup_to_mol
+from MDAnalysis.lib.log import ProgressBar
 
 import psi4
 
@@ -31,6 +33,7 @@ from rdkit import Chem
 
 from .reader import InputReader
 from .optimizer import Optimizer, get_spin_multiplicity
+from .utils.ensemble import Ensemble, EnsembleAtomGroup
 
 import logging
 
@@ -57,9 +60,9 @@ class SAPT(object):
         self._basis = config.sapt_basis
         self._settings = config.sapt_settings['settings']
 
-    def get_psi_mol(self, key: int) -> str:
+    def get_psi_mol(self, key, resid: mda.AtomGroup) -> str:
         """Generates Psi4 input file the specified residue. Prepares amino acids for SAPT using :class:`mdsapt.optimizer.Optimizer`. Adds charge and spin multiplicity to top of cooridnates."""
-        resid: mda.AtomGroup = self._opt.rebuild_resid(key, self._sel[key])
+        resid: mda.AtomGroup = self._opt.rebuild_resid(key, resid)
         rd_mol = atomgroup_to_mol(resid)
 
         coords: str = f'{Chem.GetFormalCharge(rd_mol)} {get_spin_multiplicity(rd_mol)}'
@@ -105,6 +108,7 @@ class SAPT(object):
 
             return result            
 
+
 class TrajectorySAPT(SAPT, AnalysisBase):
     """Handles iterating over MD trajectory frames,
     setting up SAPT calculations, and processing results.
@@ -134,7 +138,7 @@ class TrajectorySAPT(SAPT, AnalysisBase):
         self._unv = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
         elements = guess_types(self._unv.atoms.names)
         self._unv.add_TopologyAttr('elements', elements)
-        self._sel = {x: self._unv.select_atoms(f'resid {x} and protein') for x in config.ag_sel}
+        self._sel = {x: self._unv.select_atoms(f'resid {x} and not name (OW or HW)') for x in config.ag_sel}
         self._sel_pairs = config.ag_pair
         SAPT.__init__(self, config, optimizer)
         AnalysisBase.__init__(self, self._unv.trajectory)
@@ -147,7 +151,7 @@ class TrajectorySAPT(SAPT, AnalysisBase):
 
 
     def _single_frame(self) -> None:
-        xyz_dict = {k: self.get_psi_mol(k) for k in self._sel.keys()}
+        xyz_dict = {k: self.get_psi_mol(k, self._sel[k]) for k in self._sel.keys()}
         for pair in self._sel_pairs:
             coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
             
@@ -163,3 +167,56 @@ class TrajectorySAPT(SAPT, AnalysisBase):
     def _conclude(self) -> None:
         for k in self._col:
             self.results[k] = self._res_dict[k]
+
+
+class DockingSAPT(SAPT):
+    """"""
+    
+    _ens: Ensemble
+    _sel: Dict[int, EnsembleAtomGroup]
+
+    def __init__(self, config: InputReader, optimizer: Optimizer) -> None:
+        self._ens = Ensemble(config.path)
+        self._sel = {k: self._ens.select_atoms(f'resid {k} and not name (OW or HW)') for k in self._cfg.ag_sel}
+        super(DockingSAPT, self).__init__(config, optimizer)
+
+    def _prepare(self) -> None:
+        self._col = ['structure', 'time', 'total', 'electrostatic',
+                     'exchange', 'induction', 'dispersion']
+        self.results = pd.DataFrame(columns=self._col)
+        self._res_dict = {x: [] for x in self._col}
+
+    def _single_system(self) -> None:
+        xyz_dict = {k: self.get_psi_mol(self._sel[k][self._key]) for k in self._sel.keys()}
+        for pair in self._sel_pairs:
+            coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
+            
+            logger.info(f'Starting SAPT for {pair}')
+
+            sapt: Dict[str, float] = self.calc_SAPT(coords, f'sapt_{pair[0]}-{pair[1]}_{self.}.out')
+            result = [f'{pair[0]}-{pair[1]}', self._key] + [sapt[x] for x in ['SAPT TOTAL ENERGY', 'SAPT ELST ENERGY',
+            'SAPT EXCH ENERGY','SAPT IND ENERGY','SAPT DISP ENERGY']]
+
+            for r in range(len(result)):
+                self._res_dict[self._col[r]].append(result[r])
+
+    def _conclude(self) -> None:
+        for k in self._col:
+            self.results[k] = self._res_dict[k]
+
+    def run(self) -> DockingSAPT:
+        """Runs _single_universe on each system and _single_frame
+        on each frame in the system.
+        First iterates through keys of ensemble, then runs _setup_system
+        which defines the system and trajectory. Then iterates over
+        trajectory frames.
+        """
+        logger.info("Setting up systems")
+        self._prepare_ensemble()
+        for self._key in ProgressBar(self._ens.keys(), verbose=True):
+            self._prepare()
+            self._single_system()
+            logger.info("Moving to next universe")
+        logger.info("Finishing up")
+        self._conclude()
+        return self
