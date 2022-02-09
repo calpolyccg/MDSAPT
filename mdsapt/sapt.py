@@ -138,7 +138,7 @@ class TrajectorySAPT(SAPT, AnalysisBase):
         self._unv = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
         elements = guess_types(self._unv.atoms.names)
         self._unv.add_TopologyAttr('elements', elements)
-        self._sel = {x: self._unv.select_atoms(f'resid {x} and not name (OW or HW)') for x in config.ag_sel}
+        self._sel = {x: self._unv.select_atoms(f'resid {x} and not (name OH2 or name H1 or name H2)') for x in config.ag_sel}
         self._sel_pairs = config.ag_pair
         SAPT.__init__(self, config, optimizer)
         AnalysisBase.__init__(self, self._unv.trajectory)
@@ -193,7 +193,7 @@ class DockingSAPT(SAPT):
             
             logger.info(f'Starting SAPT for {pair}')
 
-            sapt: Dict[str, float] = self.calc_SAPT(coords, f'sapt_{pair[0]}-{pair[1]}_{self.}.out')
+            sapt: Dict[str, float] = self.calc_SAPT(coords, f'sapt_{pair[0]}-{pair[1]}_{self._key}.out')
             result = [f'{pair[0]}-{pair[1]}', self._key] + [sapt[x] for x in ['SAPT TOTAL ENERGY', 'SAPT ELST ENERGY',
             'SAPT EXCH ENERGY','SAPT IND ENERGY','SAPT DISP ENERGY']]
 
@@ -204,7 +204,7 @@ class DockingSAPT(SAPT):
         for k in self._col:
             self.results[k] = self._res_dict[k]
 
-    def run(self) -> DockingSAPT:
+    def run(self):
         """Runs _single_universe on each system and _single_frame
         on each frame in the system.
         First iterates through keys of ensemble, then runs _setup_system

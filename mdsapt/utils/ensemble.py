@@ -25,7 +25,7 @@ import MDAnalysis as mda
 from MDAnalysis.lib.log import ProgressBar
 from MDAnalysis.exceptions import FileFormatWarning, NoDataError, MissingDataWarning, SelectionError
 
-from utils import in_dir
+from .utils import in_dir
 
 import logging
 
