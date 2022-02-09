@@ -30,7 +30,6 @@ class TestOptimizer(object):
         settings = InputReader(os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
         U = mda.Universe(settings.top_path, settings.trj_path)
         Opt: Optimizer = Optimizer(settings)
-        Opt._resids[214] = U.select_atoms('resid 214')
 
         r215 = U.select_atoms('resid 214')
         r215_fixed = Opt.rebuild_resid(214, r215)
@@ -40,7 +39,6 @@ class TestOptimizer(object):
         settings = InputReader(os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
         U = mda.Universe(settings.top_path, settings.trj_path)
         Opt: Optimizer = Optimizer(settings)
-        Opt._resids[126] = U.select_atoms('resid 126')
 
         r126 = U.select_atoms('resid 126')
         r126_fixed = Opt.rebuild_resid(126, r126)

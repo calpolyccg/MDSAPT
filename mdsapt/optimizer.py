@@ -114,7 +114,7 @@ class Optimizer(object):
         """Rebuilds residue by replacing missing protons and adding a new proton
          on the C terminus. Raises key error if class
         has no value for that optimization."""
-        resname_atr = self.resid.universe._topology.resnames
+        resname_atr = resid.universe._topology.resnames
         if resname_atr.values[key - 1] in self._std_resids:
             resname = resname_atr.values[key - 1]
             step0: mda.AtomGroup = self._fix_amino(resid)
