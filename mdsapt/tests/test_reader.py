@@ -33,15 +33,16 @@ class TestInputReader(object):
             'save_psi4_output': True
         }
     }
+    
+    settings = InputReader(os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
 
     def test_reader(self):
-        settings = InputReader(os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
-        assert settings.top_path == self.reference['topology_path']
-        assert settings.trj_path == self.reference['trajectory_paths']
-        assert settings.ag_sel == self.reference['selection_resid_num']
-        assert settings.ag_pair == self.reference['int_pairs']
-        assert settings.trj_settings == self.reference['trajectory_settings']
-        assert settings.sys_settings == self.reference['system_settings']
+        assert self.settings.top_path == self.reference['topology_path']
+        assert self.settings.trj_path == self.reference['trajectory_paths']
+        assert self.settings.ag_sel == self.reference['selection_resid_num']
+        assert self.settings.ag_pair == self.reference['int_pairs']
+        assert self.settings.trj_settings == self.reference['trajectory_settings']
+        assert self.settings.sys_settings == self.reference['system_settings']
 
     @pytest.mark.parametrize('key_pair', [['topology_path', 'error'], ['trajectory_paths', ['error']],
                                           ['selection_resid_num', [0]], ['int_pairs', [[1]]],
@@ -50,7 +51,7 @@ class TestInputReader(object):
         alt_set = self.reference.copy()
         alt_set[key_pair[0]] = key_pair[1]
         with pytest.raises(InputError):
-            InputReader._check_inputs(alt_set)
+            self.settings._check_inputs(alt_set)
 
     def test_fail_load_input(self):
         with pytest.raises(InputError):
@@ -61,13 +62,13 @@ class TestInputReader(object):
         alt_set = copy.deepcopy(self.reference)
         alt_set.pop('topology_path')
         with pytest.raises(InputError):
-            InputReader._check_inputs(alt_set)
+            self.settings._check_inputs(alt_set)
 
     def test_missing_yaml_data1(self):
         alt_set = copy.deepcopy(self.reference)
         alt_set['opt_settings'].pop('pH')
         with pytest.raises(InputError):
-            InputReader._check_inputs(alt_set)
+            self.settings._check_inputs(alt_set)
 
     @pytest.mark.parametrize('key_pair', [['start', 10], ['step', 10],
                                           ['step', 0], ['stop', 1000]])
@@ -75,10 +76,10 @@ class TestInputReader(object):
         alt_set = copy.deepcopy(self.reference)
         alt_set['trajectory_settings'][key_pair[0]] = key_pair[1]
         with pytest.raises(InputError):
-            InputReader._check_inputs(alt_set)
+            self.settings._check_inputs(alt_set)
 
     def test_check_resids(self):
         alt_set = copy.deepcopy(self.reference)
         alt_set['selection_resid_num'] = [11, 199, None]
         with pytest.raises(InputError):
-            InputReader._check_inputs(alt_set)
+            self.settings._check_inputs(alt_set)

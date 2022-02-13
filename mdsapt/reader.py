@@ -72,6 +72,7 @@ class InputReader(object):
                 Path to yaml input file."""
         try:
             in_cfg = yaml.safe_load(open(path))
+            self._check_type(in_cfg)
             self._check_inputs(in_cfg)
             self._save_params(in_cfg)
         except IOError or InputError:
@@ -80,9 +81,9 @@ class InputReader(object):
 
     def _check_type(self, yaml_dict: dict) -> None:
         if 'topology_directory' in yaml_dict.keys():
-            self.input_type = 'docking'
+            self._input_type = 'docking'
         elif 'topology_path' in yaml_dict.keys():
-            self._input_type = 'trajectory'
+            self._input_type = 'trj'
         else:
             logger.fatal('Input file missing information.')
             raise InputError
@@ -112,7 +113,7 @@ class InputReader(object):
         self.walltime = yaml_dict['system_settings']['time']
 
     def _check_inputs(self, yaml_dict) -> None:
-        if self.input_type == 'trajectory':
+        if self.input_type == 'trj':
             self._check_trj_inputs(yaml_dict)
         elif self.input_type == 'docking':
             self._check_docking_inputs(yaml_dict)
@@ -154,7 +155,7 @@ class InputReader(object):
             raise InputError
         
         for path in top_path:
-            unv = self._check_top_files(path)
+            unv = self._check_top_files(top_path)
             self._check_selections(unv, ag_sel)
         
         self._check_sys_settings(sys_settings)
@@ -185,7 +186,7 @@ class InputReader(object):
             raise InputError
 
     @staticmethod
-    def _check_selections(universe: mda.Universe, ag_sel: List[int], ag_pair: Optional[List[int, int]]) -> None:
+    def _check_selections(universe: mda.Universe, ag_sel: List[int], ag_pair: Optional[List[int]]) -> None:
         # Testing names and selections
         for sel in ag_sel:
             try:
@@ -253,7 +254,7 @@ class InputReader(object):
         logger.info('Input Parameters Accepted')
 
     @staticmethod
-    def _check_opt_sapt_settings(opt_settings: dict, sapt_setting: dict) -> None:
+    def _check_opt_sapt_settings(opt_settings: dict, sapt_settings: dict) -> None:
         try:
             pH = opt_settings['pH']
             method = sapt_settings['method']
