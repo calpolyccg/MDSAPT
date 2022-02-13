@@ -15,7 +15,7 @@ using the included *mdsapt_get_runinput* script.
 """
 
 import os
-from typing import List
+from typing import List, Optional
 
 import yaml
 
@@ -33,6 +33,7 @@ class InputError(Exception):
 class InputReader(object):
     """Reader for yaml inputs"""
 
+    _input_type: str
     top_path: str
     trj_path: str
     ag_sel: List[int]
@@ -77,6 +78,19 @@ class InputReader(object):
             logger.fatal(f'error loading file {path}')
             raise InputError
 
+    def _check_type(self, yaml_dict: dict) -> None:
+        if 'topology_directory' in yaml_dict.keys():
+            self.input_type = 'docking'
+        elif 'topology_path' in yaml_dict.keys():
+            self._input_type = 'trajectory'
+        else:
+            logger.fatal('Input file missing information.')
+            raise InputError
+
+    @property
+    def input_type(self) -> str:
+        return self._input_type
+
     def _save_params(self, yaml_dict: dict) -> None:
         self.top_path = yaml_dict['topology_path']
         self.trj_path = yaml_dict['trajectory_paths']
@@ -97,8 +111,16 @@ class InputReader(object):
         self.memory = yaml_dict['system_settings']['memory']
         self.walltime = yaml_dict['system_settings']['time']
 
-    @staticmethod
-    def _check_inputs(yaml_dict: dict) -> None:
+    def _check_inputs(self, yaml_dict) -> None:
+        if self.input_type == 'trajectory':
+            self._check_trj_inputs(yaml_dict)
+        elif self.input_type == 'docking':
+            self._check_docking_inputs(yaml_dict)
+        else:
+            logger.fatal('Non valid input type')
+            raise InputError
+    
+    def _check_trj_inputs(self, yaml_dict: dict) -> None:
         # Checking inputs of yaml file
         try:
             top_path = yaml_dict['topology_path']
@@ -112,7 +134,34 @@ class InputReader(object):
         except KeyError as err:
             logger.fatal(f'{err}: missing from YAML file')
             raise InputError
+        
+        unv = self._check_trj_files(top_path, trj_path)
+        self._check_selections(unv, ag_sel, ag_pair)
+        self._check_sys_settings(sys_settings)
+        self._check_trj_settings(unv, trj_settings)
+        self._check_opt_sapt_settings(opt_settings, sapt_settings)
+    
+    def _check_docking_inputs(self, yaml_dict: dict) -> None:
+        try:
+            top_path = yaml_dict['topology_directory']
+            ag_sel = yaml_dict['selection_resid_num']
+            ag_pair = yaml_dict['int_pairs']
+            sys_settings = yaml_dict['system_settings']
+            opt_settings = yaml_dict['opt_settings']
+            sapt_settings = yaml_dict['sapt_settings']
+        except KeyError as err:
+            logger.fatal(f'{err}: missing from YAML file')
+            raise InputError
+        
+        for path in top_path:
+            unv = self._check_top_files(path)
+            self._check_selections(unv, ag_sel)
+        
+        self._check_sys_settings(sys_settings)
+        self._check_opt_sapt_settings(opt_settings, sapt_settings)
 
+    @staticmethod 
+    def _check_trj_files(top_path: str, trj_path: str) -> mda.Universe:
         try:
             if not os.path.exists(os.path.join(os.getcwd(), top_path)):
                 raise InputError
@@ -120,24 +169,92 @@ class InputReader(object):
                 if not os.path.exists(os.path.join(os.getcwd(), f)):
                     raise InputError
             unv = mda.Universe(os.path.join(os.getcwd(), top_path), [os.path.join(os.getcwd(), x) for x in trj_path])
+            return unv
         except mda.exceptions.NoDataError or InputError or ValueError:
             logger.fatal('MD file error')
             raise InputError
 
+    def _check_top_files(top_path) -> mda.Universe:
+        try:
+            if not os.path.exists(os.path.join(os.getcwd(), top_path)):
+                raise InputError
+            unv = mda.Universe(os.path.join(os.getcwd(), top_path))
+            return unv
+        except mda.exceptions.NoDataError or InputError or ValueError:
+            logger.fatal('MD file error')
+            raise InputError
+
+    @staticmethod
+    def _check_selections(universe: mda.Universe, ag_sel: List[int], ag_pair: Optional[List[int, int]]) -> None:
         # Testing names and selections
         for sel in ag_sel:
             try:
-                ag = unv.select_atoms(f'resid {sel} and protein')
+                ag = universe.select_atoms(f'resid {sel} and protein')
             except mda.SelectionError:
                 raise InputError('Error in selection: {}'.format(sel))
+        
+        if ag_pair is not None:
+            for pair in ag_pair:
+                if len(pair) != 2:
+                    logger.fatal('Pairs must be a python list of integers with 2 items')
+                    raise InputError
+                found0 = False
+                found1 = False
+                for name in ag_sel:
+                    if pair[0] == name:
+                        found0 = True
+                    if pair[1] == name:
+                        found1 = True
+                if found0 is False:
+                    logger.fatal(f'{pair[0]} in {pair} group_pair_selections is not in defined in atom_group_names')
+                    raise InputError
+                if found1 is False:
+                    logger.fatal(f'{pair[1]} in {pair} group_pair_selections is not in defined in atom_group_names')
+                    raise InputError
+
+    @staticmethod
+    def _check_sys_settings(sys_settings: dict) -> None:
+        try:
+
+            cpu = sys_settings['ncpus']
+            mem = sys_settings['memory']
+            time = sys_settings['time']
+        
+        except:
+            logger.fatal(f'{err}: missing data in input file')
+            raise InputError
+
+    @staticmethod
+    def _check_trj_settings(universe: mda.Universe, trj_settings: dict) -> None:
 
         try:
             start = trj_settings['start']
             step = trj_settings['step']
             stop = trj_settings['stop']
-            cpu = sys_settings['ncpus']
-            mem = sys_settings['memory']
-            time = sys_settings['time']
+        
+        except KeyError:
+            logger.fatal(f'{err}: missing data in input file')
+            raise InputError
+
+        if start >= stop:
+            logger.fatal('Start is greater than or equal to stop')
+            raise InputError
+        if step >= stop:
+            logger.fatal('Step is greater than or equal to stop')
+            raise InputError
+        if step == 0:
+            logger.fatal('Step cannot be 0')
+            raise InputError
+
+        if len(universe.trajectory) < stop:
+            logger.fatal('Stop exceeds length of trajectory.')
+            raise InputError
+
+        logger.info('Input Parameters Accepted')
+
+    @staticmethod
+    def _check_opt_sapt_settings(opt_settings: dict, sapt_setting: dict) -> None:
+        try:
             pH = opt_settings['pH']
             method = sapt_settings['method']
             basis = sapt_settings['basis']
@@ -148,37 +265,3 @@ class InputReader(object):
 
             logger.fatal(f'{err}: missing data in input file')
             raise InputError
-
-        for pair in ag_pair:
-            if len(pair) != 2:
-                logger.fatal('Pairs must be a python list of integers with 2 items')
-                raise InputError
-            found0 = False
-            found1 = False
-            for name in ag_sel:
-                if pair[0] == name:
-                    found0 = True
-                if pair[1] == name:
-                    found1 = True
-            if found0 is False:
-                logger.fatal(f'{pair[0]} in {pair} group_pair_selections is not in defined in atom_group_names')
-                raise InputError
-            if found1 is False:
-                logger.fatal(f'{pair[1]} in {pair} group_pair_selections is not in defined in atom_group_names')
-                raise InputError
-
-            if start >= stop:
-                logger.fatal('Start is greater than or equal to stop')
-                raise InputError
-            if step >= stop:
-                logger.fatal('Step is greater than or equal to stop')
-                raise InputError
-            if step == 0:
-                logger.fatal('Step cannot be 0')
-                raise InputError
-
-            if len(unv.trajectory) < stop:
-                logger.fatal('Stop exceeds length of trajectory.')
-                raise InputError
-
-        logger.info('Input Parameters Accepted')
