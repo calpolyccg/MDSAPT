@@ -1,15 +1,9 @@
-topology_path:
-trajectory_paths:
-  -
+topology_directory: ''
 selection_resid_num:
   -
 int_pairs:
   # Place pair names defined above in list in a list
   - []
-trajectory_settings:
-  start:
-  stop:
-  step:
 system_settings:
   ncpus:
   memory:
