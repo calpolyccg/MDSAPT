@@ -10,6 +10,8 @@ standard amino acids.
 
 `Click here for the demo notebook! <https://mybinder.org/v2/gh/calpolyccg/MDSAPT_demo/master?labpath=MD-SAPT_demo.ipynb>`_
 
+For the poster we presented at ACS Spring 2022, `click here <./_static/mdsapt_poster.pdf>`_.
+
 
 .. toctree::
    :maxdepth: 4
