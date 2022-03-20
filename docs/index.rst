@@ -8,6 +8,7 @@ trajectories using `Psi4 <https://psicode.org>`_.
 Currently MD-SAPT is installable via GitHub and supports measuring interactions between ligands and
 standard amino acids.
 
+`Click here for the demo notebook! <https://mybinder.org/v2/gh/calpolyccg/MDSAPT_demo/master?labpath=MD-SAPT_demo.ipynb>`_
 
 
 .. toctree::
