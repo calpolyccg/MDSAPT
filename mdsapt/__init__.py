@@ -9,6 +9,8 @@ from .optimizer import Optimizer
 from .sapt import TrajectorySAPT
 from .viewer import Viewer
 
+from .cli import cli
+
 # Handle versioneer
 from ._version import get_versions
 versions = get_versions()
