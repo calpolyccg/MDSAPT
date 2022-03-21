@@ -7,6 +7,7 @@ channels:
   - defaults
 dependencies:
   - mdanalysis
+  - click
   - numpy
   - openmm
   - pandas
