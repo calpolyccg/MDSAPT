@@ -8,6 +8,8 @@ from . import log
 from .config import Config, load_from_yaml_file
 from .sapt import TrajectorySAPT, DockingSAPT
 
+from .cli import cli
+
 # Handle versioneer
 from ._version import get_versions
 versions = get_versions()
