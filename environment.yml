@@ -10,6 +10,7 @@ dependencies:
   - psi4>=1.6.1,<1.7
 
   - mdanalysis>=2.2.0,<2.3
+  - click
   - numpy
   - openmm
   - pandas
