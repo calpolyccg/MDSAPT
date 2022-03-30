@@ -10,7 +10,7 @@ import click
 logger = logging.getLogger(__name__)
 
 _dir_path = os.path.dirname(os.path.realpath(__file__))
-"""Location of the mdsapt package."""
+"""Location of the mdsapt package to be used in resolving templates."""
 
 
 @click.group()
@@ -29,7 +29,7 @@ def cli():
 )
 @click.option(
     '-t', '--template', 'template',
-    help="Template to generate from.",
+    help="Template to generate from. By default, trajectory.",
     type=click.Choice(['trajectory', 'docking'], case_sensitive=False),
     default='trajectory',
 )
