@@ -7,7 +7,6 @@ from . import log
 from .reader import InputReader
 from .optimizer import Optimizer
 from .sapt import TrajectorySAPT
-from .viewer import Viewer
 
 from .cli import cli
 
