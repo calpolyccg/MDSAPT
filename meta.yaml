@@ -23,7 +23,6 @@ requirements:
   run:
     - psi4
     - mdanalysis
-    - nglview
     - numpy
     - openmm
     - pandas
@@ -39,6 +38,7 @@ test:
   requires:
     - pip
     - pytest
+    - nglview
   commands:
     - pip check
     # This is currently disabled because it does not work.
