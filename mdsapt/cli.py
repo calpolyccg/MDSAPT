@@ -29,8 +29,8 @@ def cli():
 )
 @click.option(
     '-t', '--template', 'template',
-    help="Template to generate from. By default, trajectory.",
-    type=click.Choice(['trajectory', 'docking'], case_sensitive=False),
+    help="Template to generate from. Currently only supports trajectory.",
+    type=click.Choice(['trajectory'], case_sensitive=False),
     default='trajectory',
 )
 @click.option(
