@@ -9,7 +9,7 @@ from MDAnalysis.topology.guessers import guess_types
 from rdkit.Chem.rdmolops import AddHs
 import rdkit.Chem as chem
 
-from ..reader import InputReader
+from ..config import InputReader
 from ..sapt import TrajectorySAPT
 from ..optimizer import Optimizer
 

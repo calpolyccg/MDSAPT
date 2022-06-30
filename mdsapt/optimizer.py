@@ -35,7 +35,7 @@ from simtk.openmm.app import PDBFile
 
 import numpy as np
 
-from .reader import InputReader
+from .config import InputReader
 
 import logging
 

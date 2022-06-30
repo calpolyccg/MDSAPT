@@ -8,7 +8,7 @@ import os
 import MDAnalysis as mda
 
 from ..optimizer import Optimizer
-from ..reader import InputReader
+from ..config import InputReader
 
 
 class TestOptimizer(object):

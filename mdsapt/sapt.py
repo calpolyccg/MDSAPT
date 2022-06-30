@@ -29,7 +29,7 @@ import psi4
 
 from rdkit import Chem
 
-from .reader import InputReader
+from .config import InputReader
 from .optimizer import Optimizer, get_spin_multiplicity
 
 import logging

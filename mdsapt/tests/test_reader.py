@@ -4,7 +4,7 @@ import pytest
 
 import os
 
-from ..reader import InputReader, InputError
+from ..config import InputReader, InputError
 
 
 class TestInputReader(object):

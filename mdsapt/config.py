@@ -7,7 +7,7 @@ class`mdsapt.reader.InputReader` is responsible for reading the yaml file and
 returning the information from it. If a yaml file is needed it can be generated
 using the included *mdsapt_get_runinput* script.
 
-.. autoexception:: InputError
+.. autoexception:: ConfigurationError
 
 .. autoclass:: InputReader
     :members:
@@ -15,22 +15,108 @@ using the included *mdsapt_get_runinput* script.
 """
 
 import os
-from typing import List
+from enum import Enum
+from typing import List, Union, Dict, Tuple, Iterable, Generic, TypeVar, Self, Literal
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
 
 import yaml
+import psi4.driver.procrouting.proc_table as proc_table
 
 import MDAnalysis as mda
 
 import logging
+
+from pydantic import BaseModel, validator, conint, Field
+
 logger = logging.getLogger('mdsapt.reader')
 
 
-class InputError(Exception):
+class ConfigurationError(Exception):
     """Raised when error is found in the yaml input"""
     pass
 
 
-class InputReader(object):
+class Psi4Config(BaseModel):
+    """Psi4 configuration details"""
+
+    method: str
+    """
+    The SAPT method to use.
+    
+    NOTE: You can use any valid Psi4 method, but it might fail if you don't use a SAPT method.
+    """
+
+    basis: str
+    """
+    The basis to use in Psi4.
+    
+    NOTE: We do not verify if this is a valid basis set or not.
+    """
+    save_output: bool  # whether to save the raw output of Psi4. May be useful for debugging.
+
+    settings: Dict[str, str]  # Other Psi4 settings you would like to provide.
+
+    @validator('method')
+    def check_valid_method(self, v):
+        if v not in proc_table.procedures['energy'].keys():
+            raise ValueError(f"method {v} not supported by Psi4! See Psi4 docs for list of valid methods.")
+        return v
+
+
+class SysLimitsConfig(BaseModel):
+    """Resource limits for your system."""
+    ncpus: conint(ge=1)
+    memory: str
+
+
+class ChargeGuesser(Enum):
+    Standard = 'standard'
+    RDKit = 'rdkit'
+
+
+class SimulationConfig(BaseModel):
+    ph: float
+    charge_guesser: ChargeGuesser
+
+
+class TopologySelection(BaseModel):
+    path: str
+    charge_overrides: Dict[int, int]
+
+
+class TrajectoryAnalysisConfig(BaseModel):
+    type: Literal['trajectory']
+    topology: TopologySelection
+    trajectories: List[str]
+    pairs: List[Tuple[int, int]]
+    frames: Iterable[int]
+    """
+    A selection of the frames used in this analysis.
+    
+    Serialization behavior
+    ----------------------
+    If this value is a range, it will be serialized using start/stop/step.
+    Otherwise, it will be serialized into a List[int].
+    """
+    output: str
+
+
+class DockingAnalysisConfig(BaseModel):
+    type: Literal['docking']
+    topologies: List[str]
+    pairs: List[Tuple[int, int]]
+    output: str
+
+
+class Config(BaseModel):
+    psi4: Psi4Config
+    simulation: SimulationConfig
+    system_limits: SysLimitsConfig
+    analysis: Union[TrajectoryAnalysisConfig, DockingAnalysisConfig] = Field(..., discriminator='type')
+
+
+class InputReader:
     """Reader for yaml inputs"""
 
     top_path: str
@@ -57,13 +143,13 @@ class InputReader(object):
          and saves its data as instance variables.
 
          Errors in run input will result in
-         :class`mdsapt.reader.InputError` being
+         :class`mdsapt.reader.ConfigurationError` being
          raised."""
         self.load_input(path)
 
     def load_input(self, path: str) -> None:
         """Loads input file from path and records settings.
-         If an error is found :class:`mdsapt.reader.InputError`
+         If an error is found :class:`mdsapt.reader.ConfigurationError`
          is raised.
 
          :Arguments:
@@ -73,9 +159,9 @@ class InputReader(object):
             in_cfg = yaml.safe_load(open(path))
             self._check_inputs(in_cfg)
             self._save_params(in_cfg)
-        except IOError or InputError:
+        except IOError or ConfigurationError:
             logger.fatal(f'error loading file {path}')
-            raise InputError
+            raise ConfigurationError
 
     def _save_params(self, yaml_dict: dict) -> None:
         self.top_path = yaml_dict['topology_path']
@@ -111,25 +197,25 @@ class InputReader(object):
             sapt_settings = yaml_dict['sapt_settings']
         except KeyError as err:
             logger.fatal(f'{err}: missing from YAML file')
-            raise InputError
+            raise ConfigurationError
 
         try:
             if not os.path.exists(os.path.join(os.getcwd(), top_path)):
-                raise InputError
+                raise ConfigurationError
             for f in trj_path:
                 if not os.path.exists(os.path.join(os.getcwd(), f)):
-                    raise InputError
+                    raise ConfigurationError
             unv = mda.Universe(os.path.join(os.getcwd(), top_path), [os.path.join(os.getcwd(), x) for x in trj_path])
-        except mda.exceptions.NoDataError or InputError or ValueError:
+        except mda.exceptions.NoDataError or ConfigurationError or ValueError:
             logger.fatal('MD file error')
-            raise InputError
+            raise ConfigurationError
 
         # Testing names and selections
         for sel in ag_sel:
             try:
                 ag = unv.select_atoms(f'resid {sel} and protein')
             except mda.SelectionError:
-                raise InputError('Error in selection: {}'.format(sel))
+                raise ConfigurationError('Error in selection: {}'.format(sel))
 
         try:
             start = trj_settings['start']
@@ -147,12 +233,12 @@ class InputReader(object):
         except KeyError as err:
 
             logger.fatal(f'{err}: missing data in input file')
-            raise InputError
+            raise ConfigurationError
 
         for pair in ag_pair:
             if len(pair) != 2:
                 logger.fatal('Pairs must be a python list of integers with 2 items')
-                raise InputError
+                raise ConfigurationError
             found0 = False
             found1 = False
             for name in ag_sel:
@@ -162,23 +248,23 @@ class InputReader(object):
                     found1 = True
             if found0 is False:
                 logger.fatal(f'{pair[0]} in {pair} group_pair_selections is not in defined in atom_group_names')
-                raise InputError
+                raise ConfigurationError
             if found1 is False:
                 logger.fatal(f'{pair[1]} in {pair} group_pair_selections is not in defined in atom_group_names')
-                raise InputError
+                raise ConfigurationError
 
             if start >= stop:
                 logger.fatal('Start is greater than or equal to stop')
-                raise InputError
+                raise ConfigurationError
             if step >= stop:
                 logger.fatal('Step is greater than or equal to stop')
-                raise InputError
+                raise ConfigurationError
             if step == 0:
                 logger.fatal('Step cannot be 0')
-                raise InputError
+                raise ConfigurationError
 
             if len(unv.trajectory) < stop:
                 logger.fatal('Stop exceeds length of trajectory.')
-                raise InputError
+                raise ConfigurationError
 
         logger.info('Input Parameters Accepted')

@@ -1,24 +1,59 @@
-topology_path:
-trajectory_paths:
-  -
-selection_resid_num:
-  -
-int_pairs:
-  # Place pair names defined above in list in a list
-  - []
-trajectory_settings:
-  start:
-  stop:
-  step:
-system_settings:
-  ncpus:
-  memory:
-  time:
-opt_settings:
-  pH: 7.0
-sapt_settings:
+psi4:
   method: 'sapt'
   basis: 'jun-cc-pvdz'
+  save_output: true
   settings:
     reference: 'rhf'
-  save_psi4_output: true
+simulation:
+  ph: 7.0
+  charge_guesser: 'standard'
+  # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+system_limits:
+  ncpus:
+  memory:
+analysis:
+#  ### For running TrajectorySAPT
+#  type: 'trajectory'
+#
+#  topology: 'your/file/path.pdb'
+#  # If you want to override the charges of specific, you may specify it this way.
+#  # topology:
+#  #    path: 'your/file/path.pdb'
+#  #    charge_overrides:
+#  #      132: -2
+#
+#  trajectories:
+#    - 'your/trajectory/path.dcd'
+#  pairs:
+#    - [132, 152]
+#    - [34, 152]
+#  frames:
+#    # # To select a range of frames:
+#    # start:
+#    # stop:
+#    # step:
+#
+#    # # To select a set of specific frames:
+#    # - 1
+#    # - 4
+#    # - 8
+#
+#  output: 'output.csv'
+
+#  ### For running DockingSAPT
+#  type: 'docking'
+#
+#  topologies:
+#    - 'one/topology.pdb'
+#    - 'another/topology.pdb'
+#    - 'a/glob/of/topologies/*.pdb'
+#    - 'a/directory/full/of/topologies'
+#    - path: 'one/specific/topology/with/weird/charges.pdb'
+#      charge_overrides:
+#        145: -4
+#
+#  pairs:
+#    - [132, 152]
+#    - [34, 152]
+#
+#  output: 'output.csv'

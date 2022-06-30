@@ -24,7 +24,7 @@ from .sapt import TrajectorySAPT
 
 import MDAnalysis as mda
 
-from .reader import InputReader
+from .config import InputReader
 from .optimizer import Optimizer
 
 
