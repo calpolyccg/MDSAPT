@@ -16,11 +16,10 @@ using the included *mdsapt_get_runinput* script.
 
 import os
 from enum import Enum
-from typing import List, Dict, Tuple, Iterable, Generic, TypeVar, Self, Literal, Optional, Union, Any, Set
+from pathlib import Path
+from typing import List, Dict, Tuple, Literal, Optional, Union, Any, Set
 
 import yaml
-
-import psi4.driver.procrouting.proc_table as proc_table
 
 import MDAnalysis as mda
 
@@ -48,12 +47,6 @@ class Psi4Config(BaseModel):
     save_output: bool  # whether to save the raw output of Psi4. May be useful for debugging.
     settings: Dict[str, str]  # Other Psi4 settings you would like to provide.
 
-    @validator('method')
-    def check_valid_method(self, v):
-        if v not in proc_table.procedures['energy'].keys():
-            raise ValueError(f"method {v} not supported by Psi4! See Psi4 docs for list of valid methods.")
-        return v
-
 
 class SysLimitsConfig(BaseModel):
     """Resource limits for your system."""
@@ -71,13 +64,18 @@ class SimulationConfig(BaseModel):
     charge_guesser: ChargeGuesser
 
 
-class TopologySelection(BaseModel):
+class DetailedTopologySelection(BaseModel):
     path: FilePath
     charge_overrides: Dict[int, int] = Field(default_factory=dict)
 
-    @root_validator(pre=True)
-    def allow_simple_string_path(self, v: str):
-        FilePath(v)
+
+TopologySelection = Union[FilePath, DetailedTopologySelection]
+
+
+def topology_selection_path(sel: TopologySelection) -> FilePath:
+    if isinstance(sel, DetailedTopologySelection):
+        return sel.path
+    return sel
 
 
 class RangeFrameSelection(BaseModel):
@@ -86,7 +84,7 @@ class RangeFrameSelection(BaseModel):
     step: Optional[conint(ge=1)]
 
     @root_validator()
-    def check_start_before_stop(self, values: Dict[str, int]) -> Dict[str, int]:
+    def check_start_before_stop(cls, values: Dict[str, int]) -> Dict[str, int]:
         assert values['start'] <= values['stop'], "start must be before stop"
         return values
 
@@ -108,16 +106,17 @@ class TrajectoryAnalysisConfig(BaseModel):
     output: str
 
     @root_validator()
-    def check_valid_md_system(self, values: Dict[str, Any]) -> Dict[str, Any]:
+    def check_valid_md_system(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         errors: List[str] = []
 
-        top_path: FilePath = values['topology']
+        top_path: TopologySelection = values['topology']
         trj_path: List[FilePath] = values['trajectories']
         ag_pair: List[Tuple[conint(ge=0), conint(ge=0)]] = values['pairs']
         frames: Union[List[int], RangeFrameSelection] = values['frames']
 
         try:
-            unv = mda.Universe(top_path, trj_path)
+            unv = mda.Universe(str(topology_selection_path(top_path)),
+                               [str(p) for p in trj_path])
         except mda.exceptions.NoDataError or ValueError:
             raise ValueError('Error while creating universe using provided topology and trajectories')
 
@@ -141,7 +140,6 @@ class TrajectoryAnalysisConfig(BaseModel):
                     errors.append(f'Frame {frame} exceeds trajectory length {trajlen}')
 
         if len(errors) > 0:
-            logger.error(errors)
             raise ValidationError(errors)
         return values
 
@@ -157,6 +155,18 @@ class Config(BaseModel):
     simulation: SimulationConfig
     system_limits: SysLimitsConfig
     analysis: Union[TrajectoryAnalysisConfig, DockingAnalysisConfig] = Field(..., discriminator='type')
+
+
+def load_from_yaml_file(path: Union[str, Path]) -> Config:
+    if isinstance(path, str):
+        path = Path(path)
+
+    with path.open() as f:
+        try:
+            return Config(**yaml.safe_load(f))
+        except ValidationError as err:
+            logger.exception(f"Error while loading {path}")
+            raise err
 
 
 class InputReader:
