@@ -16,7 +16,7 @@ using the included *mdsapt_get_runinput* script.
 
 import os
 from enum import Enum
-from typing import List, Union, Dict, Tuple, Iterable, Generic, TypeVar, Self, Literal
+from typing import List, Dict, Tuple, Iterable, Generic, TypeVar, Self, Literal, Optional, Union
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
@@ -27,14 +27,9 @@ import MDAnalysis as mda
 
 import logging
 
-from pydantic import BaseModel, validator, conint, Field
+from pydantic import BaseModel, validator, conint, Field, root_validator, FilePath, ValidationError
 
 logger = logging.getLogger('mdsapt.reader')
-
-
-class ConfigurationError(Exception):
-    """Raised when error is found in the yaml input"""
-    pass
 
 
 class Psi4Config(BaseModel):
@@ -84,13 +79,31 @@ class TopologySelection(BaseModel):
     path: str
     charge_overrides: Dict[int, int]
 
+    @validator('path')
+    def check_valid_path(self, v):
+        path = os.path.join(os.curdir, v)
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"specified topology file: {path} not found")
+        return v
+
+
+class RangeFrameSelection(BaseModel):
+    start: Optional[conint(ge=0)] = None
+    stop: Optional[conint(ge=0)] = None
+    step: Optional[conint(ge=1)] = None
+
+    @root_validator()
+    def check_start_before_stop(self, values):
+        assert values['start'] <= values['stop'], "start must be before stop"
+        return values
+
 
 class TrajectoryAnalysisConfig(BaseModel):
     type: Literal['trajectory']
     topology: TopologySelection
-    trajectories: List[str]
+    trajectories: List[FilePath]
     pairs: List[Tuple[int, int]]
-    frames: Iterable[int]
+    frames: Union[List[int], RangeFrameSelection]
     """
     A selection of the frames used in this analysis.
     
@@ -100,6 +113,42 @@ class TrajectoryAnalysisConfig(BaseModel):
     Otherwise, it will be serialized into a List[int].
     """
     output: str
+
+    @root_validator()
+    def check_valid_md_system(self, values):
+        errors = []
+
+        top_path = values['topology']
+        trj_path = values['trajectories']
+        ag_pair = values['pairs']
+        frames = values['frames']
+
+        try:
+            unv = mda.Universe(top_path, trj_path)
+        except mda.exceptions.NoDataError or ValueError:
+            raise ValueError('Error while creating universe using provided topology and trajectories')
+
+        # Ensure that
+        items = {i for pair in ag_pair for i in pair}
+        for sel in items:
+            try:
+                unv.select_atoms(f'resid {sel} and protein')
+            except mda.SelectionError:
+                errors.append('Error in selection: {}'.format(sel))
+
+        trajlen = len(unv.trajectory)
+        if isinstance(frames, RangeFrameSelection):
+            if trajlen <= frames.stop:
+                errors.append(f'Stop {frames.stop} exceeds trajectory length {trajlen}.')
+        else:
+            frames: List[int]
+            for frame in frames:
+                if frame >= trajlen:
+                    errors.append(f'Frame {frame} exceeds trajectory length {trajlen}')
+
+        if len(errors) > 0:
+            raise ValidationError(errors)
+        return values
 
 
 class DockingAnalysisConfig(BaseModel):
