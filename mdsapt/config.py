@@ -16,40 +16,36 @@ using the included *mdsapt_get_runinput* script.
 
 import os
 from enum import Enum
-from typing import List, Dict, Tuple, Iterable, Generic, TypeVar, Self, Literal, Optional, Union
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
+from typing import List, Dict, Tuple, Iterable, Generic, TypeVar, Self, Literal, Optional, Union, Any, Set
 
 import yaml
+
 import psi4.driver.procrouting.proc_table as proc_table
 
 import MDAnalysis as mda
 
 import logging
 
-from pydantic import BaseModel, validator, conint, Field, root_validator, FilePath, ValidationError
+from pydantic import BaseModel, validator, conint, Field, root_validator, FilePath, ValidationError, DirectoryPath
 
-logger = logging.getLogger('mdsapt.reader')
+logger = logging.getLogger('mdsapt.config')
 
 
 class Psi4Config(BaseModel):
-    """Psi4 configuration details"""
+    """Psi4 configuration details
 
-    method: str
-    """
     The SAPT method to use.
-    
-    NOTE: You can use any valid Psi4 method, but it might fail if you don't use a SAPT method.
-    """
 
-    basis: str
-    """
+    NOTE: You can use any valid Psi4 method, but it might fail if you don't use a SAPT method.
+
     The basis to use in Psi4.
-    
+
     NOTE: We do not verify if this is a valid basis set or not.
     """
-    save_output: bool  # whether to save the raw output of Psi4. May be useful for debugging.
 
+    method: str
+    basis: str
+    save_output: bool  # whether to save the raw output of Psi4. May be useful for debugging.
     settings: Dict[str, str]  # Other Psi4 settings you would like to provide.
 
     @validator('method')
@@ -76,52 +72,49 @@ class SimulationConfig(BaseModel):
 
 
 class TopologySelection(BaseModel):
-    path: str
-    charge_overrides: Dict[int, int]
+    path: FilePath
+    charge_overrides: Dict[int, int] = Field(default_factory=dict)
 
-    @validator('path')
-    def check_valid_path(self, v):
-        path = os.path.join(os.curdir, v)
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"specified topology file: {path} not found")
-        return v
+    @root_validator(pre=True)
+    def allow_simple_string_path(self, v: str):
+        FilePath(v)
 
 
 class RangeFrameSelection(BaseModel):
-    start: Optional[conint(ge=0)] = None
-    stop: Optional[conint(ge=0)] = None
-    step: Optional[conint(ge=1)] = None
+    start: Optional[conint(ge=0)]
+    stop: Optional[conint(ge=0)]
+    step: Optional[conint(ge=1)]
 
     @root_validator()
-    def check_start_before_stop(self, values):
+    def check_start_before_stop(self, values: Dict[str, int]) -> Dict[str, int]:
         assert values['start'] <= values['stop'], "start must be before stop"
         return values
 
 
 class TrajectoryAnalysisConfig(BaseModel):
-    type: Literal['trajectory']
-    topology: TopologySelection
-    trajectories: List[FilePath]
-    pairs: List[Tuple[int, int]]
-    frames: Union[List[int], RangeFrameSelection]
     """
     A selection of the frames used in this analysis.
-    
+
     Serialization behavior
     ----------------------
     If this value is a range, it will be serialized using start/stop/step.
     Otherwise, it will be serialized into a List[int].
     """
+    type: Literal['trajectory']
+    topology: TopologySelection
+    trajectories: List[FilePath]
+    pairs: List[Tuple[conint(ge=0), conint(ge=0)]]
+    frames: Union[List[int], RangeFrameSelection]
     output: str
 
     @root_validator()
-    def check_valid_md_system(self, values):
-        errors = []
+    def check_valid_md_system(self, values: Dict[str, Any]) -> Dict[str, Any]:
+        errors: List[str] = []
 
-        top_path = values['topology']
-        trj_path = values['trajectories']
-        ag_pair = values['pairs']
-        frames = values['frames']
+        top_path: FilePath = values['topology']
+        trj_path: List[FilePath] = values['trajectories']
+        ag_pair: List[Tuple[conint(ge=0), conint(ge=0)]] = values['pairs']
+        frames: Union[List[int], RangeFrameSelection] = values['frames']
 
         try:
             unv = mda.Universe(top_path, trj_path)
@@ -129,14 +122,15 @@ class TrajectoryAnalysisConfig(BaseModel):
             raise ValueError('Error while creating universe using provided topology and trajectories')
 
         # Ensure that
-        items = {i for pair in ag_pair for i in pair}
+        items: Set[int] = {i for pair in ag_pair for i in pair}
+
         for sel in items:
             try:
                 unv.select_atoms(f'resid {sel} and protein')
             except mda.SelectionError:
                 errors.append('Error in selection: {}'.format(sel))
 
-        trajlen = len(unv.trajectory)
+        trajlen: int = len(unv.trajectory)
         if isinstance(frames, RangeFrameSelection):
             if trajlen <= frames.stop:
                 errors.append(f'Stop {frames.stop} exceeds trajectory length {trajlen}.')
@@ -147,15 +141,15 @@ class TrajectoryAnalysisConfig(BaseModel):
                     errors.append(f'Frame {frame} exceeds trajectory length {trajlen}')
 
         if len(errors) > 0:
+            logger.error(errors)
             raise ValidationError(errors)
         return values
 
 
 class DockingAnalysisConfig(BaseModel):
     type: Literal['docking']
-    topologies: List[str]
+    topologies: Union[List[TopologySelection], DirectoryPath]
     pairs: List[Tuple[int, int]]
-    output: str
 
 
 class Config(BaseModel):
