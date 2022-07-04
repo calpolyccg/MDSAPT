@@ -7,12 +7,20 @@ channels:
   - defaults
 dependencies:
   - mdanalysis>=2.0.0, <2.1
-  - nglview>=3.0.3, <3.1
   - numpy
   - openmm
   - pandas
   - pdbfixer
   - psi4
-  - pytest-cov
   - pyyaml
   - rdkit
+
+  # Optional deps
+  - nglview>=3.0.3, <3.1
+
+  # Development deps
+  - autopep8
+  - pyright # type-checking
+  - pylint
+  - pytest
+  - pytest-cov

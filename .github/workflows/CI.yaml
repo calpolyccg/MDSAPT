@@ -50,23 +50,31 @@ jobs:
         auto-update-conda: false
         auto-activate-base: false
         use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+    
+    # TODO: Fix linting and type-checking
+    - name: Lint
+      run: |
+        pylint mdsapt
+
+    - name: Type-check
+      if: always() # run anyways if lint fails
+      run: |
+        pyright mdsapt
 
     - name: Install MDSAPT package
-      # conda setup requires this special shell
-      shell: bash -l {0}
+      if: always() # run anyways if lint/typecheck fails
       run: |
         python -m pip install . --no-deps
         conda list
 
-    # TODO: possibly integrate this step with meta.yml?
     - name: Run tests
-      # conda setup requires this special shell
-      shell: bash -l {0}
+      id: run-tests # run anyways if lint/typecheck fails
+      if: always()
       run: |
-        pip install pytest-cov
         pytest -v ./mdsapt --cov=mdsapt --cov-report=xml
 
     - name: Upload CodeCov
+      if: steps.run-tests.outputs.status == 'success'
       uses: codecov/codecov-action@v2
       with:
         file: ./coverage.xml
@@ -162,3 +170,20 @@ jobs:
       shell: bash -l {0}
       run: >
         python3 -c "import mdsapt"
+
+  check-formatting:
+    name: Ensure code follows PEP8 styling
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install autopep8
+      shell: bash -l {0}
+      run: |
+        pip install autopep8
+
+    - name: Run autopep8 over code
+      shell: bash -l {0}
+      run: |
+        autopep8 -r mdsapt --diff --exit-code
