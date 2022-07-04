@@ -17,7 +17,8 @@ using the included *mdsapt_get_runinput* script.
 import os
 from enum import Enum
 from pathlib import Path
-from typing import List, Dict, Tuple, Literal, Optional, Union, Any, Set
+from typing import List, Dict, Tuple, Literal, Optional, \
+    Union, Any, Set
 
 import yaml
 
@@ -25,7 +26,8 @@ import MDAnalysis as mda
 
 import logging
 
-from pydantic import BaseModel, validator, conint, Field, root_validator, FilePath, ValidationError, DirectoryPath
+from pydantic import BaseModel, conint, Field, root_validator, \
+    FilePath, ValidationError, DirectoryPath
 
 logger = logging.getLogger('mdsapt.config')
 
