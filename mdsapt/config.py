@@ -146,6 +146,14 @@ class TrajectoryAnalysisConfig(BaseModel):
             raise ValidationError(errors)
         return values
 
+    def get_universe(self, **universe_kwargs) -> mda.Universe:
+        return mda.Universe(str(topology_selection_path(self.topology)),
+                            [str(path) for path in self.trajectories],
+                            **universe_kwargs)
+
+    def get_selections(self) -> Set[int]:
+        return {i for pair in self.pairs for i in pair}
+
 
 class DockingAnalysisConfig(BaseModel):
     type: Literal['docking']
