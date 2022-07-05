@@ -19,7 +19,7 @@ jobs:
     name: Test on py${{ matrix.python-version }}/${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [macOS-latest, ubuntu-latest]
         python-version: [3.7, 3.8, 3.9]
