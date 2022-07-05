@@ -1,25 +1,57 @@
-topology_path: mdsapt/tests/testing_resources/testtop.psf
-trajectory_paths:
-  - mdsapt/tests/testing_resources/testtraj.dcd
-selection_resid_num:
-  - 11
-  - 199
-int_pairs:
-  # Place pair of  selections defined above in a list of lists
-  - [11, 199]
-trajectory_settings:
-  start: 1
-  stop: 2
-  step: 1
-system_settings:
-  ncpus: 16
-  memory: 48GB
-  time: '24:00:00'
-opt_settings:
-  pH: 7.0
-sapt_settings:
+psi4:
   method: 'sapt0'
-  basis: 'dz'
+  basis: 'jun-cc-pvdz'
+  save_output: true
   settings:
     reference: 'rhf'
-  save_psi4_output: true
+simulation:
+  ph: 7.0
+  charge_guesser: 'standard'
+  # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+system_limits:
+  ncpus: 5
+  memory: '1GB'
+analysis:
+  ### This section is for running TrajectorySAPT. To run other types of analyses, see below.
+  type: 'trajectory'
+
+  topology: 'mdsapt/tests/testing_resources/testtop.psf'
+  # If you want to override the charges of specific, you may specify it this way.
+  # topology:
+  #    path: 'your/file/path.pdb'
+  #    charge_overrides:
+  #      132: -2
+
+  trajectories:
+    - 'mdsapt/tests/testing_resources/testtraj.dcd'
+  pairs:
+    - [11, 119]
+  frames:
+    # To select a set of specific frames:
+    - 1
+    - 2
+
+    # # Alternatively, to select a range of frames: (these are mutually exclusive)
+    # start:
+    # stop:
+    # step:
+
+  output: 'output.csv'
+
+#  ### For running DockingSAPT
+#  type: 'docking'
+#
+#  topologies:
+#    - 'one/topology.pdb'
+#    - 'another/topology.pdb'
+#    - 'a/glob/of/topologies/*.pdb'
+#    - 'a/directory/full/of/topologies'
+#    - path: 'one/specific/topology/with/weird/charges.pdb'
+#      charge_overrides:
+#        145: -4
+#
+#  pairs:
+#    - [132, 152]
+#    - [34, 152]
+#
+#  output: 'output.csv'
