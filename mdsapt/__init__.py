@@ -4,7 +4,7 @@
 from . import log
 
 # Import core classes
-from .config import InputReader
+from .config import Config
 from .optimizer import Optimizer
 from .sapt import TrajectorySAPT
 from .viewer import Viewer

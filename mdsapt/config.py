@@ -14,7 +14,6 @@ using the included *mdsapt_get_runinput* script.
     :inherited-members:
 """
 
-import os
 from enum import Enum
 from pathlib import Path
 from typing import List, Dict, Tuple, Literal, Optional, \
@@ -119,17 +118,19 @@ class TrajectoryAnalysisConfig(BaseModel):
         try:
             unv = mda.Universe(str(topology_selection_path(top_path)),
                                [str(p) for p in trj_path])
-        except mda.exceptions.NoDataError or ValueError:
-            raise ValueError('Error while creating universe using provided topology and trajectories')
+        except (mda.exceptions.NoDataError, OSError, ValueError):
+            errors.append('Error while creating universe using provided topology and trajectories')
+            raise ValidationError(errors)  # If Universe doesn't load need to stop
 
         # Ensure that
         items: Set[int] = {i for pair in ag_pair for i in pair}
 
         for sel in items:
-            try:
-                unv.select_atoms(f'resid {sel} and protein')
-            except mda.SelectionError:
-                errors.append('Error in selection: {}'.format(sel))
+            ag: mda.AtomGroup = unv.select_atoms(f'resid {sel}')
+            if len(ag) == 0:
+                errors.append(f"Selection {sel} returns an empty AtomGroup.")
+
+
 
         trajlen: int = len(unv.trajectory)
         if isinstance(frames, RangeFrameSelection):
