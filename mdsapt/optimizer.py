@@ -20,7 +20,7 @@ Required Input:
 
 """
 
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import MDAnalysis as mda
 
@@ -35,7 +35,7 @@ from simtk.openmm.app import PDBFile
 
 import numpy as np
 
-from .reader import InputReader
+from .config import Config
 
 import logging
 
@@ -70,7 +70,9 @@ class Optimizer(object):
     aforementioned process. Selected molecules besides amino
     acids will pass through without modification.
     """
-    _settings: InputReader
+    _resids: Dict[int, mda.AtomGroup]
+    _unv: mda.Universe
+    _settings: Config
     _bond_lengths: Dict[int, float] = {
         'ALA': 1.1,
         'ARG': 1.1,
@@ -96,7 +98,7 @@ class Optimizer(object):
 
     _std_resids: List[str] = [x for x in _bond_lengths.keys()]
 
-    def __init__(self, settings: InputReader) -> None:
+    def __init__(self, config: Config) -> None:
         """Prepares selected residues for SAPT calculations
         by adding missing protons.
 
@@ -104,18 +106,22 @@ class Optimizer(object):
             *settings*
                 :class:`mdsapt.reader.InputReader`
         """
-        self._settings = settings
+        self._settings = config
+        self._unv = mda.Universe(str(self._settings.analysis.topology),
+                                 [str(path) for path in self._settings.analysis.trajectories])
+        ag_sel: Set[int] = {i for pair in config.analysis.pairs for i in pair}
+        self._resids = {x: self._unv.select_atoms(f'resid {x} and protein') for x in ag_sel}
 
-    def _is_amino(self, key: int, resid: mda.AtomGroup) -> bool:
-        resname_atr = self.resid.universe._topology.resnames
+    def _is_amino(self, key: int) -> bool:
+        resname_atr = self._resids[key].universe._topology.resnames
         return resname_atr.values[key - 1] in self._std_resids
 
     def rebuild_resid(self, key: int, resid: mda.AtomGroup) -> mda.AtomGroup:
         """Rebuilds residue by replacing missing protons and adding a new proton
          on the C terminus. Raises key error if class
         has no value for that optimization."""
-        resname_atr = resid.universe._topology.resnames
-        if resname_atr.values[key - 1] in self._std_resids:
+        if self._is_amino(key):
+            resname_atr = self._resids[key].universe._topology.resnames
             resname = resname_atr.values[key - 1]
             step0: mda.AtomGroup = self._fix_amino(resid)
             step1: mda.Universe = self._protonate_backbone(step0, length=self._bond_lengths[resname])
@@ -128,7 +134,7 @@ class Optimizer(object):
         fixer = PDBFixer(filename='resid.pdb')
         fixer.findMissingResidues()
         fixer.findMissingAtoms()
-        fixer.addMissingHydrogens(self._settings.pH)  # Adding protons at pH value
+        fixer.addMissingHydrogens(self._settings.simulation.ph)  # Adding protons at pH value
         PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
 
         res_fixed = mda.Universe('resid_fixed.pdb')

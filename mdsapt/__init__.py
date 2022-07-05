@@ -4,7 +4,7 @@
 from . import log
 
 # Import core classes
-from .reader import InputReader
+from .config import Config
 from .optimizer import Optimizer
 from .sapt import TrajectorySAPT
 from .viewer import Viewer
@@ -26,7 +26,7 @@ def log_banner():
     """Log program name and licence at INFO level"""
     logger.info(f"MDSAPT {__version__} starting")
     logger.info("Copyright (c) 2021 Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald")
-    logger.info("Released under MIT Licence")
+    logger.info("Released under GPLv3 License")
 
 
 logger = create_logger()

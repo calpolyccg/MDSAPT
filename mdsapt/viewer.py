@@ -24,7 +24,7 @@ from .sapt import TrajectorySAPT
 
 import MDAnalysis as mda
 
-from .reader import InputReader
+from .config import Config
 from .optimizer import Optimizer
 
 
@@ -33,9 +33,9 @@ class Viewer(object):
     _unv: mda.Universe
     _opt: Optimizer
 
-    def __init__(self, settings: InputReader) -> None:
+    def __init__(self, settings: Config) -> None:
         """Sets up visualizations for selected residues"""
-        self._unv = mda.Universe(settings.top_path, settings.trj_path)
+        self._unv = mda.Universe(settings.analysis.topology, settings.analysis.trajectories)
         self._opt = Optimizer(settings)
 
     @staticmethod
