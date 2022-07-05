@@ -6,7 +6,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - mdanalysis>=2.0.0, <2.1
+  - mdanalysis
   - numpy
   - openmm
   - pandas
@@ -16,7 +16,7 @@ dependencies:
   - rdkit
 
   # Optional deps
-  - nglview>=3.0.3, <3.1
+  - nglview
 
   # Development deps
   - autopep8
