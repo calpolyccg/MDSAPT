@@ -1,0 +1,32 @@
+REMARK   4 XXXX COMPLIES WITH FORMAT V. 2.0
+HETATM    1  C   UNK N   1      25.575  10.773  21.503  0.00  0.00      2hnt C  
+HETATM    2  O   UNK N   1      24.368  10.554  21.506  0.00  0.00      2hnt O  
+HETATM    3  N   UNK N   1      26.452   9.737  21.303  0.00  0.00      2hnt N  
+HETATM    4  C   UNK N   1      26.053   8.349  21.146  0.00  0.00      2hnt C  
+HETATM    5  C   UNK N   1      27.376   7.606  21.376  0.00  0.00      2hnt C  
+HETATM    6  C   UNK N   1      28.380   8.553  20.759  0.00  0.00      2hnt C  
+HETATM    7  C   UNK N   1      27.893   9.904  21.280  0.00  0.00      2hnt C  
+HETATM    8  C   UNK N   1      26.067  12.182  21.795  0.00  0.00      2hnt C  
+HETATM    9  C   UNK N   1      25.641  13.167  20.685  0.00  0.00      2hnt C  
+HETATM   10  C   UNK N   1      26.846  13.723  19.968  0.00  0.00      2hnt C  
+HETATM   11  C   UNK N   1      27.576  14.783  20.535  0.00  0.00      2hnt C  
+HETATM   12  C   UNK N   1      28.688  15.307  19.868  0.00  0.00      2hnt C  
+HETATM   13  C   UNK N   1      29.067  14.790  18.626  0.00  0.00      2hnt C  
+HETATM   14  C   UNK N   1      28.341  13.741  18.053  0.00  0.00      2hnt C  
+HETATM   15  C   UNK N   1      27.238  13.203  18.725  0.00  0.00      2hnt C  
+HETATM   16  N   UNK N   1      25.569  12.619  23.105  0.00  0.00      2hnt N  
+HETATM   17  H   UNK N   1      26.360  12.918  23.719  0.00  0.00      2hnt H  
+HETATM   18  H   UNK N   1      24.905  13.423  22.998  0.00  0.00      2hnt H  
+HETATM   19  C   UNK N   1      25.041   7.878  22.171  0.00  0.00      2hnt C  
+HETATM   20  N   UNK N   1      23.809   7.462  21.771  0.00  0.00      2hnt N  
+HETATM   21  H   UNK N   1      23.592   7.452  20.762  0.00  0.00      2hnt H  
+HETATM   22  O   UNK N   1      25.359   7.817  23.352  0.00  0.00      2hnt O  
+HETATM   23  C   UNK N   1      22.835   6.950  22.719  0.00  0.00      2hnt C  
+HETATM   24  C   UNK N   1      21.755   7.975  22.982  0.00  0.00      2hnt C  
+HETATM   25  C   UNK N   1      21.667   8.567  24.254  0.00  0.00      2hnt C  
+HETATM   26  N   UNK N   1      20.676   9.461  24.543  0.00  0.00      2hnt N  
+HETATM   27  C   UNK N   1      20.609  10.031  25.891  0.00  0.00      2hnt C  
+HETATM   28  C   UNK N   1      19.756   9.811  23.596  0.00  0.00      2hnt C  
+HETATM   29  C   UNK N   1      19.818   9.263  22.314  0.00  0.00      2hnt C  
+HETATM   30  C   UNK N   1      20.816   8.341  21.999  0.00  0.00      2hnt C  
+HETATM   31 Cl   UNK N   1      20.868   7.662  20.375  0.00  0.00      2hntCl  

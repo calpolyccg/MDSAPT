@@ -1,0 +1,32 @@
+REMARK   4 XXXX COMPLIES WITH FORMAT V. 2.0
+ATOM     27  HN  UNK N   1       5.116   1.788   1.012  1.00  0.00      b03_ H  
+TER      28      UNK N   1 
+HETATM    1  C   UNK N   1      -1.291   0.579   0.252  0.00  0.00      b03_ C  
+HETATM    2  O   UNK N   1      -0.697   1.621   0.509  0.00  0.00      b03_ O  
+HETATM    3  N   UNK N   1      -0.620  -0.615   0.354  0.00  0.00      b03_ N  
+HETATM    4  C   UNK N   1       0.767  -0.696   0.773  0.00  0.00      b03_ C  
+HETATM    5  C   UNK N   1       0.989  -2.210   0.914  0.00  0.00      b03_ C  
+HETATM    6  C   UNK N   1       0.073  -2.771  -0.161  0.00  0.00      b03_ C  
+HETATM    7  C   UNK N   1      -1.177  -1.910   0.008  0.00  0.00      b03_ C  
+HETATM    8  C   UNK N   1      -2.734   0.661  -0.220  0.00  0.00      b03_ C  
+HETATM    9  C   UNK N   1      -3.695   0.182   0.894  0.00  0.00      b03_ C  
+HETATM   10  C   UNK N   1      -5.125   0.111   0.427  0.00  0.00      b03_ C  
+HETATM   11  C   UNK N   1      -5.655  -1.113  -0.015  0.00  0.00      b03_ C  
+HETATM   12  C   UNK N   1      -6.978  -1.187  -0.460  0.00  0.00      b03_ C  
+HETATM   13  C   UNK N   1      -7.782  -0.044  -0.459  0.00  0.00      b03_ C  
+HETATM   14  C   UNK N   1      -7.265   1.175  -0.013  0.00  0.00      b03_ C  
+HETATM   15  C   UNK N   1      -5.941   1.256   0.429  0.00  0.00      b03_ C  
+HETATM   16  N   UNK N   1      -3.043   2.031  -0.642  0.00  0.00      b03_ N  
+HETATM   17  H   UNK N   1      -3.948   2.062  -1.164  0.00  0.00      b03_ H  
+HETATM   18  H   UNK N   1      -3.079   2.680   0.177  0.00  0.00      b03_ H  
+HETATM   19  C   UNK N   1       1.698  -0.076  -0.254  0.00  0.00      b03_ C  
+HETATM   20  N   UNK N   1       3.034  -0.039  -0.012  0.00  0.00      b03_ N  
+HETATM   21  H   UNK N   1       3.393  -0.427   0.875  0.00  0.00      b03_ H  
+HETATM   22  O   UNK N   1       1.247   0.390  -1.293  0.00  0.00      b03_ O  
+HETATM   23  C   UNK N   1       3.964   0.501  -0.985  0.00  0.00      b03_ C  
+HETATM   24  C   UNK N   1       5.374   0.389  -0.483  0.00  0.00      b03_ C  
+HETATM   25  N   UNK N   1       5.780   1.149   0.575  0.00  0.00      b03_ N  
+HETATM   26  C   UNK N   1       7.049   1.074   1.061  0.00  0.00      b03_ C  
+HETATM   28  C   UNK N   1       7.967   0.191   0.487  0.00  0.00      b03_ C  
+HETATM   29  C   UNK N   1       7.573  -0.603  -0.590  0.00  0.00      b03_ C  
+HETATM   30  C   UNK N   1       6.273  -0.501  -1.085  0.00  0.00      b03_ C  
