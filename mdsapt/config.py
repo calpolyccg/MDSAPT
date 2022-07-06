@@ -7,11 +7,6 @@ class`mdsapt.reader.InputReader` is responsible for reading the yaml file and
 returning the information from it. If a yaml file is needed it can be generated
 using the included *mdsapt_get_runinput* script.
 
-.. autoexception:: ConfigurationError
-
-.. autoclass:: InputReader
-    :members:
-    :inherited-members:
 """
 
 from enum import Enum
@@ -106,6 +101,7 @@ class TrajectoryAnalysisConfig(BaseModel):
     frames: Union[List[int], RangeFrameSelection]
     output: str
 
+    @classmethod
     @root_validator()
     def check_valid_md_system(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         errors: List[str] = []
@@ -155,10 +151,98 @@ class TrajectoryAnalysisConfig(BaseModel):
         return {i for pair in self.pairs for i in pair}
 
 
+class DockingStructureMode(Enum):
+    Protein_Ligand = 'protein-ligand'
+    Separate_Ligand = 'separate-ligand'
+
+
+DockingElement = Union[Literal['L'], int]
+
+
 class DockingAnalysisConfig(BaseModel):
     type: Literal['docking']
-    topologies: Union[List[TopologySelection], DirectoryPath]
-    pairs: List[Tuple[int, int]]
+    mode: DockingStructureMode
+    protein: Optional[TopologySelection]
+    ligands: Optional[Union[List[TopologySelection], DirectoryPath]]
+    combined_topologies: Union[List[TopologySelection], DirectoryPath]
+    pairs: List[Tuple[DockingElement, DockingElement]]
+
+    @root_validator()
+    def check_valid_config(self, values: Dict[str, Any]) -> Dict[str, Any]:
+        mode: DockingStructureMode = values['mode']
+        protein: Optional[TopologySelection] = None
+        ligands: Optional[Union[List[TopologySelection], DirectoryPath]] = None
+        combined_topologies: Optional[Union[List[TopologySelection], DirectoryPath]] = None
+        errors: List[str] = []
+
+        # Trying to get values some will not be given
+        try:
+            protein = values['protein']
+        except KeyError:
+            pass
+
+        try:
+            ligands = values['ligands']
+        except KeyError:
+            pass
+        try:
+            combined_topologies = values['combined_topologies']
+        except KeyError:
+            pass
+
+        # Checking if necessary values given
+        if mode == DockingStructureMode.Protein_Ligand and \
+                combined_topologies is None:
+            errors.append("protein and ligands must be specified when using 'protein-ligand' mode")
+        elif mode == DockingStructureMode.Separate_Ligand and \
+                (protein is None or ligands is None):
+            errors.append("topologies must be specified with using 'combined-topologies mode")
+
+        self.replace_ligand_alias()
+
+        pairs: List[Tuple[DockingElement, DockingElement]] = values['pairs']
+        selections: Set[DockingElement] = {
+            i for pair in self.pairs for i in pair
+        }
+
+        if mode == DockingStructureMode.Protein_Ligand:
+            sys_dict: Dict[TopologySelection, mda.Universe] = {}
+
+            for top in combined_topologies:
+                try:
+                    sys_dict[top] = mda.Universe(str(topology_selection_path(top)))
+                except (mda.exceptions.NoDataError, OSError, ValueError):
+                    errors.append('Error while creating universe using provided topology and trajectories')
+                    raise ValidationError(errors)  # If Universe doesn't load need to stop
+
+            for selection in selections:
+                for k in sys_dict:
+                    ag: mda.AtomGroup = sys_dict[k].select_atoms(f'resid {selection}')
+                    if len(ag) == 0:
+                        errors.append(f"Selection {selection} returns an empty AtomGroup.")
+        elif mode == DockingStructureMode.Separate_Ligand:
+            try:
+                protein_sys: mda.Universe = mda.Universe(str(protein))
+            except (mda.exceptions.NoDataError, OSError, ValueError):
+                errors.append('Error while creating universe using provided topology and trajectories')
+                raise ValidationError(errors)  # If Universe doesn't load need to stop
+
+            for selection in selections:
+                ag: mda.AtomGroup = protein_sys.select_atoms(f'resid {selection}')
+                if len(ag) == 0:
+                    errors.append(f"Selection {selection} returns an empty AtomGroup.")
+
+        return values
+
+    def replace_ligand_alias(self) -> None:
+        for ind, pair in enumerate(self.pairs):
+            if pair[0] == Literal['L']:
+                self.pairs[ind] = (-1, self.pairs[ind][1])
+            if pair[1] == Literal['L']:
+                self.pairs[ind] = (self.pairs[ind][0], -1)
+
+    def get_selections(self) -> Set[Union[Literal['L'], int]]:
+        return {i for pair in self.pairs for i in pair}
 
 
 class Config(BaseModel):
