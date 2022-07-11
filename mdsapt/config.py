@@ -8,12 +8,15 @@ returning the information from it. If a yaml file is needed it can be generated
 using the included *mdsapt_get_runinput* script.
 
 """
-
+import dataclasses
+from dataclasses import dataclass
 from enum import Enum
+from os import PathLike
 from pathlib import Path
 from typing import List, Dict, Tuple, Literal, Optional, \
     Union, Any, Set
 
+import pydantic
 import yaml
 
 import MDAnalysis as mda
@@ -60,18 +63,28 @@ class SimulationConfig(BaseModel):
     charge_guesser: ChargeGuesser
 
 
-class DetailedTopologySelection(BaseModel):
-    path: FilePath
-    charge_overrides: Dict[int, int] = Field(default_factory=dict)
+@dataclass
+class TopologySelection:
+    class _TopologySelection(BaseModel):
+        path: FilePath
+        topology_format: Optional[str]
+        charge_overrides: Dict[int, int] = Field(default_factory=dict)
 
+    path: Path
+    topology_format: Optional[str] = None
+    charge_overrides: Dict[int, int] = dataclasses.field(default_factory=dict)
 
-TopologySelection = Union[FilePath, DetailedTopologySelection]
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
 
-
-def topology_selection_path(sel: TopologySelection) -> FilePath:
-    if isinstance(sel, DetailedTopologySelection):
-        return sel.path
-    return sel
+    @classmethod
+    def validate(cls, v):
+        result = pydantic.parse_obj_as(Union[FilePath, cls._TopologySelection], v)
+        if isinstance(result, PathLike):
+            return TopologySelection(path=Path(result))
+        return TopologySelection(path=result.path, topology_format=result.topology_format,
+                                 charge_overrides=result.charge_overrides)
 
 
 class RangeFrameSelection(BaseModel):
@@ -101,21 +114,21 @@ class TrajectoryAnalysisConfig(BaseModel):
     frames: Union[List[int], RangeFrameSelection]
     output: str
 
-    @root_validator()
-    def check_valid_md_system(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield from super().__get_validators__()
+        yield cls.check_valid_md_system
+
+    @classmethod
+    def check_valid_md_system(cls, values: Any) -> Dict[str, Any]:
         errors: List[str] = []
 
-        top_path: TopologySelection = values['topology']
-        trj_path: List[FilePath] = values['trajectories']
-        ag_pair: List[Tuple[conint(ge=0), conint(ge=0)]] = values['pairs']
-        frames: Union[List[int], RangeFrameSelection] = values['frames']
+        top_path: TopologySelection = values.topology
+        trj_path: List[FilePath] = values.trajectories
+        ag_pair: List[Tuple[conint(ge=0), conint(ge=0)]] = values.pairs
+        frames: Union[List[int], RangeFrameSelection] = values.frames
 
-        try:
-            unv = mda.Universe(str(topology_selection_path(top_path)),
-                               [str(p) for p in trj_path])
-        except (mda.exceptions.NoDataError, OSError, ValueError):
-            errors.append('Error while creating universe using provided topology and trajectories')
-            raise ValidationError(errors)  # If Universe doesn't load need to stop
+        unv = mda.Universe(top_path.path, [str(p) for p in trj_path], topology_format=top_path.topology_format)
 
         # Ensure that
         items: Set[int] = {i for pair in ag_pair for i in pair}
@@ -136,11 +149,11 @@ class TrajectoryAnalysisConfig(BaseModel):
                     errors.append(f'Frame {frame} exceeds trajectory length {trajlen}')
 
         if len(errors) > 0:
-            raise ValidationError(errors)
+            raise ValidationError([errors], cls)
         return values
 
     def get_universe(self, **universe_kwargs) -> mda.Universe:
-        return mda.Universe(str(topology_selection_path(self.topology)),
+        return mda.Universe(str(self.topology),
                             [str(path) for path in self.trajectories],
                             **universe_kwargs)
 
@@ -210,8 +223,8 @@ class DockingAnalysisConfig(BaseModel):
 
             for top in combined_topologies:
                 try:
-                    sys_dict[top] = mda.Universe(str(topology_selection_path(top)))
-                except (mda.exceptions.NoDataError, OSError, ValueError):
+                    sys_dict[top] = mda.Universe(str(top))
+                except (mda.exceptions.NoDataError, OSError, ValueError) as e:
                     errors.append('Error while creating universe using provided topology and trajectories')
                     raise ValidationError(errors)  # If Universe doesn't load need to stop
 
@@ -254,8 +267,7 @@ class Config(BaseModel):
 
 
 def load_from_yaml_file(path: Union[str, Path]) -> Config:
-    if isinstance(path, str):
-        path = Path(path)
+    path = Path(path)
 
     with path.open() as f:
         try:

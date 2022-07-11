@@ -33,4 +33,3 @@ def test_list_of_merged() -> None:
                              systems_dir=docking_config.combined_topologies)
 
 
-

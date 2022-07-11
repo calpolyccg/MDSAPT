@@ -30,7 +30,7 @@ from .utils import in_dir
 
 import logging
 
-from ..config import TopologySelection, topology_selection_path, DockingStructureMode
+from ..config import TopologySelection, DockingStructureMode
 
 logger = logging.getLogger('mdsapt.utils.ensemble')
 
@@ -141,10 +141,10 @@ class Ensemble:
 
     def _build_ligand_systems(self, protein_dir: TopologySelection,
                               ligands_dir: Union[DirectoryPath, List[TopologySelection]]) -> None:
-        protein_sys: mda.Universe = mda.Universe(str(topology_selection_path(protein_dir)))
+        protein_sys: mda.Universe = mda.Universe(str(protein_dir))
         protein_mol: mda.AtomGroup = protein_sys.select_atoms("protein")
         for ligand in ligands_dir:
-            ligand_sys: mda.Universe = mda.Universe(str(topology_selection_path(ligand)))
+            ligand_sys: mda.Universe = mda.Universe(str(ligand))
             ligand_mol: mda.AtomGroup = ligand_sys.select_atoms('name *')
             self.add_system(ligand, self._merge_ligand_protein(ligand_mol, protein_mol))
 
@@ -193,7 +193,7 @@ class Ensemble:
 
     def _build_ensemble_from_list(self, topologies: List[TopologySelection], **universe_kwargs) -> None:
         for top in topologies:
-            name: str = str(topology_selection_path(top))
+            name: str = str(top)
             try:
                 self.add_system(name, mda.Universe(name, **universe_kwargs))
             except (mda.exceptions.NoDataError, OSError, ValueError) as err:

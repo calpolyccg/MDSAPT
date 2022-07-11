@@ -1,13 +1,13 @@
 from pathlib import Path
 from typing import Dict, Any, Tuple, List
 
+import pydantic
 import pytest
 
 from pydantic import ValidationError, FilePath
 
 from mdsapt.config import load_from_yaml_file, RangeFrameSelection, \
-    DetailedTopologySelection, topology_selection_path, \
-    TrajectoryAnalysisConfig, DockingStructureMode, DockingAnalysisConfig
+    TrajectoryAnalysisConfig, DockingStructureMode, DockingAnalysisConfig, TopologySelection
 
 resources_dir = Path(__file__).parent / 'testing_resources'
 
@@ -145,3 +145,27 @@ def test_template_can_be_loaded():
 def test_load_from_yaml_fail():
     with pytest.raises(ValidationError):
         load_from_yaml_file(resources_dir / 'test_broken_input.yaml')
+
+
+def test_topology_selection_parses_from_string():
+    data: str = str(resources_dir / 'test_input.yaml')
+    result = pydantic.parse_obj_as(TopologySelection, data)
+
+    assert result.path == resources_dir / 'test_input.yaml'
+    assert result.charge_overrides == {}
+
+
+def test_topology_selection_parses_from_obj_with_overrides():
+    data = {'path': str(resources_dir / 'test_input.yaml'), 'charge_overrides': {'13': 3}}
+    result = pydantic.parse_obj_as(TopologySelection, data)
+
+    assert result.path == resources_dir / 'test_input.yaml'
+    assert result.charge_overrides == {13: 3}
+
+
+def test_topology_selection_parses_from_obj_without_overrides():
+    data = {'path': str(resources_dir / 'test_input.yaml')}
+    result = pydantic.parse_obj_as(TopologySelection, data)
+
+    assert result.path == resources_dir / 'test_input.yaml'
+    assert result.charge_overrides == {}
