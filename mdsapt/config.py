@@ -101,7 +101,6 @@ class TrajectoryAnalysisConfig(BaseModel):
     frames: Union[List[int], RangeFrameSelection]
     output: str
 
-    @classmethod
     @root_validator()
     def check_valid_md_system(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         errors: List[str] = []
@@ -125,8 +124,6 @@ class TrajectoryAnalysisConfig(BaseModel):
             ag: mda.AtomGroup = unv.select_atoms(f'resid {sel}')
             if len(ag) == 0:
                 errors.append(f"Selection {sel} returns an empty AtomGroup.")
-
-
 
         trajlen: int = len(unv.trajectory)
         if isinstance(frames, RangeFrameSelection):
@@ -152,8 +149,8 @@ class TrajectoryAnalysisConfig(BaseModel):
 
 
 class DockingStructureMode(Enum):
-    Protein_Ligand = 'protein-ligand'
-    Separate_Ligand = 'separate-ligand'
+    MergedLigand = 'protein-ligand'
+    SeparateLigand = 'separate-ligand'
 
 
 DockingElement = Union[Literal['L'], int]
@@ -168,7 +165,7 @@ class DockingAnalysisConfig(BaseModel):
     pairs: List[Tuple[DockingElement, DockingElement]]
 
     @root_validator()
-    def check_valid_config(self, values: Dict[str, Any]) -> Dict[str, Any]:
+    def check_valid_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         mode: DockingStructureMode = values['mode']
         protein: Optional[TopologySelection] = None
         ligands: Optional[Union[List[TopologySelection], DirectoryPath]] = None
@@ -191,21 +188,24 @@ class DockingAnalysisConfig(BaseModel):
             pass
 
         # Checking if necessary values given
-        if mode == DockingStructureMode.Protein_Ligand and \
+        if mode == DockingStructureMode.MergedLigand and \
                 combined_topologies is None:
             errors.append("protein and ligands must be specified when using 'protein-ligand' mode")
-        elif mode == DockingStructureMode.Separate_Ligand and \
+        elif mode == DockingStructureMode.SeparateLigand and \
                 (protein is None or ligands is None):
             errors.append("topologies must be specified with using 'combined-topologies mode")
 
-        self.replace_ligand_alias()
+        if len(errors) > 0:
+            err = ValidationError(errors)
+            logger.exception(err)
+            raise err
 
         pairs: List[Tuple[DockingElement, DockingElement]] = values['pairs']
         selections: Set[DockingElement] = {
-            i for pair in self.pairs for i in pair
+            i for pair in pairs for i in pair
         }
 
-        if mode == DockingStructureMode.Protein_Ligand:
+        if mode == DockingStructureMode.MergedLigand:
             sys_dict: Dict[TopologySelection, mda.Universe] = {}
 
             for top in combined_topologies:
@@ -216,11 +216,12 @@ class DockingAnalysisConfig(BaseModel):
                     raise ValidationError(errors)  # If Universe doesn't load need to stop
 
             for selection in selections:
-                for k in sys_dict:
-                    ag: mda.AtomGroup = sys_dict[k].select_atoms(f'resid {selection}')
-                    if len(ag) == 0:
-                        errors.append(f"Selection {selection} returns an empty AtomGroup.")
-        elif mode == DockingStructureMode.Separate_Ligand:
+                if selection != Literal['L']:
+                    for k in sys_dict:
+                        ag: mda.AtomGroup = sys_dict[k].select_atoms(f'resid {selection}')
+                        if len(ag) == 0:
+                            errors.append(f"Selection {selection} returns an empty AtomGroup.")
+        elif mode == DockingStructureMode.SeparateLigand:
             try:
                 protein_sys: mda.Universe = mda.Universe(str(protein))
             except (mda.exceptions.NoDataError, OSError, ValueError):

@@ -105,7 +105,7 @@ class Ensemble:
         self.unv_kwargs: Dict = universe_kwargs
         if mode is None:
             pass  # return empty ensemble
-        elif mode == DockingStructureMode.Separate_Ligand and \
+        elif mode == DockingStructureMode.SeparateLigand and \
                 protein_dir is not None and ligands_dir is not None:
             if isinstance(ligands_dir, DirectoryPath):  # for ligand directory case
                 self._ensemble_dir = str(ligands_dir)
@@ -113,11 +113,11 @@ class Ensemble:
                 self._add_protein_top(protein_dir)  # Adding protein topology to ensemble systems
             elif isinstance(ligands_dir, List):  # for list of ligands case
                 self._build_ligand_systems(protein_dir, ligands_dir)
-        elif mode == DockingStructureMode.Protein_Ligand and systems_dir is not None:
+        elif mode == DockingStructureMode.MergedLigand and systems_dir is not None:
             if isinstance(systems_dir, DirectoryPath):
                 self._ensemble_dir = str(systems_dir)
                 self._build_ensemble_from_dir(**universe_kwargs)
-            elif any([not isinstance(top, TopologySelection) for top in systems_dir]):
+            elif all([isinstance(top, TopologySelection) for top in systems_dir]):
                 self._ensemble_dir = os.curdir
                 self._build_ensemble_from_list(systems_dir, **universe_kwargs)
             else:

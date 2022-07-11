@@ -15,7 +15,6 @@ calculations between the residues selected in the input file.
 
 """
 
-from tkinter.ttk import Progressbar
 from typing import Dict, List, Set, Tuple
 
 import pandas as pd
@@ -28,11 +27,12 @@ from MDAnalysis.converters.RDKit import atomgroup_to_mol
 from MDAnalysis.lib.log import ProgressBar
 
 import psi4
+
 from pydantic import ValidationError
 
 from rdkit import Chem
 
-from .config import Config, TrajectoryAnalysisConfig
+from .config import Config, TrajectoryAnalysisConfig, DockingAnalysisConfig, DockingStructureMode
 from .optimizer import Optimizer, get_spin_multiplicity
 from .utils.ensemble import Ensemble, EnsembleAtomGroup
 
@@ -42,7 +42,8 @@ logger = logging.getLogger('mdsapt.sapt')
 
 
 class SAPT(object):
-    """Contains methods for running SAPT calculations on molecular dynamics data. Used as the super class for other SAPT tools in the library."""
+    """Contains methods for running SAPT calculations on molecular dynamics data. Used as the super class for other
+    SAPT tools in the library. """
 
     _opt: Optimizer
     _cfg: Config
@@ -190,7 +191,24 @@ class DockingSAPT(SAPT):
     _sel: Dict[int, EnsembleAtomGroup]
 
     def __init__(self, config: Config, optimizer: Optimizer) -> None:
-        self._ens = Ensemble(config.)
+        try:
+            # Ensuring config type is correct
+            if not isinstance(config.analysis, DockingAnalysisConfig):
+                raise ValidationError("config.analysis.type is not docking")
+        except ValidationError as err:
+            logger.exception(err)
+            raise err
+
+        if config.analysis.mode == DockingStructureMode.MergedLigand:
+            self._ens = Ensemble(systems_dir=config.analysis.combined_topologies)
+        elif config.analysis.mode == DockingStructureMode.SeparateLigand:
+            self._ens = Ensemble(protein_dir=config.analysis.protein,
+                                 ligands_dir=config.analysis.ligands)
+        else:
+            err = ValidationError("Must specify either 'protein-ligand' or 'separate-ligand' mode in config")
+            logger.exception(err)
+            raise err
+
         self._sel = {k: self._ens.select_atoms(f'resid {k} and not (name OH2 or name H1 or name H2') for k in
                      self._cfg.ag_sel}
         super(DockingSAPT, self).__init__(config, optimizer)
@@ -228,7 +246,6 @@ class DockingSAPT(SAPT):
         trajectory frames.
         """
         logger.info("Setting up systems")
-        self._prepare_ensemble()
         for self._key in ProgressBar(self._ens.keys(), verbose=True):
             self._prepare()
             self._single_system()

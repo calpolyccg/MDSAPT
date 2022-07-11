@@ -42,7 +42,7 @@ analysis:
 
 #  ### For running DockingSAPT
 #  type: 'docking'
-#
+#  mode: 'protein-ligand'
 #  topologies:
 #    - 'one/topology.pdb'
 #    - 'another/topology.pdb'
