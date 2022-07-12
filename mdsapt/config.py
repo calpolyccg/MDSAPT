@@ -1,5 +1,5 @@
 r"""
-:mod:`mdsapt.reader` -- Reads input file and saves configuration
+:mod:`mdsapt.config` -- Reads input file and saves configuration
 ================================================================
 
 MDSAPT uses an yaml file to get user's configurations for SAPT calculations
@@ -8,13 +8,14 @@ returning the information from it. If a yaml file is needed it can be generated
 using the included *mdsapt_get_runinput* script.
 
 """
+import abc
 import dataclasses
 from dataclasses import dataclass
 from enum import Enum
 from os import PathLike
 from pathlib import Path
 from typing import List, Dict, Tuple, Literal, Optional, \
-    Union, Any, Set
+    Union, Any, Set, Iterable
 
 import pydantic
 import yaml
@@ -25,6 +26,8 @@ import logging
 
 from pydantic import BaseModel, conint, Field, root_validator, \
     FilePath, ValidationError, DirectoryPath
+
+from mdsapt.utils.ensemble import Ensemble, EnsembleAtomGroup
 
 logger = logging.getLogger('mdsapt.config')
 
@@ -86,6 +89,10 @@ class TopologySelection:
         return TopologySelection(path=result.path, topology_format=result.topology_format,
                                  charge_overrides=result.charge_overrides)
 
+    def create_universe(self, *coordinates: Any, **kwargs) -> mda.Universe:
+        """Create a universe based on this topology and the given arguments.."""
+        return mda.Universe(str(self.path), *coordinates, topology_format=self.topology_format, **kwargs)
+
 
 class RangeFrameSelection(BaseModel):
     start: Optional[conint(ge=0)]
@@ -123,20 +130,16 @@ class TrajectoryAnalysisConfig(BaseModel):
     def check_valid_md_system(cls, values: Any) -> Dict[str, Any]:
         errors: List[str] = []
 
-        top_path: TopologySelection = values.topology
-        trj_path: List[FilePath] = values.trajectories
+        topology: TopologySelection = values.topology
+        trajectories: List[FilePath] = values.trajectories
         ag_pair: List[Tuple[conint(ge=0), conint(ge=0)]] = values.pairs
         frames: Union[List[int], RangeFrameSelection] = values.frames
 
-        unv = mda.Universe(top_path.path, [str(p) for p in trj_path], topology_format=top_path.topology_format)
+        unv = topology.create_universe([str(p) for p in trajectories])
 
-        # Ensure that
-        items: Set[int] = {i for pair in ag_pair for i in pair}
-
-        for sel in items:
-            ag: mda.AtomGroup = unv.select_atoms(f'resid {sel}')
-            if len(ag) == 0:
-                errors.append(f"Selection {sel} returns an empty AtomGroup.")
+        missing_selections = get_invalid_residue_selections({r for p in ag_pair for r in p}, unv)
+        if len(missing_selections) > 0:
+            errors.append(f'Selected residues are missing from topology: {missing_selections}')
 
         trajlen: int = len(unv.trajectory)
         if isinstance(frames, RangeFrameSelection):
@@ -152,114 +155,103 @@ class TrajectoryAnalysisConfig(BaseModel):
             raise ValidationError([errors], cls)
         return values
 
-    def get_universe(self, **universe_kwargs) -> mda.Universe:
-        return mda.Universe(str(self.topology),
-                            [str(path) for path in self.trajectories],
-                            **universe_kwargs)
+    def create_universe(self, **universe_kwargs) -> mda.Universe:
+        return self.topology.create_universe([str(p) for p in self.trajectories], **universe_kwargs)
 
     def get_selections(self) -> Set[int]:
         return {i for pair in self.pairs for i in pair}
 
 
-class DockingStructureMode(Enum):
-    MergedLigand = 'protein-ligand'
-    SeparateLigand = 'separate-ligand'
+def get_invalid_residue_selections(residues: Iterable[int], unv: mda.Universe) -> Iterable[int]:
+    """Helper function to find selected residues that aren't in the universe."""
+    return (
+        i for i in residues
+        if len(unv.select_atoms(f'resid {i}')) == 0
+    )
 
 
-DockingElement = Union[Literal['L'], int]
+class DockingElement(BaseModel):
+    """
+    A single element to analyze in docking.
+
+    The literal 'L' specifies the ligand, whereas an integer specifies the protein residue number.
+    """
+    __root__: Union[Literal['L'], int]
 
 
-class DockingAnalysisConfig(BaseModel):
+class TopologyGroupSelection(BaseModel):
+    __root__: Union[List[TopologySelection], DirectoryPath]
+
+    def get_individual_topologies(self) -> List[TopologySelection]:
+        if isinstance(self.__root__, list):
+            return self.__root__
+
+        return [
+            TopologySelection(path=f)
+            for f in self.__root__.iterdir()
+            if f.is_file()
+        ]
+
+
+class DockingAnalysisConfigBase(BaseModel):
     type: Literal['docking']
-    mode: DockingStructureMode
-    protein: Optional[TopologySelection]
-    ligands: Optional[Union[List[TopologySelection], DirectoryPath]]
-    combined_topologies: Union[List[TopologySelection], DirectoryPath]
     pairs: List[Tuple[DockingElement, DockingElement]]
 
-    @root_validator()
+    @classmethod
+    @root_validator
     def check_valid_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        mode: DockingStructureMode = values['mode']
-        protein: Optional[TopologySelection] = None
-        ligands: Optional[Union[List[TopologySelection], DirectoryPath]] = None
-        combined_topologies: Optional[Union[List[TopologySelection], DirectoryPath]] = None
         errors: List[str] = []
 
-        # Trying to get values some will not be given
-        try:
-            protein = values['protein']
-        except KeyError:
-            pass
-
-        try:
-            ligands = values['ligands']
-        except KeyError:
-            pass
-        try:
-            combined_topologies = values['combined_topologies']
-        except KeyError:
-            pass
-
-        # Checking if necessary values given
-        if mode == DockingStructureMode.MergedLigand and \
-                combined_topologies is None:
-            errors.append("protein and ligands must be specified when using 'protein-ligand' mode")
-        elif mode == DockingStructureMode.SeparateLigand and \
-                (protein is None or ligands is None):
-            errors.append("topologies must be specified with using 'combined-topologies mode")
-
-        if len(errors) > 0:
-            err = ValidationError(errors)
-            logger.exception(err)
-            raise err
-
         pairs: List[Tuple[DockingElement, DockingElement]] = values['pairs']
-        selections: Set[DockingElement] = {
-            i for pair in pairs for i in pair
+        protein_selections: Set[int] = {
+            i for pair in pairs for i in pair if i != 'L'
         }
+        ens: Ensemble = cls.build_ensemble(values)
+        missing_selections: List[int] = []
 
-        if mode == DockingStructureMode.MergedLigand:
-            sys_dict: Dict[TopologySelection, mda.Universe] = {}
+        for k in ens.keys():
+            missing_selections += get_invalid_residue_selections(protein_selections, ens[k])
 
-            for top in combined_topologies:
-                try:
-                    sys_dict[top] = mda.Universe(str(top))
-                except (mda.exceptions.NoDataError, OSError, ValueError) as e:
-                    errors.append('Error while creating universe using provided topology and trajectories')
-                    raise ValidationError(errors)  # If Universe doesn't load need to stop
-
-            for selection in selections:
-                if selection != Literal['L']:
-                    for k in sys_dict:
-                        ag: mda.AtomGroup = sys_dict[k].select_atoms(f'resid {selection}')
-                        if len(ag) == 0:
-                            errors.append(f"Selection {selection} returns an empty AtomGroup.")
-        elif mode == DockingStructureMode.SeparateLigand:
-            try:
-                protein_sys: mda.Universe = mda.Universe(str(protein))
-            except (mda.exceptions.NoDataError, OSError, ValueError):
-                errors.append('Error while creating universe using provided topology and trajectories')
-                raise ValidationError(errors)  # If Universe doesn't load need to stop
-
-            for selection in selections:
-                ag: mda.AtomGroup = protein_sys.select_atoms(f'resid {selection}')
-                if len(ag) == 0:
-                    errors.append(f"Selection {selection} returns an empty AtomGroup.")
+        if len(missing_selections) > 0:
+            errors.append(f'Selected residues are missing from topology: {missing_selections}')
 
         return values
 
-    def replace_ligand_alias(self) -> None:
-        for ind, pair in enumerate(self.pairs):
-            if pair[0] == Literal['L']:
-                self.pairs[ind] = (-1, self.pairs[ind][1])
-            if pair[1] == Literal['L']:
-                self.pairs[ind] = (self.pairs[ind][0], -1)
+    @abc.abstractmethod
+    def build_ensemble(self) -> Ensemble:
+        assert NotImplementedError
 
-    def get_selections(self) -> Set[Union[Literal['L'], int]]:
-        return {i for pair in self.pairs for i in pair}
+
+class DockingAnalysisProteinLigands(DockingAnalysisConfigBase):
+    protein: TopologySelection
+    ligands: TopologyGroupSelection
+
+    def build_ensemble(self) -> Ensemble:
+        ens: Ensemble = Ensemble.build_from_files([top.path for top in self.ligands.get_individual_topologies()])
+        protein_sys: mda.Universe = mda.Universe(str(self.protein))
+        protein_mol: mda.AtomGroup = protein_sys.select_atoms("protein")
+        ens = ens.merge(protein_mol)
+
+        return ens
+
+
+class DockingAnalysisCombinedTopologies(DockingAnalysisConfigBase):
+    combined_topologies: TopologyGroupSelection
+
+    def build_ensemble(self) -> Ensemble:
+        ens: Ensemble = Ensemble.build_from_files([top.path for top in
+                                                   self.combined_topologies.get_individual_topologies()])
+        return ens
+
+
+class DockingAnalysisConfig(BaseModel):
+    __root__: Union[DockingAnalysisProteinLigands, DockingAnalysisCombinedTopologies]
 
 
 class Config(BaseModel):
+    """
+
+    """
     psi4: Psi4Config
     simulation: SimulationConfig
     system_limits: SysLimitsConfig
@@ -267,6 +259,9 @@ class Config(BaseModel):
 
 
 def load_from_yaml_file(path: Union[str, Path]) -> Config:
+    """
+
+    """
     path = Path(path)
 
     with path.open() as f:
