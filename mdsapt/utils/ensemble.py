@@ -15,9 +15,8 @@ A set of objects for manging and analyzing collections of similar MD simulations
     :inherited-members:
 
 """
-
 import os
-from typing import Optional, List, Union, Dict
+from typing import Optional, List, Union, Dict, Iterable, Set
 
 import MDAnalysis as mda
 from MDAnalysis.core.universe import Merge
@@ -29,8 +28,6 @@ import numpy as np
 from .utils import in_dir
 
 import logging
-
-from ..config import TopologySelection, DockingStructureMode
 
 logger = logging.getLogger('mdsapt.utils.ensemble')
 
@@ -90,79 +87,45 @@ class Ensemble:
                              'mol2', 'data', 'lammpsdump', 'xyz', 'txyz', 'arc',
                              'gms', 'log', 'config', 'history', 'xml', 'gsd', 'mmtf',
                              'in']
-    _num_systems: int
     _ensemble: Dict[str, mda.Universe]
-    _keys: List[str]
 
-    def __init__(self, mode: Optional[DockingStructureMode] = None,
-                 systems_dir: Union[None, DirectoryPath, List[TopologySelection]] = None,
-                 protein_dir: Optional[TopologySelection] = None,
-                 ligands_dir: Union[None, DirectoryPath, List[TopologySelection]] = None,
-                 **universe_kwargs):
-        self._num_systems = 0
-        self._ensemble = {}
-        self._keys = []
-        self.unv_kwargs: Dict = universe_kwargs
-        if mode is None:
-            pass  # return empty ensemble
-        elif mode == DockingStructureMode.SeparateLigand and \
-                protein_dir is not None and ligands_dir is not None:
-            if isinstance(ligands_dir, DirectoryPath):  # for ligand directory case
-                self._ensemble_dir = str(ligands_dir)
-                self._build_ensemble_from_dir()  # Adding ligand data to ensemble
-                self._add_protein_top(protein_dir)  # Adding protein topology to ensemble systems
-            elif isinstance(ligands_dir, List):  # for list of ligands case
-                self._build_ligand_systems(protein_dir, ligands_dir)
-        elif mode == DockingStructureMode.MergedLigand and systems_dir is not None:
-            if isinstance(systems_dir, DirectoryPath):
-                self._ensemble_dir = str(systems_dir)
-                self._build_ensemble_from_dir(**universe_kwargs)
-            elif all([isinstance(top, TopologySelection) for top in systems_dir]):
-                self._ensemble_dir = os.curdir
-                self._build_ensemble_from_list(systems_dir, **universe_kwargs)
-            else:
-                err: Exception = TypeError(f"dirname must be None, a directory, or a list of topologies")
-                logger.exception(err)
-                raise err
+    def __init__(self, universes: Optional[Dict[str, mda.Universe]] = None):
+        self._ensemble = {} if universes is None else universes
 
     def __repr__(self) -> str:
-        return f"<Ensemble Containing {self._num_systems} System>"
+        return f"<Ensemble Containing {len(self)} System>"
 
     def __len__(self) -> int:
-        return self._num_systems
+        return len(self._ensemble)
 
-    def __getitem__(self, index) -> mda.Universe:
+    def __getitem__(self, index: str) -> mda.Universe:
         """Allows dictionary like indexing"""
         return self._ensemble[index]
 
-    def keys(self) -> List[str]:
+    def __setitem__(self, key: str, value: mda.Universe) -> None:
+        """Adds system from universe object for trajectory and topology files
+        Existing mda.Universe object or trajectory and topology path. Ensure
+        that paths are set to absolute when creating the universe."""
+        self._ensemble[key] = value
+
+    def keys(self) -> Iterable[str]:
         """Returns list of system keys"""
-        return self._keys
+        return self._ensemble.keys()
 
-    def _build_ligand_systems(self, protein_dir: TopologySelection,
-                              ligands_dir: Union[DirectoryPath, List[TopologySelection]]) -> None:
-        protein_sys: mda.Universe = mda.Universe(str(protein_dir))
-        protein_mol: mda.AtomGroup = protein_sys.select_atoms("protein")
-        for ligand in ligands_dir:
-            ligand_sys: mda.Universe = mda.Universe(str(ligand))
-            ligand_mol: mda.AtomGroup = ligand_sys.select_atoms('name *')
-            self.add_system(ligand, self._merge_ligand_protein(ligand_mol, protein_mol))
+    def merge(self, ligand, *args: List[mda.AtomGroup], ligand_id: int = -1) -> 'Ensemble':
+        """
+        Merge an atom group into
+        """
+        _ens: Dict[str, mda.Universe] = {}
 
-    def _add_protein_top(self, protein_dir: DirectoryPath) -> None:
-        protein_sys: mda.Universe = mda.Universe(str(protein_dir))
-        protein_mol: mda.AtomGroup = mda.AtomGroup('protein')
-        ligands: EnsembleAtomGroup = self.select_atoms('name *')
+        for k in self.keys():
+            ligand.universe.residues.resids = [ligand_id]
+            _ens[k] = Merge(ligand, args)
 
-        for k in ligands.keys():
-            ligands[k].universe.residues.resids = [-1]
-            self._ensemble[k] = self._merge_ligand_protein(ligands[k], protein_mol)
+        return Ensemble(_ens)
 
-    @staticmethod
-    def _merge_ligand_protein(ligand: mda.AtomGroup, protein: mda.AtomGroup) -> mda.Universe:
-        ligand.universe.residues.resids = [-1]
-        return Merge(ligand, protein)
-
-    def _build_ensemble_from_dir(self, **universe_kwargs) -> None:
+    @classmethod
+    def build_from_dir(cls, ensemble_dir: DirectoryPath, **universe_kwargs) -> 'Ensemble':
         """Finds simulation files genderated by MDPOW and attempts to build
         :class:`MDAnalysis.Universe <MDAnalysis.core.groups.universe.Universe>`
         in the lambda directories.
@@ -170,50 +133,41 @@ class Ensemble:
         First enters FEP directory, then traverses solvent and interaction
         directories to search lambda directories for system files."""
 
-        with in_dir(self._ensemble_dir, create=False):
+        with in_dir(str(ensemble_dir), create=False):
             cur_dir = os.listdir(os.curdir)
             top = []
 
             for file in cur_dir:
-                if any([file.endswith(x) for x in self._top_types]):
+                if any([file.endswith(x) for x in cls._top_types]):
                     # Saving topology directories
                     top.append(file)
 
             if len(top) == 0:
                 logger.warning('No MD files detected in %s', os.curdir)
-                return
+                return Ensemble()
+
+            _ens: Dict[str, mda.Universe]
 
             for f in top:
                 try:
                     u = mda.Universe(os.path.abspath(f), **universe_kwargs)
-                    self.add_system(f.split('.')[0], u)
+                    _ens[f.split('.')[0]] = u
                 except (ValueError, FileFormatWarning, NoDataError, MissingDataWarning, OSError) as err:
                     logger.error(f'{err} raised while loading {top[0]} in dir {cur_dir}')
                     raise NoDataError
+            return Ensemble(_ens)
 
-    def _build_ensemble_from_list(self, topologies: List[TopologySelection], **universe_kwargs) -> None:
+    @classmethod
+    def build_from_files(cls, topologies: List[os.PathLike], **universe_kwargs) -> 'Ensemble':
+        _ens: Dict[str, mda.Universe] = {}
         for top in topologies:
             name: str = str(top)
             try:
-                self.add_system(name, mda.Universe(name, **universe_kwargs))
+                _ens[name] = mda.Universe(name, **universe_kwargs)
             except (mda.exceptions.NoDataError, OSError, ValueError) as err:
                 logger.exception(err)
                 raise err
-
-    def add_system(self, key, universe: mda.Universe) -> None:
-        """Adds system from universe object for trajectory and topology files
-        Existing mda.Universe object or trajectory and topology path. Ensure
-        that paths are set to absolute when creating the universe."""
-        self._ensemble[key] = universe
-        self._keys.append(key)
-        self._num_systems += 1
-
-    def pop(self, key) -> mda.Universe:
-        """Removes and returns system at specified key.
-        Logs if KeyError is raised."""
-        system = self._ensemble.pop(key)
-        self._num_systems -= 1
-        return system
+        return Ensemble(_ens)
 
     def select_atoms(self, *args, **kwargs):
         """Returns :class:`~mdpow.analysis.ensemble.EnsembleAtomGroup` containing selections
@@ -232,7 +186,7 @@ class Ensemble:
                 selections[key] = ag
         return EnsembleAtomGroup(selections, ensemble=self)
 
-    def select_systems(self, keys: List[str]):
+    def select_systems(self, keys: List[str]) -> 'Ensemble':
         """
         Select specific subset of systems and returns them in an Ensemble.
         This can be accomplished in two ways, by specific keys, or by
@@ -243,12 +197,12 @@ class Ensemble:
             System keys from :class:`~mdpow.analysis.ensemble.Ensemble`
             to be returned.
         """
-        new_ens = Ensemble()
+        _ens: Dict[str, mda.Universe] = {}
+
         for k in keys:
             logger.info('adding system %r to ensemble', k)
-            new_ens.add_system(k, universe=self[k])
-        new_ens._ensemble_dir = self._ensemble_dir
-        return new_ens
+            _ens[k] = self[k]
+        return Ensemble(_ens)
 
 
 class EnsembleAtomGroup:
@@ -259,13 +213,11 @@ class EnsembleAtomGroup:
     """
 
     _groups: Dict[str, mda.AtomGroup]
-    _keys: List[str]
     _ensemble: Ensemble
 
     def __init__(self, group_dict: dict, ensemble: Ensemble):
         self._groups = group_dict
         self._ensemble = ensemble
-        self._keys = [str(k) for k in group_dict]
 
     def __getitem__(self, index) -> mda.AtomGroup:
         return self._groups[index]
@@ -276,17 +228,17 @@ class EnsembleAtomGroup:
         return False
 
     def __len__(self) -> int:
-        return len(self.keys())
+        return len(self._ensemble)
 
-    def keys(self) -> List[str]:
+    def keys(self) -> Iterable[str]:
         """List of keys to specific atom groups in the system"""
-        return self._keys
+        return self._ensemble.keys()
 
     def positions(self, keys=None) -> Dict[str, np.ndarray]:
         """Returns the positions of the keys of the selected atoms.
         If no keys are specified positions for all keys are returned"""
         positions = {}
-        if not keys is None:
+        if keys is not None:
             for k in keys:
                 positions[k] = self._groups[k].positions
         else:
