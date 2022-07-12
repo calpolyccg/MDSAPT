@@ -25,18 +25,16 @@ from .sapt import TrajectorySAPT
 import MDAnalysis as mda
 
 from .config import Config
-from .optimizer import Optimizer
+from .repair import rebuild_resid
 
 
 class Viewer(object):
 
     _unv: mda.Universe
-    _opt: Optimizer
 
     def __init__(self, settings: Config) -> None:
         """Sets up visualizations for selected residues"""
         self._unv = mda.Universe(settings.analysis.topology, settings.analysis.trajectories)
-        self._opt = Optimizer(settings)
 
     @staticmethod
     def _launch_viewer(system: Union[mda.Universe, mda.AtomGroup], **nglview_kwargs) -> nv.NGLWidget:
@@ -80,7 +78,7 @@ class Viewer(object):
                 number of selected residue in polypeptide chain
             *nglview_kwargs*
                 arguments passed to the viewer"""
-        resid = self._opt.rebuild_resid(resid, self._unv.select_atoms(f'resid {resid} and protein'))
+        resid = rebuild_resid(resid, self._unv.select_atoms(f'resid {resid} and protein'))
         return self._launch_viewer(resid, **nglview_kwargs)
 
     def view_optimized_interaction_pair(self, resid1: int, resid2: int, **nglview_kwargs) -> nv.NGLWidget:
@@ -92,8 +90,8 @@ class Viewer(object):
                 number of selected residue in polypeptide chain
             *nglview_kwargs*
                 arguments passed to the viewer"""
-        r1 = self._opt.rebuild_resid(resid1, self._unv.select_atoms(f'resid {resid1} and protein'))
-        r2 = self._opt.rebuild_resid(resid2, self._unv.select_atoms(f'resid {resid2} and protein'))
+        r1 = rebuild_resid(resid1, self._unv.select_atoms(f'resid {resid1} and protein'))
+        r2 = rebuild_resid(resid2, self._unv.select_atoms(f'resid {resid2} and protein'))
         r_pair: mda.Universe = mda.Universe.empty(n_atoms=(r1.n_atoms + r2.n_atoms), trajectory=True)
         r_pair.add_TopologyAttr('name', [x for x in r1.names] + [x for x in r2.names])
         r_pair.atoms.positions = np.row_stack((r1.positions, r2.positions))
