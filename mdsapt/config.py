@@ -120,23 +120,20 @@ class TrajectoryAnalysisConfig(BaseModel):
     frames: Union[List[int], RangeFrameSelection]
     output: str
 
-    @classmethod
-    def __get_validators__(cls):
-        yield from super().__get_validators__()
-        yield cls.check_valid_md_system
-
-    # note: if this is tagged with @root_validator, then values.topology will not exist on the passed-in values
-    # when this is called. Thus, it must be yielded in cls.__get_validators__.
-    @classmethod
-    def check_valid_md_system(cls, values: Any) -> Dict[str, Any]:
+    # noinspection PyMethodParameters
+    @root_validator
+    def check_valid_md_system(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         errors: List[str] = []
 
-        topology: TopologySelection = values.topology
-        trajectories: List[FilePath] = values.trajectories
-        ag_pair: List[Tuple[conint(ge=0), conint(ge=0)]] = values.pairs
-        frames: Union[List[int], RangeFrameSelection] = values.frames
+        topology: TopologySelection = values['topology']
+        trajectories: List[FilePath] = values['trajectories']
+        ag_pair: List[Tuple[conint(ge=0), conint(ge=0)]] = values['pairs']
+        frames: Union[List[int], RangeFrameSelection] = values['frames']
 
-        unv = topology.create_universe([str(p) for p in trajectories])
+        try:
+            unv = topology.create_universe([str(p) for p in trajectories])
+        except OSError as e:
+            raise ValueError("Error while creating the universe") from e
 
         missing_selections = get_invalid_residue_selections({r for p in ag_pair for r in p}, unv)
         if len(missing_selections) > 0:

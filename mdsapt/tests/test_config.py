@@ -12,14 +12,52 @@ from mdsapt.utils.ensemble import Ensemble, EnsembleAtomGroup
 
 resources_dir = Path(__file__).parent / 'testing_resources'
 
-traj_setting_list: List[Tuple[str, Any]] = [
+
+def test_frame_range_selection():
+    frame_range: Dict[str, int] = {'start': 2,
+                                   'step': 1,
+                                   'stop': 0}
+
+    with pytest.raises(ValidationError):
+        RangeFrameSelection(**frame_range)
+
+
+@pytest.mark.parametrize('k,v', [
     ('trajectories', [f'{resources_dir}/test_read_error.dcd']),
     ('frames', {'start': 1, 'stop': 120}),
     ('frames', [1, 4, 6, 120]),
     ('pairs', [(250, 251)])
-]
+])
+def test_traj_analysis_config(k: str, v: Any) -> None:
+    traj_analysis_dict: Dict[str, Any] = dict(
+        type='trajectory',
+        topology=f'{resources_dir}/testtop.psf',
+        trajectories=[f'{resources_dir}/testtraj.dcd'],
+        pairs=[(132, 152), (34, 152)],
+        frames=[1, 4, 6],
+        output=True
+    )
 
-docking_settings_list: List[Dict[str, Any]] = [
+    traj_analysis_dict[k] = v
+
+    with pytest.raises(ValidationError):
+        TrajectoryAnalysisConfig(**traj_analysis_dict)
+
+
+def test_traj_sel() -> None:
+    traj_analysis_dict: Dict[str, Any] = dict(
+        type='trajectory',
+        topology=f'{resources_dir}/testtop.psf',
+        trajectories=[f'{resources_dir}/testtraj.dcd'],
+        pairs=[(132, 152), (34, 152)],
+        frames=[1, 4, 6],
+        output=True)
+
+    cfg: TrajectoryAnalysisConfig = TrajectoryAnalysisConfig(**traj_analysis_dict)
+    assert {34, 132, 152} == cfg.get_selections()
+
+
+@pytest.mark.parametrize('setting', [
     # Testing missing ligand
     dict(
         type='docking',
@@ -63,48 +101,7 @@ docking_settings_list: List[Dict[str, Any]] = [
                  f'{resources_dir}/docking_sep_test/98P_2.pdb'],
         pairs=[(400, 410)]
     ),
-]
-
-
-def test_frame_range_selection():
-    frame_range: Dict[str, int] = {'start': 2,
-                                   'step': 1,
-                                   'stop': 0}
-
-    with pytest.raises(ValidationError):
-        RangeFrameSelection(**frame_range)
-
-
-@pytest.mark.parametrize('setting', traj_setting_list)
-def test_traj_analysis_config(setting: Tuple[str, Any]) -> None:
-    traj_analysis_dict: Dict[str, Any] = dict(
-        type='trajectory',
-        topology=f'{resources_dir}/testtop.psf',
-        trajectories=[f'{resources_dir}/testtraj.dcd'],
-        pairs=[(132, 152), (34, 152)],
-        frames=[1, 4, 6],
-        output=True)
-
-    traj_analysis_dict[setting[0]] = setting[1]
-
-    with pytest.raises(ValidationError):
-        TrajectoryAnalysisConfig(**traj_analysis_dict)
-
-
-def test_traj_sel() -> None:
-    traj_analysis_dict: Dict[str, Any] = dict(
-        type='trajectory',
-        topology=f'{resources_dir}/testtop.psf',
-        trajectories=[f'{resources_dir}/testtraj.dcd'],
-        pairs=[(132, 152), (34, 152)],
-        frames=[1, 4, 6],
-        output=True)
-
-    cfg: TrajectoryAnalysisConfig = TrajectoryAnalysisConfig(**traj_analysis_dict)
-    assert {34, 132, 152} == cfg.get_selections()
-
-
-@pytest.mark.parametrize('setting', docking_settings_list)
+])
 def test_dock_analysis_config(setting: Dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
         DockingAnalysisConfig(**setting)
