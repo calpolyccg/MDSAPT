@@ -112,15 +112,16 @@ class Ensemble:
         """Returns list of system keys"""
         return self._ensemble.keys()
 
-    def merge(self, ligand, *args: List[mda.AtomGroup], ligand_id: int = -1) -> 'Ensemble':
+    def merge(self, *args, ligand_id: int = -1) -> 'Ensemble':
         """
-        Merge an atom group into
+        Merge a list of atom group into the existing ensemble returning a new merged ensemble,
+        the existing item is set to resid id -1 by default, intended for adding proteins to a ligand
         """
         _ens: Dict[str, mda.Universe] = {}
 
         for k in self.keys():
-            ligand.universe.residues.resids = [ligand_id]
-            _ens[k] = Merge(ligand, args)
+            self[k].universe.residues.resids = [ligand_id]
+            _ens[k] = Merge(self[k].select_atoms('name *'), *args)
 
         return Ensemble(_ens)
 
@@ -146,7 +147,7 @@ class Ensemble:
                 logger.warning('No MD files detected in %s', os.curdir)
                 return Ensemble()
 
-            _ens: Dict[str, mda.Universe]
+            _ens: Dict[str, mda.Universe] = {}
 
             for f in top:
                 try:
