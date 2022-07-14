@@ -4,10 +4,11 @@ from typing import Dict, Any, Tuple, List
 import pydantic
 import pytest
 
-from pydantic import ValidationError, FilePath
+from pydantic import ValidationError
 
 from mdsapt.config import load_from_yaml_file, RangeFrameSelection, \
-    TrajectoryAnalysisConfig, DockingStructureMode, DockingAnalysisConfig, TopologySelection
+    TrajectoryAnalysisConfig, DockingAnalysisConfig, TopologySelection
+from mdsapt.utils.ensemble import Ensemble, EnsembleAtomGroup
 
 resources_dir = Path(__file__).parent / 'testing_resources'
 
@@ -18,92 +19,50 @@ traj_setting_list: List[Tuple[str, Any]] = [
     ('pairs', [(250, 251)])
 ]
 
-working_docking_settings = dict(
-    mode=DockingStructureMode.SeparateLigand,
-    protein=f'{resources_dir}/docking_sep_test/2hnt.pdb',
-    ligands=[f'{resources_dir}/docking_sep_test/15U0.pdb',
-             f'{resources_dir}/docking_sep_test/15U1.pdb',
-             f'{resources_dir}/docking_sep_test/98P_2.pdb'],
-    combined_topologies=[f'{resources_dir}/docking_merged_test/2hnt_15U0.pdb',
-                         f'{resources_dir}/docking_merged_test/2hnt_98P.pdb'],
-    pairs=[('L', 1)]
-)
-
-working_docking_settings_list: List[Dict[str, Any]] = [
-
-    # Testing missing protein
-    dict(
-        mode=DockingStructureMode.SeparateLigand,
-        ligands=[f'{resources_dir}/docking_sep_test/15U0.pdb',
-                 f'{resources_dir}/docking_sep_test/15U1.pdb',
-                 f'{resources_dir}/docking_sep_test/98P_2.pdb'],
-        combined_topologies=[f'{resources_dir}/docking_merged_test/2hnt_15U0.pdb',
-                             f'{resources_dir}/docking_merged_test/2hnt_98P.pdb'],
-        pairs=[('L', 1)]
-    ),
-
+docking_settings_list: List[Dict[str, Any]] = [
     # Testing missing ligand
     dict(
-        mode=DockingStructureMode.SeparateLigand,
+        type='docking',
         protein=f'{resources_dir}/docking_sep_test/2hnt.pdb',
-        combined_topologies=[f'{resources_dir}/docking_merged_test/2hnt_15U0.pdb',
-                             f'{resources_dir}/docking_merged_test/2hnt_98P.pdb'],
         pairs=[('L', 1)]
     ),
 
     # Testing missing combined topologies
     dict(
-        mode=DockingStructureMode.SeparateLigand,
-        ligands=[f'{resources_dir}/docking_sep_test/15U0.pdb',
-                 f'{resources_dir}/docking_sep_test/15U1.pdb',
-                 f'{resources_dir}/docking_sep_test/98P_2.pdb'],
+        type='docking',
         pairs=[('L', 1)]
     ),
 
     # Testing separate with protein set to None
     dict(
-        mode=DockingStructureMode.SeparateLigand,
-        protein=None,
+        type='docking',
         ligands=[f'{resources_dir}/docking_sep_test/15U0.pdb',
                  f'{resources_dir}/docking_sep_test/15U1.pdb',
                  f'{resources_dir}/docking_sep_test/98P_2.pdb'],
-        combined_topologies=[f'{resources_dir}/docking_merged_test/2hnt_15U0.pdb',
-                             f'{resources_dir}/docking_merged_test/2hnt_98P.pdb'],
         pairs=[('L', 1)]
     ),
 
     # Testing separate with ligand set to None
     dict(
-        mode=DockingStructureMode.SeparateLigand,
+        type='docking',
         protein=f'{resources_dir}/docking_sep_test/2hnt.pdb',
-        ligands=None,
-        combined_topologies=[f'{resources_dir}/docking_merged_test/2hnt_15U0.pdb',
-                             f'{resources_dir}/docking_merged_test/2hnt_98P.pdb'],
-        pairs=[('L', 1)]
-    ),
-
-    # Testing separate with protein and ligand set to None
-    dict(
-        mode=DockingStructureMode.SeparateLigand,
-        protein=None,
-        ligands=None,
-        combined_topologies=[f'{resources_dir}/docking_merged_test/2hnt_15U0.pdb',
-                             f'{resources_dir}/docking_merged_test/2hnt_98P.pdb'],
         pairs=[('L', 1)]
     ),
 
     # Testing combine with top set to none
     dict(
-        mode=DockingStructureMode.MergedLigand,
+        type='docking',
+        pairs=[('L', 1)]
+    ),
+
+    dict(
+        type='docking',
         protein=f'{resources_dir}/docking_sep_test/2hnt.pdb',
         ligands=[f'{resources_dir}/docking_sep_test/15U0.pdb',
                  f'{resources_dir}/docking_sep_test/15U1.pdb',
                  f'{resources_dir}/docking_sep_test/98P_2.pdb'],
-        combined_topologies=None,
-        pairs=[('L', 1)]
+        pairs=[(400, 410)]
     ),
-
-
 ]
 
 
@@ -119,6 +78,7 @@ def test_frame_range_selection():
 @pytest.mark.parametrize('setting', traj_setting_list)
 def test_traj_analysis_config(setting: Tuple[str, Any]) -> None:
     traj_analysis_dict: Dict[str, Any] = dict(
+        type='trajectory',
         topology=f'{resources_dir}/testtop.psf',
         trajectories=[f'{resources_dir}/testtraj.dcd'],
         pairs=[(132, 152), (34, 152)],
@@ -131,14 +91,26 @@ def test_traj_analysis_config(setting: Tuple[str, Any]) -> None:
         TrajectoryAnalysisConfig(**traj_analysis_dict)
 
 
-@pytest.mark.parametrize('setting', working_docking_settings_list)
-def test_dock_analysis_config(setting: Dict[str, Any]) -> None:
+def test_traj_sel() -> None:
+    traj_analysis_dict: Dict[str, Any] = dict(
+        type='trajectory',
+        topology=f'{resources_dir}/testtop.psf',
+        trajectories=[f'{resources_dir}/testtraj.dcd'],
+        pairs=[(132, 152), (34, 152)],
+        frames=[1, 4, 6],
+        output=True)
 
+    cfg: TrajectoryAnalysisConfig = TrajectoryAnalysisConfig(**traj_analysis_dict)
+    assert {34, 132, 152} == cfg.get_selections()
+
+
+@pytest.mark.parametrize('setting', docking_settings_list)
+def test_dock_analysis_config(setting: Dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
         DockingAnalysisConfig(**setting)
 
 
-def test_template_can_be_loaded():
+def test_template_can_be_loaded() -> None:
     load_from_yaml_file(resources_dir / "test_input.yaml")
 
 
@@ -169,3 +141,58 @@ def test_topology_selection_parses_from_obj_without_overrides():
 
     assert result.path == resources_dir / 'test_input.yaml'
     assert result.charge_overrides == {}
+
+
+def test_separated_docking_list() -> None:
+    config_dict: Dict[str, Any] = dict(
+        type='docking',
+        protein=resources_dir / 'docking_sep_test/2hnt.pdb',
+        ligands=[resources_dir / 'docking_sep_test/ligands/15U0.pdb',
+                 resources_dir / 'docking_sep_test/ligands/15U1.pdb',
+                 resources_dir / 'docking_sep_test/ligands/98P_1.pdb'],
+        pairs=[(13, 18)]
+    )
+
+    cfg: DockingAnalysisConfig = DockingAnalysisConfig(**config_dict)
+    ens: Ensemble = cfg.build_ensemble()
+    assert len(ens) == 3
+    ligands: EnsembleAtomGroup = ens.select_atoms('resid -1')
+    assert all([len(ligands[k]) != 0 for k in ligands.keys()])
+
+
+def test_seperated_docking_dir() -> None:
+    config_dict: Dict[str, Any] = dict(
+        type='docking',
+        protein=resources_dir / 'docking_sep_test/2hnt.pdb',
+        ligands=resources_dir / 'docking_sep_test/ligands',
+        pairs=[(13, 18)]
+    )
+
+    cfg: DockingAnalysisConfig = DockingAnalysisConfig(**config_dict)
+    ens: Ensemble = cfg.build_ensemble()
+    assert len(ens) == 7
+
+
+def test_combined_docking_list() -> None:
+    config_dict: Dict[str, Any] = dict(
+        type='docking',
+        combined_topologies=[resources_dir / 'docking_merged_test/2hnt_15U0.pdb',
+                             resources_dir / 'docking_merged_test/2hnt_98P.pdb'],
+        pairs=[(13, 18)]
+    )
+
+    cfg: DockingAnalysisConfig = DockingAnalysisConfig(**config_dict)
+    ens: Ensemble = cfg.build_ensemble()
+    assert len(ens) == 2
+
+
+def test_combined_docking_dir() -> None:
+    config_dict: Dict[str, Any] = dict(
+        type='docking',
+        combined_topologies=resources_dir / 'docking_merged_test',
+        pairs=[(13, 18)]
+    )
+
+    cfg: DockingAnalysisConfig = DockingAnalysisConfig(**config_dict)
+    ens: Ensemble = cfg.build_ensemble()
+    assert len(ens) == 2

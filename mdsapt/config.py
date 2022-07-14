@@ -8,7 +8,6 @@ returning the information from it. If a yaml file is needed it can be generated
 using the included *mdsapt_get_runinput* script.
 
 """
-import abc
 import dataclasses
 from dataclasses import dataclass
 from enum import Enum
@@ -122,10 +121,12 @@ class TrajectoryAnalysisConfig(BaseModel):
     output: str
 
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
+    def __get_validators__(cls):
         yield from super().__get_validators__()
         yield cls.check_valid_md_system
 
+    # note: if this is tagged with @root_validator, then values.topology will not exist on the passed-in values
+    # when this is called. Thus, it must be yielded in cls.__get_validators__.
     @classmethod
     def check_valid_md_system(cls, values: Any) -> Dict[str, Any]:
         errors: List[str] = []
@@ -164,23 +165,22 @@ class TrajectoryAnalysisConfig(BaseModel):
 
 def get_invalid_residue_selections(residues: Iterable[int], unv: mda.Universe) -> Iterable[int]:
     """Helper function to find selected residues that aren't in the universe."""
-    return (
+    return [
         i for i in residues
         if len(unv.select_atoms(f'resid {i}')) == 0
-    )
+    ]
 
 
-class DockingElement(BaseModel):
-    """
-    A single element to analyze in docking.
+DockingElement = Union[Literal['L'], conint(ge=-1)]
+"""
+A single element to analyze in docking.
 
-    The literal 'L' specifies the ligand, whereas an integer specifies the protein residue number.
-    """
-    __root__: Union[Literal['L'], int]
+The literal 'L' specifies the ligand, whereas an integer specifies the protein residue number.
+"""
 
 
 class TopologyGroupSelection(BaseModel):
-    __root__: Union[List[TopologySelection], DirectoryPath]
+    __root__: Union[DirectoryPath, List[TopologySelection]]
 
     def get_individual_topologies(self) -> List[TopologySelection]:
         if isinstance(self.__root__, list):
@@ -193,11 +193,15 @@ class TopologyGroupSelection(BaseModel):
         ]
 
 
-class DockingAnalysisConfigBase(BaseModel):
+# noinspection PyMethodParameters
+class DockingAnalysisConfig(BaseModel):
     type: Literal['docking']
     pairs: List[Tuple[DockingElement, DockingElement]]
 
-    @classmethod
+    combined_topologies: Optional[TopologyGroupSelection]
+    protein: Optional[TopologySelection]
+    ligands: Optional[TopologyGroupSelection]
+
     @root_validator
     def check_valid_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         errors: List[str] = []
@@ -206,7 +210,9 @@ class DockingAnalysisConfigBase(BaseModel):
         protein_selections: Set[int] = {
             i for pair in pairs for i in pair if i != 'L'
         }
-        ens: Ensemble = cls.build_ensemble(values)
+        ens: Ensemble = cls._build_ensemble(combined_topologies=values.get('combined_topologies'),
+                                            protein=values.get('protein'),
+                                            ligands=values.get('ligands'))
         missing_selections: List[int] = []
 
         for k in ens.keys():
@@ -217,35 +223,32 @@ class DockingAnalysisConfigBase(BaseModel):
 
         return values
 
-    @abc.abstractmethod
-    def build_ensemble(self) -> Ensemble:
-        assert NotImplementedError
+    def build_ensemble(self):
+        return self._build_ensemble(combined_topologies=self.combined_topologies, protein=self.protein,
+                                    ligands=self.ligands)
 
+    @classmethod
+    def _build_ensemble(
+            cls,
+            *,
+            combined_topologies: Optional[TopologyGroupSelection],
+            protein: Optional[TopologySelection],
+            ligands: Optional[TopologyGroupSelection],
+    ) -> Ensemble:
+        """Fails if the wrong types of arguments are provided."""
+        if combined_topologies is not None and (protein, ligands) == (None, None):
+            return Ensemble.build_from_files(
+                [top.path for top in combined_topologies.get_individual_topologies()]
+            )
 
-class DockingAnalysisProteinLigands(DockingAnalysisConfigBase):
-    protein: TopologySelection
-    ligands: TopologyGroupSelection
+        if combined_topologies is None and None not in (protein, ligands):
+            ens: Ensemble = Ensemble.build_from_files([top.path for top in ligands.get_individual_topologies()])
+            protein_sys: mda.Universe = mda.Universe(str(protein.path))
+            protein_mol: mda.AtomGroup = protein_sys.select_atoms("protein")
+            ens = ens.merge(protein_mol)
+            return ens
 
-    def build_ensemble(self) -> Ensemble:
-        ens: Ensemble = Ensemble.build_from_files([top.path for top in self.ligands.get_individual_topologies()])
-        protein_sys: mda.Universe = mda.Universe(str(self.protein))
-        protein_mol: mda.AtomGroup = protein_sys.select_atoms("protein")
-        ens = ens.merge(protein_mol)
-
-        return ens
-
-
-class DockingAnalysisCombinedTopologies(DockingAnalysisConfigBase):
-    combined_topologies: TopologyGroupSelection
-
-    def build_ensemble(self) -> Ensemble:
-        ens: Ensemble = Ensemble.build_from_files([top.path for top in
-                                                   self.combined_topologies.get_individual_topologies()])
-        return ens
-
-
-class DockingAnalysisConfig(BaseModel):
-    __root__: Union[DockingAnalysisProteinLigands, DockingAnalysisCombinedTopologies]
+        raise ValueError('Must provide `protein` and `ligands` keys, or only `combined_topologies`')
 
 
 class Config(BaseModel):
