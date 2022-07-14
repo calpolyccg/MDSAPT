@@ -102,12 +102,6 @@ class Ensemble:
         """Allows dictionary like indexing"""
         return self._ensemble[index]
 
-    def __setitem__(self, key: str, value: mda.Universe) -> None:
-        """Adds system from universe object for trajectory and topology files
-        Existing mda.Universe object or trajectory and topology path. Ensure
-        that paths are set to absolute when creating the universe."""
-        self._ensemble[key] = value
-
     def keys(self) -> Iterable[str]:
         """Returns list of system keys"""
         return self._ensemble.keys()
@@ -258,7 +252,7 @@ class EnsembleAtomGroup:
             try:
                 ag = self[key].select_atoms(*args, **kwargs)
             except SelectionError as err:
-                logger.error("%r on system %r with selection settings %r %r", err, key, args, kwargs)
+                logger.error("%r on system %r with selection traj_settings %r %r", err, key, args, kwargs)
                 raise
             else:
                 selections[key] = ag

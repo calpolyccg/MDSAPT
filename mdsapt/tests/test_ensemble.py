@@ -1,10 +1,5 @@
 from pathlib import Path
-from typing import List, Literal
 
-import pytest
-from pydantic import FilePath
-
-from ..config import DockingAnalysisConfig
 from ..utils.ensemble import Ensemble
 
 resources_dir = Path(__file__).parent / 'testing_resources'
@@ -29,7 +24,7 @@ def test_list_of_merged() -> None:
 
 
 def test_dir_of_merged() -> None:
-    ens: Ensemble = Ensemble.build_from_dir(f'{resources_dir}/docking_merged_test')
+    ens: Ensemble = Ensemble.build_from_dir(Path(f'{resources_dir}/docking_merged_test'))
 
     assert len(ens) == 2
-
+    assert f'{ens}' == "<Ensemble Containing 2 System>"
