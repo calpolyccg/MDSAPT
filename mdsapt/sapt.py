@@ -15,7 +15,7 @@ calculations between the residues selected in the input file.
 
 """
 
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, List, Set, Tuple, Optional, Final
 
 import pandas as pd
 
@@ -41,7 +41,7 @@ import logging
 logger = logging.getLogger('mdsapt.sapt')
 
 
-MHT_TO_KCALMOL: float = 627.509
+MHT_TO_KCALMOL: Final[float] = 627.509
 
 
 def build_psi4_input_str(resid: int, residue: mda.AtomGroup) -> str:
