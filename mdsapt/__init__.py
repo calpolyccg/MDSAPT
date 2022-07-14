@@ -3,10 +3,9 @@
 # Add imports here
 from . import log
 
-# Import core classes
-from .config import Config
-from .optimizer import Optimizer
-from .sapt import TrajectorySAPT
+# Import core items
+from .config import Config, load_from_yaml_file
+from .sapt import TrajectorySAPT, DockingSAPT
 from .viewer import Viewer
 
 # Handle versioneer
@@ -24,8 +23,8 @@ def create_logger(logfile='mdsapt.log'):
 
 def log_banner():
     """Log program name and licence at INFO level"""
-    logger.info(f"MDSAPT {__version__} starting")
-    logger.info("Copyright (c) 2021 Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald")
+    logger.info(f"MD-SAPT {__version__} starting")
+    logger.info("Copyright (c) 2021-2022 Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald")
     logger.info("Released under GPLv3 License")
 
 
