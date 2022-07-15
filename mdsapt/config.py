@@ -26,7 +26,7 @@ import logging
 from pydantic import BaseModel, conint, Field, root_validator, \
     FilePath, ValidationError, DirectoryPath
 
-from mdsapt.utils.ensemble import Ensemble, EnsembleAtomGroup
+from mdsapt.utils.ensemble import Ensemble
 
 logger = logging.getLogger('mdsapt.config')
 
@@ -194,10 +194,10 @@ class TopologyGroupSelection(BaseModel):
 class DockingAnalysisConfig(BaseModel):
     type: Literal['docking']
     pairs: List[Tuple[DockingElement, DockingElement]]
-
     combined_topologies: Optional[TopologyGroupSelection]
     protein: Optional[TopologySelection]
     ligands: Optional[TopologyGroupSelection]
+    output: str
 
     @root_validator
     def check_valid_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -246,6 +246,9 @@ class DockingAnalysisConfig(BaseModel):
             return ens
 
         raise ValueError('Must provide `protein` and `ligands` keys, or only `combined_topologies`')
+
+    def get_selections(self) -> Set[int]:
+        return {i for pair in self.pairs for i in pair}
 
 
 class Config(BaseModel):
