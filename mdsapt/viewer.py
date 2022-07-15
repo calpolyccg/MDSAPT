@@ -5,6 +5,11 @@ r"""
 Allows for visualization of trajectories using `NGLView <http://nglviewer.org>`_
 in a Jupyter Notebook.
 
+.. note::
+    This module only works if NGLView is installed. It is likely not
+    automatically installed by your package manager because it is an optional
+    dependency.
+
 Required Input:
 
 - :class:`-mdsapt.reader.InputReader
@@ -17,7 +22,13 @@ Required Input:
 
 from typing import Union
 
-import nglview as nv
+try:
+    import nglview as nv
+except ImportError:
+    raise ImportError(
+        "nglview is not installed! Please install it to use the viewer module."
+    )
+    
 import numpy as np
 
 from .sapt import TrajectorySAPT
