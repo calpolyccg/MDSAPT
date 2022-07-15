@@ -3,10 +3,9 @@
 # Add imports here
 from . import log
 
-# Import core items
+# Import core classes
 from .config import Config, load_from_yaml_file
 from .sapt import TrajectorySAPT, DockingSAPT
-from .viewer import Viewer
 
 # Handle versioneer
 from ._version import get_versions
