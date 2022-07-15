@@ -6,8 +6,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - mdanalysis>=2.0.0, <2.1
-  - nglview>=3.0.3, <3.1
+  - mdanalysis
   - numpy
   - openmm
   - pandas
@@ -17,3 +16,13 @@ dependencies:
   - pytest-cov
   - pyyaml
   - rdkit
+
+  # Optional deps
+  - nglview
+
+  # Development deps
+  - autopep8
+  - pyright # type-checking
+  - pylint
+  - pytest
+  - pytest-cov
