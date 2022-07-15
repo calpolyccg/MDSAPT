@@ -12,6 +12,8 @@ dependencies:
   - pandas
   - pdbfixer
   - psi4
+  - pydantic
+  - pytest-cov
   - pyyaml
   - rdkit
 

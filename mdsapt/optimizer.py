@@ -20,7 +20,7 @@ Required Input:
 
 """
 
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import MDAnalysis as mda
 
@@ -35,7 +35,7 @@ from simtk.openmm.app import PDBFile
 
 import numpy as np
 
-from .reader import InputReader
+from .config import Config
 
 import logging
 
@@ -72,7 +72,7 @@ class Optimizer(object):
     """
     _resids: Dict[int, mda.AtomGroup]
     _unv: mda.Universe
-    _settings: InputReader
+    _settings: Config
     _bond_lengths: Dict[int, float] = {
         'ALA': 1.1,
         'ARG': 1.1,
@@ -98,7 +98,7 @@ class Optimizer(object):
 
     _std_resids: List[str] = [x for x in _bond_lengths.keys()]
 
-    def __init__(self, settings: InputReader) -> None:
+    def __init__(self, config: Config) -> None:
         """Prepares selected residues for SAPT calculations
         by adding missing protons.
 
@@ -106,9 +106,11 @@ class Optimizer(object):
             *settings*
                 :class:`mdsapt.reader.InputReader`
         """
-        self._settings = settings
-        self._unv = mda.Universe(self._settings.top_path, self._settings.trj_path)
-        self._resids = {x: self._unv.select_atoms(f"resid {x} and protein") for x in self._settings.ag_sel}
+        self._settings = config
+        self._unv = mda.Universe(str(self._settings.analysis.topology),
+                                 [str(path) for path in self._settings.analysis.trajectories])
+        ag_sel: Set[int] = {i for pair in config.analysis.pairs for i in pair}
+        self._resids = {x: self._unv.select_atoms(f'resid {x} and protein') for x in ag_sel}
 
     def _is_amino(self, key: int) -> bool:
         resname_atr = self._resids[key].universe._topology.resnames
@@ -132,7 +134,7 @@ class Optimizer(object):
         fixer = PDBFixer(filename='resid.pdb')
         fixer.findMissingResidues()
         fixer.findMissingAtoms()
-        fixer.addMissingHydrogens(self._settings.pH)  # Adding protons at pH value
+        fixer.addMissingHydrogens(self._settings.simulation.ph)  # Adding protons at pH value
         PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
 
         res_fixed = mda.Universe('resid_fixed.pdb')

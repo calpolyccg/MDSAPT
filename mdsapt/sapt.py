@@ -15,7 +15,7 @@ Required Input:
     :inherited-members:
 """
 
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import pandas as pd
 
@@ -29,7 +29,7 @@ import psi4
 
 from rdkit import Chem
 
-from .reader import InputReader
+from .config import Config
 from .optimizer import Optimizer, get_spin_multiplicity
 
 import logging
@@ -50,7 +50,7 @@ class TrajectorySAPT(AnalysisBase):
     _sel: Dict[int, mda.AtomGroup]
     _sel_pairs: List[List[int]]
     _mem: str
-    _cfg: InputReader
+    _cfg: Config
     _opt: Optimizer
     _save_psi_out: bool
     _method: str
@@ -59,12 +59,12 @@ class TrajectorySAPT(AnalysisBase):
     results: pd.DataFrame
     _mht_to_kcalmol: float = 627.509
 
-    def __init__(self, config: InputReader, optimizer: Optimizer, **universe_kwargs) -> None:
+    def __init__(self, config: Config, optimizer: Optimizer, **universe_kwargs) -> None:
         """Sets up Trajectory and residue selections.
 
         :Arguments:
             *config*
-                :class:`mdsapt.reader.InputReader containing data for running calculations
+                :class:`mdsapt.config.Config containing data for running calculations
             *optimizer*
                 :class:`mdsapt.optimizer.Optimizer` for preparing residues by replacing missing protons
                 and providing a balanced spin state.
@@ -72,18 +72,20 @@ class TrajectorySAPT(AnalysisBase):
                 keyword arguments for loading the trajectory into a MDAnalysis :class:`Universe <MDAnalysis.core.groups.universe.Universe>`
         """
 
-        self._unv = mda.Universe(config.top_path, config.trj_path, **universe_kwargs)
+        self._unv = mda.Universe(str(config.analysis.topology), [str(path) for path in config.analysis.trajectories],
+                                 **universe_kwargs)
         elements = guess_types(self._unv.atoms.names)
         self._unv.add_TopologyAttr('elements', elements)
-        self._sel = {x: self._unv.select_atoms(f'resid {x} and protein') for x in config.ag_sel}
-        self._sel_pairs = config.ag_pair
-        self._mem = config.sys_settings['memory']
+        ag_sel: Set[int] = {i for pair in config.analysis.pairs for i in pair}
+        self._sel = {x: self._unv.select_atoms(f'resid {x} and protein') for x in ag_sel}
+        self._sel_pairs = config.analysis.pairs
+        self._mem = config.system_limits.memory
         self._cfg = config
         self._opt = optimizer
-        self._save_psi_out = config.sapt_out
-        self._method = config.sapt_method
-        self._basis = config.sapt_basis
-        self._settings = config.sapt_settings['settings']
+        self._save_psi_out = config.psi4.save_output
+        self._method = config.psi4.method
+        self._basis = config.psi4.basis
+        self._settings = config.psi4.settings
 
         super(TrajectorySAPT, self).__init__(self._unv.trajectory)
 
@@ -109,7 +111,7 @@ class TrajectorySAPT(AnalysisBase):
             dimer = psi4.geometry(coords)
             psi4.set_options(self._settings)
             psi4.set_memory(self._mem)
-            psi4.set_num_threads(self._cfg.ncpus)
+            psi4.set_num_threads(self._cfg.system_limits.ncpus)
 
             logger.info(f'Starting SAPT for {pair}')
 
