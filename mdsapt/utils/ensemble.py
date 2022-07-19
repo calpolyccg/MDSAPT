@@ -121,12 +121,14 @@ class Ensemble:
 
     @classmethod
     def build_from_dir(cls, ensemble_dir: DirectoryPath, **universe_kwargs) -> 'Ensemble':
-        """Finds simulation files genderated by MDPOW and attempts to build
+        """
+        Finds simulation files genderated by MDPOW and attempts to build
         :class:`MDAnalysis.Universe <MDAnalysis.core.groups.universe.Universe>`
         in the lambda directories.
         Run if :code:`dirname` argument is given when initializing the class.
         First enters FEP directory, then traverses solvent and interaction
-        directories to search lambda directories for system files."""
+        directories to search lambda directories for system files.
+        """
 
         with in_dir(str(ensemble_dir), create=False):
             cur_dir = os.listdir(os.curdir)

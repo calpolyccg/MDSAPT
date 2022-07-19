@@ -5,9 +5,9 @@ r"""
 Sets up and runs `SAPT <https://psicode.org/psi4manual/master/sapt.html>`_
 calculations between the residues selected in the input file.
 
- autoclass:: SAPT
-    :members:
-    :inherited-members:
+.. autofunction:: build_psi4_imput_str
+
+.. autofunction:: calc_sapt
 
 .. autoclass:: TrajectorySAPT
     :members:
@@ -94,7 +94,8 @@ def calc_sapt(psi4_input: str, psi4_cfg: Psi4Config, sys_cfg: SysLimitsConfig,
 
 
 class TrajectorySAPT(AnalysisBase):
-    """Handles iterating over MD trajectory frames,
+    """
+    Handles iterating over MD trajectory frames,
     setting up SAPT calculations, and processing results.
 
     Results are stored in a Pandas :class:`DataFrame` following the
@@ -109,14 +110,12 @@ class TrajectorySAPT(AnalysisBase):
     results: pd.DataFrame
 
     def __init__(self, config: Config, **universe_kwargs) -> None:
-        """Sets up Trajectory and residue selections.
+        """
+        Sets up Trajectory and residue selections.
 
         :Arguments:
             *config*
-                :class:`mdsapt.reader.InputReader containing data for running calculations
-            *optimizer*
-                :class:`mdsapt.optimizer.Optimizer` for preparing residues by replacing missing protons
-                and providing a balanced spin state.
+                :class:`mdsapt.config.Config` containing data for running calculations
             *universe_arguments*
                 keyword arguments for loading the trajectory into a MDAnalysis :class:`Universe <MDAnalysis.core.groups.universe.Universe>`
         """
@@ -171,7 +170,13 @@ class TrajectorySAPT(AnalysisBase):
 
 
 class DockingSAPT:
-    """"""
+    """
+    Handles running SAPT calculations on a collection of protein-ligand topologies.
+
+    Results are stored in a Pandas :class:`DataFrame` following the
+    `"tidy dataframe" <https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html>`_
+    convention.
+    """
 
     _cfg: Config
     _ens: Ensemble
@@ -191,6 +196,13 @@ class DockingSAPT:
     ]
 
     def __init__(self, config: Config) -> None:
+        """
+        Sets up ligand topology systems.
+
+        :Arguments:
+            *config*
+                A :class:`mdsapt.config.Config` for a docking analysis.
+        """
         self._cfg = config
 
         try:
@@ -239,7 +251,7 @@ class DockingSAPT:
         for k in self._col:
             self.results[k] = self._res_dict[k]
 
-    def run(self):
+    def run(self) -> None:
         """
         Runs _single_universe on each system and _single_frame
         on each frame in the system.
@@ -254,4 +266,3 @@ class DockingSAPT:
             logger.info("Moving to next universe")
         logger.info("Finishing up")
         self._conclude()
-        return self

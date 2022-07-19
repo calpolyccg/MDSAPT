@@ -14,9 +14,9 @@ Required Input:
 
 .. autofunction:: get_spin_multiplicity
 
-.. autoclass:: Optimizer
-    :members:
-    :inherited-members:
+.. autofunction:: is_amino
+
+.. autofunction:: rebuild_resid
 
 """
 
@@ -119,22 +119,23 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, ph: float = 7.0) -> mda.At
     def protonate_backbone(residue: mda.AtomGroup, length: float = 1.128) -> mda.Universe:
         mol_resid = atomgroup_to_mol(residue)
         i: int = 0
-        for n in mol_resid.GetAtoms():
-            i += n.GetNumRadicalElectrons()
+        for atom in mol_resid.GetAtoms():
+            i += atom.GetNumRadicalElectrons()
 
         if i > 0:
             backbone = residue.select_atoms('backbone')
-            protonated: mda.Universe = mda.Universe.empty(n_atoms=residue.n_atoms + 1, trajectory=True)
+            protonated: mda.Universe = mda.Universe.empty(n_atoms=residue.n_atoms + 1,
+                                                          trajectory=True)
             protonated.add_TopologyAttr('masses', [x for x in residue.masses] + [1])
             protonated.add_TopologyAttr('name', [x for x in residue.names] + ['Hc'])
             protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
-            protonated.add_TopologyAttr('elements', [guess_atom_element(atom) for atom in protonated.atoms.names])
+            protonated.add_TopologyAttr('elements',
+                                        [guess_atom_element(atom) for atom in protonated.atoms.names])
             new_pos = residue.positions
             h_pos = get_new_pos(backbone, length)
             protonated.atoms.positions = np.row_stack((new_pos, h_pos))
             return protonated
-        else:
-            return residue
+        return residue
 
     if is_amino(residue.universe, resid):
         step0: mda.AtomGroup = fix_amino(residue)
