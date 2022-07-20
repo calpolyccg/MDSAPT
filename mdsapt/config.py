@@ -50,17 +50,28 @@ class SysLimitsConfig(BaseModel):
 
 
 class ChargeGuesser(Enum):
+    """
+    Specifies the charge guesser used in the analysis. The standard one is faster but will not
+    work on more complex sulfur based ligands.
+    """
     STANDARD = 'standard'
     RDKIT = 'rdkit'
 
 
 class SimulationConfig(BaseModel):
+    """
+    Configuration options for the simulation:
+    allows for specifying pH and which charge guesser.
+    """
     ph: float
     charge_guesser: ChargeGuesser
 
 
 @dataclass
 class TopologySelection:
+    """
+    Config for selecting topologies.
+    """
     class _TopologySelection(BaseModel):
         path: FilePath
         topology_format: Optional[str]
@@ -76,6 +87,9 @@ class TopologySelection:
 
     @classmethod
     def validate(cls, values):
+        """
+        Validates topology
+        """
         result = pydantic.parse_obj_as(Union[FilePath, cls._TopologySelection], values)
         if isinstance(result, PathLike):
             return TopologySelection(path=Path(result))
@@ -89,12 +103,18 @@ class TopologySelection:
 
 
 class RangeFrameSelection(BaseModel):
+    """
+    Stores and validates frame iteration selection for trajectory analysis
+    """
     start: Optional[conint(ge=0)]
     stop: Optional[conint(ge=0)]
     step: Optional[conint(ge=1)]
 
     @root_validator()
     def check_start_before_stop(cls, values: Dict[str, int]) -> Dict[str, int]:
+        """
+        Ensures that valid options are selected for frame iteration
+        """
         assert values['start'] <= values['stop'], "start must be before stop"
         return values
 
@@ -118,6 +138,9 @@ class TrajectoryAnalysisConfig(BaseModel):
     # noinspection PyMethodParameters
     @root_validator
     def check_valid_md_system(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validates that setting work with the selected MD system
+        """
         errors: List[str] = []
 
         topology: TopologySelection = values['topology']
@@ -149,9 +172,15 @@ class TrajectoryAnalysisConfig(BaseModel):
         return values
 
     def create_universe(self, **universe_kwargs) -> mda.Universe:
+        """
+        Loads a universe from the given topology and trajectory
+        """
         return self.topology.create_universe([str(p) for p in self.trajectories], **universe_kwargs)
 
     def get_selections(self) -> Set[int]:
+        """
+        Returns a set of ints for the selected residues for trajectory analysis
+        """
         return {i for pair in self.pairs for i in pair}
 
 
@@ -172,6 +201,9 @@ The literal 'L' specifies the ligand, whereas an integer specifies the protein r
 
 
 class TopologyGroupSelection(BaseModel):
+    """
+    Selection for a group of topologies
+    """
     __root__: Union[DirectoryPath, List[TopologySelection]]
 
     def get_individual_topologies(self) -> List[TopologySelection]:
@@ -187,6 +219,9 @@ class TopologyGroupSelection(BaseModel):
 
 # noinspection PyMethodParameters
 class DockingAnalysisConfig(BaseModel):
+    """
+    Config for docking analysis
+    """
     type: Literal['docking']
     pairs: List[Tuple[DockingElement, DockingElement]]
     combined_topologies: Optional[TopologyGroupSelection]
@@ -196,6 +231,9 @@ class DockingAnalysisConfig(BaseModel):
 
     @root_validator
     def check_valid_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validates analysis settings
+        """
         errors: List[str] = []
 
         pairs: List[Tuple[DockingElement, DockingElement]] = values['pairs']
@@ -215,8 +253,9 @@ class DockingAnalysisConfig(BaseModel):
 
         return values
 
-    def build_ensemble(self):
-        return self._build_ensemble(combined_topologies=self.combined_topologies, protein=self.protein,
+    def build_ensemble(self) -> Ensemble:
+        return self._build_ensemble(combined_topologies=self.combined_topologies,
+                                    protein=self.protein,
                                     ligands=self.ligands)
 
     @classmethod
@@ -244,22 +283,26 @@ class DockingAnalysisConfig(BaseModel):
         raise ValueError('Must provide `protein` and `ligands` keys, or only `combined_topologies`')
 
     def get_selections(self) -> Set[int]:
+        """
+        Returns selected residues in a set
+        """
         return {i for pair in self.pairs for i in pair}
 
 
 class Config(BaseModel):
     """
-
+    Config object for MD-SAPT
     """
     psi4: Psi4Config
     simulation: SimulationConfig
     system_limits: SysLimitsConfig
-    analysis: Union[TrajectoryAnalysisConfig, DockingAnalysisConfig] = Field(..., discriminator='type')
+    analysis: Union[TrajectoryAnalysisConfig, DockingAnalysisConfig] = \
+        Field(..., discriminator='type')
 
 
 def load_from_yaml_file(path: Union[str, Path]) -> Config:
     """
-
+    Creates a config from a yaml file
     """
     path = Path(path)
 
