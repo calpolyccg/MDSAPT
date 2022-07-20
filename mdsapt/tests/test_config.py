@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any
 
 import pydantic
 import pytest
@@ -13,7 +13,10 @@ from mdsapt.utils.ensemble import Ensemble, EnsembleAtomGroup
 resources_dir = Path(__file__).parent / 'testing_resources'
 
 
-def test_frame_range_selection():
+def test_frame_range_selection() -> None:
+    """
+    Test frame selection object validator.
+    """
     frame_range: Dict[str, int] = {'start': 2,
                                    'step': 1,
                                    'stop': 0}
@@ -22,13 +25,16 @@ def test_frame_range_selection():
         RangeFrameSelection(**frame_range)
 
 
-@pytest.mark.parametrize('k,v', [
+@pytest.mark.parametrize('key,var', [
     ('trajectories', [f'{resources_dir}/test_read_error.dcd']),
     ('frames', {'start': 1, 'stop': 120}),
     ('frames', [1, 4, 6, 120]),
     ('pairs', [(250, 251)])
 ])
-def test_traj_analysis_config(k: str, v: Any) -> None:
+def test_traj_analysis_config(key: str, var: Any) -> None:
+    """
+    Tests TrajectoryAnalysis config validation with different errors
+    """
     traj_analysis_dict: Dict[str, Any] = dict(
         type='trajectory',
         topology=f'{resources_dir}/testtop.psf',
@@ -38,13 +44,16 @@ def test_traj_analysis_config(k: str, v: Any) -> None:
         output=True
     )
 
-    traj_analysis_dict[k] = v
+    traj_analysis_dict[key] = var
 
     with pytest.raises(ValidationError):
         TrajectoryAnalysisConfig(**traj_analysis_dict)
 
 
 def test_traj_sel() -> None:
+    """
+    Test getting set of selections
+    """
     traj_analysis_dict: Dict[str, Any] = dict(
         type='trajectory',
         topology=f'{resources_dir}/testtop.psf',
@@ -103,20 +112,32 @@ def test_traj_sel() -> None:
     ),
 ])
 def test_dock_analysis_config(setting: Dict[str, Any]) -> None:
+    """
+    Test docking analysis config validation
+    """
     with pytest.raises(ValidationError):
         DockingAnalysisConfig(**setting)
 
 
 def test_template_can_be_loaded() -> None:
+    """
+    Tests that a trajectory analysis can be loaded from a yaml file
+    """
     load_from_yaml_file(resources_dir / "test_input.yaml")
 
 
-def test_load_from_yaml_fail():
+def test_load_from_yaml_fail() -> None:
+    """
+    Tests that errors are raised with an incorrect yaml is loaded
+    """
     with pytest.raises(ValidationError):
         load_from_yaml_file(resources_dir / 'test_broken_input.yaml')
 
 
-def test_topology_selection_parses_from_string():
+def test_topology_selection_parses_from_string() -> None:
+    """
+    Test topology selection parses
+    """
     data: str = str(resources_dir / 'test_input.yaml')
     result = pydantic.parse_obj_as(TopologySelection, data)
 
@@ -124,7 +145,10 @@ def test_topology_selection_parses_from_string():
     assert result.charge_overrides == {}
 
 
-def test_topology_selection_parses_from_obj_with_overrides():
+def test_topology_selection_parses_from_obj_with_overrides() -> None:
+    """
+    Test alternative topology selection
+    """
     data = {'path': str(resources_dir / 'test_input.yaml'), 'charge_overrides': {'13': 3}}
     result = pydantic.parse_obj_as(TopologySelection, data)
 
@@ -132,7 +156,10 @@ def test_topology_selection_parses_from_obj_with_overrides():
     assert result.charge_overrides == {13: 3}
 
 
-def test_topology_selection_parses_from_obj_without_overrides():
+def test_topology_selection_parses_from_obj_without_overrides() -> None:
+    """
+    Tests no charge overrides topology selection
+    """
     data = {'path': str(resources_dir / 'test_input.yaml')}
     result = pydantic.parse_obj_as(TopologySelection, data)
 
@@ -141,6 +168,9 @@ def test_topology_selection_parses_from_obj_without_overrides():
 
 
 def test_separated_docking_list() -> None:
+    """
+    Test seperated docking list setup for correct ensemble
+    """
     config_dict: Dict[str, Any] = dict(
         type='docking',
         protein=resources_dir / 'docking_sep_test/2hnt.pdb',
@@ -154,10 +184,13 @@ def test_separated_docking_list() -> None:
     ens: Ensemble = cfg.build_ensemble()
     assert len(ens) == 3
     ligands: EnsembleAtomGroup = ens.select_atoms('resid -1')
-    assert all([len(ligands[k]) != 0 for k in ligands.keys()])
+    assert all((len(ligands[k]) != 0 for k in ligands.keys()))
 
 
 def test_seperated_docking_dir() -> None:
+    """
+    Test seperated docking directory of ligands for correct ensemble
+    """
     config_dict: Dict[str, Any] = dict(
         type='docking',
         protein=resources_dir / 'docking_sep_test/2hnt.pdb',
@@ -171,6 +204,9 @@ def test_seperated_docking_dir() -> None:
 
 
 def test_combined_docking_list() -> None:
+    """
+    Test combined topologies list ensemble
+    """
     config_dict: Dict[str, Any] = dict(
         type='docking',
         combined_topologies=[resources_dir / 'docking_merged_test/2hnt_15U0.pdb',
@@ -184,6 +220,9 @@ def test_combined_docking_list() -> None:
 
 
 def test_combined_docking_dir() -> None:
+    """
+    Test combined topologies given in a directory
+    """
     config_dict: Dict[str, Any] = dict(
         type='docking',
         combined_topologies=resources_dir / 'docking_merged_test',
