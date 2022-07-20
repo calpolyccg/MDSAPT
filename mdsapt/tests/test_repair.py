@@ -30,7 +30,7 @@ class TestRepair:
                                   r11_fixed.select_atoms('name CA').positions,
                                   decimal=3)
         assert_array_almost_equal(r11.select_atoms('name N').positions,
-                                  r11_fixed.select_atoms(f'name N').positions,
+                                  r11_fixed.select_atoms('name N').positions,
                                   decimal=3)
         assert_array_almost_equal(r11.select_atoms('name O').positions,
                                   r11_fixed.select_atoms('name O').positions,

@@ -22,8 +22,11 @@ Required Input:
 
 from typing import Set, Union
 
-import MDAnalysis as mda
+import logging
 
+import numpy as np
+
+import MDAnalysis as mda
 from MDAnalysis.converters.RDKit import atomgroup_to_mol
 from MDAnalysis.topology.guessers import guess_types, guess_atom_element
 
@@ -32,20 +35,16 @@ from rdkit import Chem
 from pdbfixer import PDBFixer
 from simtk.openmm.app import PDBFile
 
-import numpy as np
-
-import logging
-
 logger = logging.getLogger('mdsapt.optimizer')
 
 
 def get_spin_multiplicity(molecule: Chem.Mol) -> int:
-    """Returns the spin multiplicity of a :class:`RDKit.Mol`.
+    """Returns the spin multiplicity of a :class:`RDKIT.Mol`.
     Based on method in http://www.mayachemtools.org/docs/modules/html/code/RDKitUtil.py.html .
 
     :Arguments:
         *molecule*
-            :class:`RDKit.Mol` object
+            :class:`RDKIT.Mol` object
     """
     radical_electrons: int = 0
 
@@ -103,7 +102,7 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, ph: float = 7.0) -> mda.At
         amino.guess_bonds()
         return amino
 
-    def get_new_pos(backbone: mda.AtomGroup, length: float):
+    def get_new_pos(backbone: mda.AtomGroup, length: float) -> np.ndarray:
         c_pos = backbone.select_atoms('name C').positions[0]
         o_pos = backbone.select_atoms('name O').positions[0]
         a_pos = backbone.select_atoms('name CA').positions[0]
@@ -116,7 +115,8 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, ph: float = 7.0) -> mda.At
         h_norm = (h_norm * length) + c_pos
         return h_norm
 
-    def protonate_backbone(bkbone: mda.AtomGroup, length: float = 1.128) -> Union[mda.AtomGroup, mda.Universe]:
+    def protonate_backbone(bkbone: mda.AtomGroup, length: float = 1.128) -> \
+            Union[mda.AtomGroup, mda.Universe]:
         mol_resid = atomgroup_to_mol(bkbone)
         i: int = 0
         for atom in mol_resid.GetAtoms():
@@ -129,8 +129,8 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, ph: float = 7.0) -> mda.At
             protonated.add_TopologyAttr('masses', [x for x in bkbone.masses] + [1])
             protonated.add_TopologyAttr('name', [x for x in bkbone.names] + ['Hc'])
             protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
-            protonated.add_TopologyAttr('elements',
-                                        [guess_atom_element(atom) for atom in protonated.atoms.names])
+            protonated.add_TopologyAttr('elements', [guess_atom_element(atom) for
+                                                     atom in protonated.atoms.names])
             new_pos = bkbone.positions
             h_pos = get_new_pos(backbone, length)
             protonated.atoms.positions = np.row_stack((new_pos, h_pos))

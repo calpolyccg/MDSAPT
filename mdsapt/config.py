@@ -2,11 +2,6 @@ r"""
 :mod:`mdsapt.config` -- Reads input file and saves configuration
 ================================================================
 
-MDSAPT uses an yaml file to get user's configurations for SAPT calculations
-class`mdsapt.reader.InputReader` is responsible for reading the yaml file and
-returning the information from it. If a yaml file is needed it can be generated
-using the included *mdsapt_get_runinput* script.
-
 """
 import dataclasses
 from dataclasses import dataclass
@@ -16,15 +11,14 @@ from pathlib import Path
 from typing import List, Dict, Tuple, Literal, Optional, \
     Union, Any, Set, Iterable
 
+import logging
+
 import pydantic
+from pydantic import BaseModel, conint, Field, root_validator, \
+    FilePath, ValidationError, DirectoryPath
 import yaml
 
 import MDAnalysis as mda
-
-import logging
-
-from pydantic import BaseModel, conint, Field, root_validator, \
-    FilePath, ValidationError, DirectoryPath
 
 from mdsapt.utils.ensemble import Ensemble
 
@@ -56,8 +50,8 @@ class SysLimitsConfig(BaseModel):
 
 
 class ChargeGuesser(Enum):
-    Standard = 'standard'
-    RDKit = 'rdkit'
+    STANDARD = 'standard'
+    RDKIT = 'rdkit'
 
 
 class SimulationConfig(BaseModel):
@@ -81,8 +75,8 @@ class TopologySelection:
         yield cls.validate
 
     @classmethod
-    def validate(cls, v):
-        result = pydantic.parse_obj_as(Union[FilePath, cls._TopologySelection], v)
+    def validate(cls, values):
+        result = pydantic.parse_obj_as(Union[FilePath, cls._TopologySelection], values)
         if isinstance(result, PathLike):
             return TopologySelection(path=Path(result))
         return TopologySelection(path=result.path, topology_format=result.topology_format,
@@ -267,9 +261,9 @@ def load_from_yaml_file(path: Union[str, Path]) -> Config:
     """
     path = Path(path)
 
-    with path.open() as f:
+    with path.open() as file:
         try:
-            return Config(**yaml.safe_load(f))
+            return Config(**yaml.safe_load(file))
         except ValidationError as err:
             logger.exception(f"Error while loading {path}")
             raise err

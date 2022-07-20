@@ -13,8 +13,11 @@ calculations between the residues selected in the input file.
     :members:
     :inherited-members:
 
-"""
+.. autoclass:: DockingSAPT
+    :members:
+    :inherited-members:
 
+"""
 from typing import Dict, List, Set, Tuple, Optional, Final, Union
 
 import pandas as pd
@@ -32,7 +35,8 @@ from pydantic import ValidationError
 
 from rdkit import Chem
 
-from .config import Config, TrajectoryAnalysisConfig, DockingAnalysisConfig, Psi4Config, SysLimitsConfig
+from .config import Config, TrajectoryAnalysisConfig, DockingAnalysisConfig, \
+    Psi4Config, SysLimitsConfig
 from .repair import rebuild_resid, get_spin_multiplicity
 from .utils.ensemble import Ensemble, EnsembleAtomGroup
 
@@ -60,10 +64,11 @@ def build_psi4_input_str(resid: int, residue: mda.AtomGroup) -> str:
 def calc_sapt(psi4_input: str, psi4_cfg: Psi4Config, sys_cfg: SysLimitsConfig,
               outfile: Optional[str]) -> Dict[str, float]:
     """
-    Runs SAPT on the molecules given in the input string. If `save_psi4_output` is set to true the output will
-    be saved as the given filename.
+    Runs SAPT on the molecules given in the input string. If `save_psi4_output`
+    is set to true the output will be saved as the given filename.
 
-        Results are returned in a dictionary with the SAPT energy broken down by type with the following keys.
+    Results are returned in a dictionary with the SAPT energy broken down by
+    type with the following keys.
 
         1. SAPT TOTAL ENERGY
         2. SAPT ELST ENERGY
@@ -82,14 +87,15 @@ def calc_sapt(psi4_input: str, psi4_cfg: Psi4Config, sys_cfg: SysLimitsConfig,
     # Calculating SAPT
     psi4.energy(f'{psi4_cfg.method}/{psi4_cfg.basis}', molecule=dimer)
 
-    result: Dict[str, float] = {'SAPT TOTAL ENERGY': psi4.variable('SAPT TOTAL ENERGY') * MHT_TO_KCALMOL,
-                                'SAPT ELST ENERGY': psi4.variable('SAPT ELST ENERGY') * MHT_TO_KCALMOL,
-                                'SAPT EXCH ENERGY': psi4.variable('SAPT EXCH ENERGY') * MHT_TO_KCALMOL,
-                                'SAPT IND ENERGY': psi4.variable('SAPT IND ENERGY') * MHT_TO_KCALMOL,
-                                'SAPT DISP ENERGY': psi4.variable('SAPT DISP ENERGY') * MHT_TO_KCALMOL}
+    result: Dict[str, float] = {
+        'SAPT TOTAL ENERGY': psi4.variable('SAPT TOTAL ENERGY') * MHT_TO_KCALMOL,
+        'SAPT ELST ENERGY': psi4.variable('SAPT ELST ENERGY') * MHT_TO_KCALMOL,
+        'SAPT EXCH ENERGY': psi4.variable('SAPT EXCH ENERGY') * MHT_TO_KCALMOL,
+        'SAPT IND ENERGY': psi4.variable('SAPT IND ENERGY') * MHT_TO_KCALMOL,
+        'SAPT DISP ENERGY': psi4.variable('SAPT DISP ENERGY') * MHT_TO_KCALMOL
+    }
 
     # Getting results
-
     return result
 
 
@@ -108,6 +114,11 @@ class TrajectorySAPT(AnalysisBase):
     _sel: Dict[int, mda.AtomGroup]
     _sel_pairs: List[Tuple[int, int]]
     results: pd.DataFrame
+    _COL: Final[List[str]] = ['residues', 'time', 'total', 'electrostatic',
+                              'exchange', 'induction', 'dispersion']
+    _SAPT_KEYS: Final[List[str]] = ['SAPT TOTAL ENERGY', 'SAPT ELST ENERGY',
+                                    'SAPT EXCH ENERGY', 'SAPT IND ENERGY',
+                                    'SAPT DISP ENERGY']
 
     def __init__(self, config: Config, **universe_kwargs) -> None:
         """
@@ -117,7 +128,8 @@ class TrajectorySAPT(AnalysisBase):
             *config*
                 :class:`mdsapt.config.Config` containing data for running calculations
             *universe_arguments*
-                keyword arguments for loading the trajectory into a MDAnalysis :class:`Universe <MDAnalysis.core.groups.universe.Universe>`
+                keyword arguments for loading the trajectory into a MDAnalysis
+                :class:`Universe <MDAnalysis.core.groups.universe.Universe>`
         """
         try:
             # Ensuring config type is correct
@@ -131,16 +143,17 @@ class TrajectorySAPT(AnalysisBase):
         elements = guess_types(self._unv.atoms.names)
         self._unv.add_TopologyAttr('elements', elements)
         ag_sel: Set[int] = config.analysis.get_selections()
-        self._sel = {x: self._unv.select_atoms(f'resid {x} and not (name OH2 or name H1 or name H2)')
-                     for x in ag_sel}
+        self._sel = {
+            x: self._unv.select_atoms(f'resid {x} and not (name OH2 or name H1 or name H2)')
+            for x in ag_sel
+        }
+
         self._sel_pairs = config.analysis.pairs
         AnalysisBase.__init__(self, self._unv.trajectory)
 
     def _prepare(self) -> None:
-        self._col = ['residues', 'time', 'total', 'electrostatic',
-                     'exchange', 'induction', 'dispersion']
-        self.results = pd.DataFrame(columns=self._col)
-        self._res_dict = {x: [] for x in self._col}
+        self.results = pd.DataFrame(columns=self._COL)
+        self._res_dict = {x: [] for x in self._COL}
 
     def _single_frame(self) -> None:
         outfile: Optional[str] = None
@@ -156,16 +169,13 @@ class TrajectorySAPT(AnalysisBase):
             sapt: Dict[str, float] = calc_sapt(coords, self._cfg.psi4,
                                                self._cfg.system_limits,
                                                outfile)
-            result = [f'{pair[0]}-{pair[1]}', self._ts.time] + [sapt[x] for x in
-                                                                ['SAPT TOTAL ENERGY', 'SAPT ELST ENERGY',
-                                                                 'SAPT EXCH ENERGY', 'SAPT IND ENERGY',
-                                                                 'SAPT DISP ENERGY']]
+            result = [f'{pair[0]}-{pair[1]}', self._ts.time] + [sapt[x] for x in self._SAPT_KEYS]
 
             for r in range(len(result)):
-                self._res_dict[self._col[r]].append(result[r])
+                self._res_dict[self._COL[r]].append(result[r])
 
     def _conclude(self) -> None:
-        for k in self._col:
+        for k in self._COL:
             self.results[k] = self._res_dict[k]
 
 
@@ -182,12 +192,12 @@ class DockingSAPT:
     _ens: Ensemble
     _sel: Dict[int, EnsembleAtomGroup]
     _sel_pairs: List[Tuple[int, int]]
-    _col: Final[List[str]] = ['structure', 'pair', 'total', 'electrostatic',
+    _COL: Final[List[str]] = ['structure', 'pair', 'total', 'electrostatic',
                               'exchange', 'induction', 'dispersion']
     _key: str
     key_name: Dict[str, str]
     _pair_names: Dict[Tuple[int, int], str]
-    _sapt_keys: Final[List[str]] = [
+    _SAPT_KEYS: Final[List[str]] = [
         'SAPT TOTAL ENERGY',
         'SAPT ELST ENERGY',
         'SAPT EXCH ENERGY',
@@ -217,13 +227,14 @@ class DockingSAPT:
 
         self._sel_pairs = self._cfg.analysis.pairs
 
-        self._sel = {k: self._ens.select_atoms(f'resid {k} and not (name OH2 or name H1 or name H2)') for k in
-                     self._cfg.analysis.get_selections()}
+        self._sel = {
+            k: self._ens.select_atoms(f'resid {k} and not (name OH2 or name H1 or name H2)')
+            for k in self._cfg.analysis.get_selections()
+        }
 
     def _prepare(self) -> None:
-
-        self.results = pd.DataFrame(columns=self._col)
-        self._res_dict = {x: [] for x in self._col}
+        self.results = pd.DataFrame(columns=self._COL)
+        self._res_dict = {x: [] for x in self._COL}
         self._key_names = {k: k.split("/")[-1].split(".")[0] for k in self._ens.keys()}
         self._pair_names = {pair: f'{pair[0]}-{pair[1]}' for pair in self._sel_pairs}
 
@@ -241,14 +252,15 @@ class DockingSAPT:
                 outfile = f'sapt_{self._key_names[self._key]}_{self._pair_names[pair]}.out'
 
             sapt_result = calc_sapt(coords, self._cfg.psi4, self._cfg.system_limits, outfile)
-            result: List[Union[str, float]] = [self._key_names[self._key], self._pair_names[pair]] + \
-                                              [sapt_result[k] for k in self._sapt_keys]
+            result: List[Union[str, float]] = \
+                [self._key_names[self._key], self._pair_names[pair]] + \
+                [sapt_result[k] for k in self._SAPT_KEYS]
 
             for i, res in enumerate(result):
-                self._res_dict[self._col[i]].append(res)
+                self._res_dict[self._COL[i]].append(res)
 
     def _conclude(self) -> None:
-        for k in self._col:
+        for k in self._COL:
             self.results[k] = self._res_dict[k]
 
     def run(self) -> None:
