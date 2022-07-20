@@ -1,9 +1,11 @@
+"""
+Tests for Ensemble framework
+"""
 from pathlib import Path
 
 from ..utils.ensemble import Ensemble
 
 resources_dir = Path(__file__).parent / 'testing_resources'
-
 
 working_docking_settings = dict(
     type='docking',
@@ -16,6 +18,9 @@ working_docking_settings = dict(
 
 
 def test_list_of_merged() -> None:
+    """
+    Test loading merged
+    """
     merged_list = [f'{resources_dir}/docking_merged_test/2hnt_15U0.pdb',
                    f'{resources_dir}/docking_merged_test/2hnt_98P.pdb']
 
@@ -24,6 +29,9 @@ def test_list_of_merged() -> None:
 
 
 def test_dir_of_merged() -> None:
+    """
+    Test loading a directory of merged
+    """
     ens: Ensemble = Ensemble.build_from_dir(Path(f'{resources_dir}/docking_merged_test'))
 
     assert len(ens) == 2
