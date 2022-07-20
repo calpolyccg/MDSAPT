@@ -20,7 +20,7 @@ Required Input:
 
 """
 
-from typing import Set
+from typing import Set, Union
 
 import MDAnalysis as mda
 
@@ -90,18 +90,18 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, ph: float = 7.0) -> mda.At
      on the C terminus. Raises key error if class
     has no value for that optimization."""
 
-    def fix_amino(residue: mda.AtomGroup) -> mda.AtomGroup:
-        residue.write('resid.pdb', file_format='PDB')  # Saving residue
+    def fix_amino(amino: mda.AtomGroup, sys_ph: float = 7.0) -> mda.AtomGroup:
+        amino.write('resid.pdb', file_format='PDB')  # Saving residue
         fixer = PDBFixer(filename='resid.pdb')
         fixer.findMissingResidues()
         fixer.findMissingAtoms()
-        fixer.addMissingHydrogens()  # Adding protons at pH value
+        fixer.addMissingHydrogens(sys_ph)  # Adding protons at pH value
         PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
 
         res_fixed = mda.Universe('resid_fixed.pdb')
-        residue: mda.AtomGroup = res_fixed.select_atoms("resname *")
-        residue.guess_bonds()
-        return residue
+        amino: mda.AtomGroup = res_fixed.select_atoms("resname *")
+        amino.guess_bonds()
+        return amino
 
     def get_new_pos(backbone: mda.AtomGroup, length: float):
         c_pos = backbone.select_atoms('name C').positions[0]
@@ -116,29 +116,29 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, ph: float = 7.0) -> mda.At
         h_norm = (h_norm * length) + c_pos
         return h_norm
 
-    def protonate_backbone(residue: mda.AtomGroup, length: float = 1.128) -> mda.Universe:
-        mol_resid = atomgroup_to_mol(residue)
+    def protonate_backbone(bkbone: mda.AtomGroup, length: float = 1.128) -> Union[mda.AtomGroup, mda.Universe]:
+        mol_resid = atomgroup_to_mol(bkbone)
         i: int = 0
         for atom in mol_resid.GetAtoms():
             i += atom.GetNumRadicalElectrons()
 
         if i > 0:
-            backbone = residue.select_atoms('backbone')
-            protonated: mda.Universe = mda.Universe.empty(n_atoms=residue.n_atoms + 1,
+            backbone = bkbone.select_atoms('backbone')
+            protonated: mda.Universe = mda.Universe.empty(n_atoms=bkbone.n_atoms + 1,
                                                           trajectory=True)
-            protonated.add_TopologyAttr('masses', [x for x in residue.masses] + [1])
-            protonated.add_TopologyAttr('name', [x for x in residue.names] + ['Hc'])
+            protonated.add_TopologyAttr('masses', [x for x in bkbone.masses] + [1])
+            protonated.add_TopologyAttr('name', [x for x in bkbone.names] + ['Hc'])
             protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
             protonated.add_TopologyAttr('elements',
                                         [guess_atom_element(atom) for atom in protonated.atoms.names])
-            new_pos = residue.positions
+            new_pos = bkbone.positions
             h_pos = get_new_pos(backbone, length)
             protonated.atoms.positions = np.row_stack((new_pos, h_pos))
             return protonated
-        return residue
+        return bkbone
 
     if is_amino(residue.universe, resid):
-        step0: mda.AtomGroup = fix_amino(residue)
+        step0: mda.AtomGroup = fix_amino(residue, ph)
         step1: mda.Universe = protonate_backbone(step0, length=1.128)
         return step1.select_atoms("all")
     else:
