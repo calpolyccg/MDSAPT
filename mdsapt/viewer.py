@@ -28,10 +28,8 @@ except ImportError:
     raise ImportError(
         "nglview is not installed! Please install it to use the viewer module."
     )
-    
-import numpy as np
 
-from .sapt import TrajectorySAPT
+import numpy as np
 
 import MDAnalysis as mda
 
@@ -77,9 +75,9 @@ class Viewer:
                 number of second selected residue in polypeptide chain
             *nglview_kwargs*
                 arguments passed to the viewer"""
-        r1: mda.AtomGroup = self._unv.select_atoms(f'resid {resid1} and protein')
-        r2: mda.AtomGroup = self._unv.select_atoms(f'resid {resid2} and protein')
-        r_pair: mda.AtomGroup = r1 + r2
+        residue_1: mda.AtomGroup = self._unv.select_atoms(f'resid {resid1} and protein')
+        residue_2: mda.AtomGroup = self._unv.select_atoms(f'resid {resid2} and protein')
+        r_pair: mda.AtomGroup = residue_1 + residue_2
         return self._launch_viewer(r_pair, **nglview_kwargs)
 
     def view_optimized_residue(self, resid: int, **nglview_kwargs) -> nv.NGLWidget:
@@ -104,10 +102,12 @@ class Viewer:
                 number of selected residue in polypeptide chain
             *nglview_kwargs*
                 arguments passed to the viewer"""
-        r1 = rebuild_resid(resid1, self._unv.select_atoms(f'resid {resid1} and protein'))
-        r2 = rebuild_resid(resid2, self._unv.select_atoms(f'resid {resid2} and protein'))
-        r_pair: mda.Universe = mda.Universe.empty(n_atoms=(r1.n_atoms + r2.n_atoms),
+        residue_1 = rebuild_resid(resid1, self._unv.select_atoms(f'resid {resid1} and protein'))
+        residue_2 = rebuild_resid(resid2, self._unv.select_atoms(f'resid {resid2} and protein'))
+        r_pair: mda.Universe = mda.Universe.empty(n_atoms=(residue_1.n_atoms + residue_2.n_atoms),
                                                   trajectory=True)
-        r_pair.add_TopologyAttr('name', [x for x in r1.names] + [x for x in r2.names])
-        r_pair.atoms.positions = np.row_stack((r1.positions, r2.positions))
+        r_pair.add_TopologyAttr('name',
+                                [x for x in residue_1.names] + [x for x in residue_2.names])
+        r_pair.atoms.positions = np.row_stack((residue_1.positions,
+                                               residue_2.positions))
         return self._launch_viewer(r_pair, **nglview_kwargs)

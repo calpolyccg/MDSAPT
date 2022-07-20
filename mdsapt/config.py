@@ -84,7 +84,8 @@ class TopologySelection:
 
     def create_universe(self, *coordinates: Any, **kwargs) -> mda.Universe:
         """Create a universe based on this topology and the given arguments.."""
-        return mda.Universe(str(self.path), *coordinates, topology_format=self.topology_format, **kwargs)
+        return mda.Universe(str(self.path), *coordinates,
+                            topology_format=self.topology_format, **kwargs)
 
 
 class RangeFrameSelection(BaseModel):
@@ -233,7 +234,8 @@ class DockingAnalysisConfig(BaseModel):
             )
 
         if combined_topologies is None and None not in (protein, ligands):
-            ens: Ensemble = Ensemble.build_from_files([top.path for top in ligands.get_individual_topologies()])
+            ens: Ensemble = Ensemble.build_from_files([top.path for top
+                                                       in ligands.get_individual_topologies()])
             protein_sys: mda.Universe = mda.Universe(str(protein.path))
             protein_mol: mda.AtomGroup = protein_sys.select_atoms("protein")
             ens = ens.merge(protein_mol)
