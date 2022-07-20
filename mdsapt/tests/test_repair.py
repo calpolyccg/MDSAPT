@@ -15,7 +15,10 @@ unv: mda.Universe = mda.Universe(f'{resources_dir}/testtop.psf',
                                  f'{resources_dir}/testtraj.dcd')
 
 
-class TestOptimizer:
+class TestRepair:
+    """
+    Test object for functions
+    """
 
     def test_prepare_resids(self) -> None:
         """
@@ -23,17 +26,17 @@ class TestOptimizer:
         """
         r11: mda.AtomGroup = unv.select_atoms('resid 11')
         r11_fixed: mda.AtomGroup = rebuild_resid(11, r11)
-        assert_array_almost_equal(r11.select_atoms(f'name CA').positions,
-                                  r11_fixed.select_atoms(f'name CA').positions,
+        assert_array_almost_equal(r11.select_atoms('name CA').positions,
+                                  r11_fixed.select_atoms('name CA').positions,
                                   decimal=3)
-        assert_array_almost_equal(r11.select_atoms(f'name N').positions,
+        assert_array_almost_equal(r11.select_atoms('name N').positions,
                                   r11_fixed.select_atoms(f'name N').positions,
                                   decimal=3)
-        assert_array_almost_equal(r11.select_atoms(f'name O').positions,
-                                  r11_fixed.select_atoms(f'name O').positions,
+        assert_array_almost_equal(r11.select_atoms('name O').positions,
+                                  r11_fixed.select_atoms('name O').positions,
                                   decimal=3)
-        assert_array_almost_equal(r11.select_atoms(f'name C').positions,
-                                  r11_fixed.select_atoms(f'name C').positions,
+        assert_array_almost_equal(r11.select_atoms('name C').positions,
+                                  r11_fixed.select_atoms('name C').positions,
                                   decimal=3)
 
     def test_prepare_end(self) -> None:

@@ -1,9 +1,16 @@
-# Based on log.py https://github.com/Becksteinlab/MDPOW/blob/develop/mdpow/log.py
+"""
+Based on log.py https://github.com/Becksteinlab/MDPOW/blob/develop/mdpow/log.py
+
+Logs issues throughout MD-SAPT
+"""
 import logging
 
 
-def create(logname: str, logfile: str):
-    logger = logging.getLogger(logname)
+def create(log_name: str, logfile: str) -> logging.Logger:
+    """
+    Create the logger for MD-SAPT
+    """
+    logger = logging.getLogger(log_name)
 
     logger.setLevel(logging.DEBUG)
 
