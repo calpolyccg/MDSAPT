@@ -178,7 +178,7 @@ jobs:
 
     - name: Lint code
       run: |
-        pylint mdsapt
+        pylint --disable=W,R mdsapt
 
     - name: Ensure formatting
       run: |

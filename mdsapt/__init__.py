@@ -1,3 +1,4 @@
+# pylint: skip-file
 """An MDA-kit for calcuating quantum interactions in psi4."""
 import logging
 
