@@ -84,7 +84,7 @@ def is_amino(unv: mda.Universe, resid: int) -> bool:
     return resname_atr.values[resid - 1] in std_resids
 
 
-def rebuild_resid(resid: int, residue: mda.AtomGroup, ph: float = 7.0) -> mda.AtomGroup:
+def rebuild_resid(resid: int, residue: mda.AtomGroup, sim_ph: float = 7.0) -> mda.AtomGroup:
     """Rebuilds residue by replacing missing protons and adding a new proton
      on the C terminus. Raises key error if class
     has no value for that optimization."""
@@ -126,8 +126,8 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, ph: float = 7.0) -> mda.At
             backbone = bkbone.select_atoms('backbone')
             protonated: mda.Universe = mda.Universe.empty(n_atoms=bkbone.n_atoms + 1,
                                                           trajectory=True)
-            protonated.add_TopologyAttr('masses', [x for x in bkbone.masses] + [1])
-            protonated.add_TopologyAttr('name', [x for x in bkbone.names] + ['Hc'])
+            protonated.add_TopologyAttr('masses', bkbone.masses + [1])
+            protonated.add_TopologyAttr('name', bkbone.names + ['Hc'])
             protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
             protonated.add_TopologyAttr('elements', [guess_atom_element(atom) for
                                                      atom in protonated.atoms.names])
@@ -138,8 +138,8 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, ph: float = 7.0) -> mda.At
         return bkbone
 
     if is_amino(residue.universe, resid):
-        step0: mda.AtomGroup = fix_amino(residue, ph)
+        step0: mda.AtomGroup = fix_amino(residue, sim_ph)
         step1: mda.Universe = protonate_backbone(step0, length=1.128)
         return step1.select_atoms("all")
-    else:
-        return residue
+
+    return residue

@@ -18,7 +18,9 @@ calculations between the residues selected in the input file.
     :inherited-members:
 
 """
-from typing import Dict, List, Set, Tuple, Optional, Final, Union
+from typing import Dict, List, Set, Tuple, Optional, Final, Union, Any
+
+import logging
 
 import pandas as pd
 
@@ -39,8 +41,6 @@ from .config import Config, TrajectoryAnalysisConfig, DockingAnalysisConfig, \
     Psi4Config, SysLimitsConfig
 from .repair import rebuild_resid, get_spin_multiplicity
 from .utils.ensemble import Ensemble, EnsembleAtomGroup
-
-import logging
 
 logger = logging.getLogger('mdsapt.sapt')
 
@@ -113,6 +113,7 @@ class TrajectorySAPT(AnalysisBase):
     _unv: mda.Universe
     _sel: Dict[int, mda.AtomGroup]
     _sel_pairs: List[Tuple[int, int]]
+    _res_dict: Dict[str, List[Any]]
     results: pd.DataFrame
     _COL: Final[List[str]] = ['residues', 'time', 'total', 'electrostatic',
                               'exchange', 'induction', 'dispersion']
