@@ -3,10 +3,16 @@ r"""
 ================================================================
 
 """
+
+# There's lots of implicit class methods because pydantic decorators are stupid.
+# Thus, we will disable this lint for this file.
+# pylint: disable=no-self-argument
+
 import dataclasses
 from dataclasses import dataclass
 from enum import Enum
 from os import PathLike
+import os
 from pathlib import Path
 from typing import List, Dict, Tuple, Literal, Optional, \
     Union, Any, Set, Iterable
@@ -22,29 +28,36 @@ import MDAnalysis as mda
 
 from mdsapt.utils.ensemble import Ensemble
 
-logger = logging.getLogger('mdsapt.config')
+logger = logging.getLogger(__name__)
 
 
 class Psi4Config(BaseModel):
     """Psi4 configuration details
 
-    The SAPT method to use.
-
-    NOTE: You can use any valid Psi4 method, but it might fail if you don't use a SAPT method.
-
-    The basis to use in Psi4.
-
-    NOTE: We do not verify if this is a valid basis set or not.
+    Attributes:
+        method:
+            The SAPT method to use.
+            NOTE: You can use any valid Psi4 method, but it might fail if you don't use a SAPT method.
+        basis:
+            The basis to use.
+            NOTE: We do not verify if this is a valid basis set or not.
+        save_output:
+            Whether to save the raw output of Psi4. May be useful for debugging.
+        settings:
+            Other Psi4 settings you would like to provide. These will be passed into
+            `psi4.set_options <https://psicode.org/psi4manual/master/api/psi4.driver.set_options.html>`_.
     """
 
     method: str
     basis: str
-    save_output: bool  # whether to save the raw output of Psi4. May be useful for debugging.
-    settings: Dict[str, str]  # Other Psi4 settings you would like to provide.
+    save_output: bool
+    settings: Dict[str, str]
 
 
 class SysLimitsConfig(BaseModel):
-    """Resource limits for your system."""
+    """
+    Resource limits for your system.
+    """
     ncpus: conint(ge=1)
     memory: str
 
@@ -52,7 +65,7 @@ class SysLimitsConfig(BaseModel):
 class ChargeGuesser(Enum):
     """
     Specifies the charge guesser used in the analysis. The standard one is faster but will not
-    work on more complex sulfur based ligands.
+    work on more complex sulfur-based ligands.
     """
     STANDARD = 'standard'
     RDKIT = 'rdkit'
@@ -60,8 +73,11 @@ class ChargeGuesser(Enum):
 
 class SimulationConfig(BaseModel):
     """
-    Configuration options for the simulation:
-    allows for specifying pH and which charge guesser.
+    Configuration options for the simulation.
+
+    Attributes:
+        ph (float): The pH of the simulation.
+        charge_guesser: The default charge guesser to use for atoms.
     """
     ph: float
     charge_guesser: ChargeGuesser
@@ -70,7 +86,16 @@ class SimulationConfig(BaseModel):
 @dataclass
 class TopologySelection:
     """
-    Config for selecting topologies.
+    A configuration item for selecting a single topology. To successfully import a topology,
+    it must be supported by MDAnalysis.
+
+    Attributes:
+        path: Where the topology file is located.
+        topology_format: If specified, overrides the format to import with.
+        charge_overrides: An optional dictionary, where keys are atom numbers and values are their charges.
+
+    .. seealso::
+        `List of topology formats that MDAnalysis supports <https://docs.mdanalysis.org/1.1.1/documentation_pages/topology/init.html>`_
     """
     class _TopologySelection(BaseModel):
         path: FilePath
@@ -83,12 +108,12 @@ class TopologySelection:
 
     @classmethod
     def __get_validators__(cls):
-        yield cls.validate
+        yield cls._validate
 
     @classmethod
-    def validate(cls, values):
+    def _validate(cls, values):
         """
-        Validates topology
+        Validates the topology. You should not call this directly.
         """
         result = pydantic.parse_obj_as(Union[FilePath, cls._TopologySelection], values)
         if isinstance(result, PathLike):
@@ -104,16 +129,21 @@ class TopologySelection:
 
 class RangeFrameSelection(BaseModel):
     """
-    Stores and validates frame iteration selection for trajectory analysis
+    A selection of contiguous frames.
+
+    Attributes:
+        start: the first frame to use, inclusive.
+        stop: the last frame to use, inclusive.
+        step: step between frames.
     """
     start: Optional[conint(ge=0)]
     stop: Optional[conint(ge=0)]
     step: Optional[conint(ge=1)]
 
     @root_validator()
-    def check_start_before_stop(cls, values: Dict[str, int]) -> Dict[str, int]:
+    def _check_start_before_stop(cls, values: Dict[str, int]) -> Dict[str, int]:
         """
-        Ensures that valid options are selected for frame iteration
+        Ensures that a valid range is selected for frame iteration.
         """
         assert values['start'] <= values['stop'], "start must be before stop"
         return values
@@ -121,12 +151,26 @@ class RangeFrameSelection(BaseModel):
 
 class TrajectoryAnalysisConfig(BaseModel):
     """
-    A selection of the frames used in this analysis.
+    Config for performing a Trajectory SAPT analysis.
 
-    Serialization behavior
-    ----------------------
-    If this value is a range, it will be serialized using start/stop/step.
-    Otherwise, it will be serialized into a List[int].
+    .. seealso::
+        :obj:`mdsapt.sapt.TrajectorySAPT`
+
+    Attributes:
+        topology: The topology to analyze.
+        trajectories: A list of trajectories to analyze.
+        pairs: Interaction pairs to study
+        frames:
+            A selection of frames to analyze.
+            
+            This may either be a :obj:`RangeFrameSelection` with start/stop/step,
+            or a list of frame numbers.
+
+            Serialization behavior
+            ----------------------
+            If this value is a range, it will be serialized using start/stop/step.
+            Otherwise, it will be serialized into a List[int].
+        output: A file to write an output CSV to.
     """
     type: Literal['trajectory']
     topology: TopologySelection
@@ -150,8 +194,8 @@ class TrajectoryAnalysisConfig(BaseModel):
 
         try:
             unv = topology.create_universe([str(p) for p in trajectories])
-        except OSError as e:
-            raise ValueError("Error while creating the universe") from e
+        except OSError as err:
+            raise ValueError("Error while creating the universe") from err
 
         missing_selections = get_invalid_residue_selections({r for p in ag_pair for r in p}, unv)
         if len(missing_selections) > 0:
@@ -202,11 +246,17 @@ The literal 'L' specifies the ligand, whereas an integer specifies the protein r
 
 class TopologyGroupSelection(BaseModel):
     """
-    Selection for a group of topologies
+    A selection of a group of topologies.
+
+    In a YAML config, this may either be a path to a flat directory full of topologies
+    or a list of :obj:`TopologySelection`s.
     """
     __root__: Union[DirectoryPath, List[TopologySelection]]
 
     def get_individual_topologies(self) -> List[TopologySelection]:
+        """
+        It
+        """
         if isinstance(self.__root__, list):
             return self.__root__
 
@@ -220,7 +270,31 @@ class TopologyGroupSelection(BaseModel):
 # noinspection PyMethodParameters
 class DockingAnalysisConfig(BaseModel):
     """
-    Config for docking analysis
+    Config for performing a docking SAPT analysis.
+
+    There are two valid modes of selecting the system to analyze:
+        - Only specifying <combined_topologies>
+        - Specifying <protein> and <ligands> together
+    
+    You must choose one mode or the other, you cannot mix the two (i.e. specify
+    <combined_topologies> and <protein>).
+
+    .. seealso::
+        :obj:`mdsapt.sapt.DockingSAPT`
+
+    Attributes:
+        pairs: Interaction pairs to study.
+        combined_topologies:
+            A selection of topologies such that every topology contains a ligand
+            and a protein.
+
+            NOTE: These must all be numbered consistently.
+        protein:
+            The topology of the protein to study.
+        ligands:
+            A selection of topologies of a ligand such that every ligand is offset relative to
+            the protein specified in <protein>.
+        output: A file to write an output CSV to.
     """
     type: Literal['docking']
     pairs: List[Tuple[DockingElement, DockingElement]]
@@ -230,9 +304,9 @@ class DockingAnalysisConfig(BaseModel):
     output: str
 
     @root_validator
-    def check_valid_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def _check_valid_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Validates analysis settings
+        Validates that the provided settings are valid.
         """
         errors: List[str] = []
 
@@ -245,8 +319,8 @@ class DockingAnalysisConfig(BaseModel):
                                             ligands=values.get('ligands'))
         missing_selections: List[int] = []
 
-        for k in ens.keys():
-            missing_selections += get_invalid_residue_selections(protein_selections, ens[k])
+        for v in ens.values():
+            missing_selections += get_invalid_residue_selections(protein_selections, v)
 
         if len(missing_selections) > 0:
             errors.append(f'Selected residues are missing from topology: {missing_selections}')
@@ -291,7 +365,7 @@ class DockingAnalysisConfig(BaseModel):
 
 class Config(BaseModel):
     """
-    Config object for MD-SAPT
+    The root configuration object for MDSAPT.
     """
     psi4: Psi4Config
     simulation: SimulationConfig
@@ -300,15 +374,13 @@ class Config(BaseModel):
         Field(..., discriminator='type')
 
 
-def load_from_yaml_file(path: Union[str, Path]) -> Config:
+def load_from_yaml_file(path: os.PathLike) -> Config:
     """
-    Creates a config from a yaml file
+    Loads a config from a YAML file.
     """
-    path = Path(path)
-
-    with path.open() as file:
+    with Path(path).open('r', encoding='utf8') as file:
         try:
             return Config(**yaml.safe_load(file))
         except ValidationError as err:
-            logger.exception(f"Error while loading {path}")
+            logger.exception("Error while loading config from %r", path)
             raise err

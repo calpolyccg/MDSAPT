@@ -107,7 +107,7 @@ class Viewer:
         r_pair: mda.Universe = mda.Universe.empty(n_atoms=(residue_1.n_atoms + residue_2.n_atoms),
                                                   trajectory=True)
         r_pair.add_TopologyAttr('name',
-                                [x for x in residue_1.names] + [x for x in residue_2.names])
+                                list(residue_1.names) + list(residue_2.names))
         r_pair.atoms.positions = np.row_stack((residue_1.positions,
                                                residue_2.positions))
         return self._launch_viewer(r_pair, **nglview_kwargs)

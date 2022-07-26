@@ -16,7 +16,7 @@ A set of objects for manging and analyzing collections of similar MD simulations
 
 """
 import os
-from typing import Optional, List, Union, Dict, Iterable, Set
+from typing import Optional, List, Tuple, Union, Dict, Iterable, Set
 
 import MDAnalysis as mda
 from MDAnalysis.core.universe import Merge
@@ -106,6 +106,12 @@ class Ensemble:
         """Returns list of system keys"""
         return self._ensemble.keys()
 
+    def items(self) -> Iterable[Tuple[str, mda.Universe]]:
+        return self._ensemble.items()
+
+    def values(self) -> Iterable[mda.Universe]:
+        return self._ensemble.values()
+
     def merge(self, *args, ligand_id: int = -1) -> 'Ensemble':
         """
         Merge a list of atom group into the existing ensemble returning a new merged ensemble,
@@ -113,7 +119,7 @@ class Ensemble:
         """
         _ens: Dict[str, mda.Universe] = {}
 
-        for k in self.keys():
+        for k in self.items():
             self[k].universe.residues.resids = [ligand_id]
             _ens[k] = Merge(self[k].select_atoms('name *'), *args)
 
@@ -150,12 +156,13 @@ class Ensemble:
                     u = mda.Universe(os.path.abspath(f), **universe_kwargs)
                     _ens[f.split('.')[0]] = u
                 except (ValueError, FileFormatWarning, NoDataError, MissingDataWarning, OSError) as err:
-                    logger.error(f'{err} raised while loading {top[0]} in dir {cur_dir}')
-                    raise NoDataError
+                    logger.exception('Error while loading topology %r in dir %r', top[0], cur_dir)
+                    raise NoDataError from err
             return Ensemble(_ens)
 
     @classmethod
     def build_from_files(cls, topologies: List[os.PathLike], **universe_kwargs) -> 'Ensemble':
+        """Constructs an ensemble from a list of files."""
         _ens: Dict[str, mda.Universe] = {}
         for top in topologies:
             name: str = str(top)
@@ -173,14 +180,14 @@ class Ensemble:
         `selection commands <https://docs.mdanalysis.org/stable/documentation_pages/selections.html>`_
         as MDAnalysis, and has the same keys as the :class:`~mdpow.analysis.ensemble.Ensemble`"""
         selections = {}
-        for key in self.keys():
+        for k, unv in self.items():
             try:
-                ag = self[key].select_atoms(*args, **kwargs)
+                ag = unv.select_atoms(*args, **kwargs)
             except SelectionError as err:
-                logger.error("%r on system %r with selection settings %r %r", err, key, args, kwargs)
-                raise
+                logger.exception("Failed to select system %r with selection settings %r %r", k, args, kwargs)
+                raise err
             else:
-                selections[key] = ag
+                selections[k] = ag
         return EnsembleAtomGroup(selections, ensemble=self)
 
     def select_systems(self, keys: List[str]) -> 'Ensemble':
@@ -200,7 +207,7 @@ class Ensemble:
             logger.info('adding system %r to ensemble', k)
             _ens[k] = self[k]
         return Ensemble(_ens)
-
+    
 
 class EnsembleAtomGroup:
     """Group for storing selections from :class:`~mdpow.analysis.ensemble.Ensemble`
@@ -227,9 +234,17 @@ class EnsembleAtomGroup:
     def __len__(self) -> int:
         return len(self._ensemble)
 
+    def items(self) -> Iterable[Tuple[str, mda.AtomGroup]]:
+        """Returns an iterable of key/value pairs"""
+        return self._groups.items()
+
+    def values(self) -> Iterable[mda.AtomGroup]:
+        """Returns an iterable of values"""
+        return self._groups.values()
+
     def keys(self) -> Iterable[str]:
         """List of keys to specific atom groups in the system"""
-        return self._ensemble.keys()
+        return self._groups.keys()
 
     def positions(self, keys=None) -> Dict[str, np.ndarray]:
         """Returns the positions of the keys of the selected atoms.
@@ -239,8 +254,8 @@ class EnsembleAtomGroup:
             for k in keys:
                 positions[k] = self._groups[k].positions
         else:
-            for k in self.keys():
-                positions[k] = self[k].positions
+            for k, u in self.items():
+                positions[k] = u.positions
         return positions
 
     def select_atoms(self, *args, **kwargs):
@@ -250,11 +265,11 @@ class EnsembleAtomGroup:
         `selection commands <https://docs.mdanalysis.org/stable/documentation_pages/selections.html>`_
         as MDAnalysis, and has the same keys as :class:`~mdpow.analysis.ensemble.EnsembleAtomGroup`"""
         selections = {}
-        for key in self.keys():
+        for key in self.items():
             try:
                 ag = self[key].select_atoms(*args, **kwargs)
             except SelectionError as err:
-                logger.error("%r on system %r with selection traj_settings %r %r", err, key, args, kwargs)
+                logger.exception("Failed to select in system %r with selection traj_settings %r %r", key, args, kwargs)
                 raise
             else:
                 selections[key] = ag

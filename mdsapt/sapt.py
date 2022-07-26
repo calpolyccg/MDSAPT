@@ -162,7 +162,7 @@ class TrajectorySAPT(AnalysisBase):
         for pair in self._sel_pairs:
             coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
 
-            logger.info(f'Starting SAPT for {pair}')
+            logger.info('Starting SAPT for %s', pair)
 
             if self._cfg.psi4.save_output:
                 outfile = f'sapt_{pair[0]}-{pair[1]}_{self._ts.time}.out'
@@ -172,8 +172,8 @@ class TrajectorySAPT(AnalysisBase):
                                                outfile)
             result = [f'{pair[0]}-{pair[1]}', self._ts.time] + [sapt[x] for x in self._SAPT_KEYS]
 
-            for r in range(len(result)):
-                self._res_dict[self._COL[r]].append(result[r])
+            for i, pairstr in enumerate(result):
+                self._res_dict[self._COL[i]].append(pairstr)
 
     def _conclude(self) -> None:
         for k in self._COL:

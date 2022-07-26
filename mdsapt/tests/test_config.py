@@ -187,7 +187,7 @@ def test_separated_docking_list() -> None:
     ens: Ensemble = cfg.build_ensemble()
     assert len(ens) == 3
     ligands: EnsembleAtomGroup = ens.select_atoms('resid -1')
-    assert all((len(ligands[k]) != 0 for k in ligands.keys()))
+    assert all((len(ag) != 0 for ag in ligands.values()))
 
 
 def test_seperated_docking_dir() -> None:

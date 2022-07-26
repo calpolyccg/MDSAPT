@@ -25,14 +25,14 @@ def in_dir(directory, create=True):
     try:
         try:
             os.chdir(directory)
-            logger.debug("Working in {directory!r}...".format(**vars()))
+            logger.debug("Working in %r...", directory)
         except OSError as err:
             if create and err.errno == errno.ENOENT:
                 os.makedirs(directory)
                 os.chdir(directory)
-                logger.info("Working in {directory!r} (newly created)...".format(**vars()))
+                logger.info("Working in %r (newly created)...", directory)
             else:
-                logger.exception("Failed to start working in {directory!r}.".format(**vars()))
+                logger.exception("Failed to start working in %r.", directory)
                 raise
         yield os.getcwd()
     finally:
