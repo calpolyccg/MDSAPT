@@ -103,7 +103,7 @@ class Ensemble:
     def __getitem__(self, index: str) -> mda.Universe:
         """Allows dictionary like indexing"""
         return self._ensemble[index]
-    
+
     def keys(self) -> Iterable[str]:
         """Returns list of system keys"""
         return self._ensemble.keys()
@@ -211,7 +211,7 @@ class Ensemble:
             logger.info('adding system %r to ensemble', k)
             _ens[k] = self[k]
         return Ensemble(_ens)
-    
+
 
 class EnsembleAtomGroup:
     """Group for storing selections from :class:`~mdpow.analysis.ensemble.Ensemble`

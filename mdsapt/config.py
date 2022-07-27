@@ -120,7 +120,7 @@ class TopologySelection:
             path = Path(result)
         except TypeError:
             return TopologySelection(path=result.path, topology_format=result.topology_format,
-                                 charge_overrides=result.charge_overrides)
+                                     charge_overrides=result.charge_overrides)
         return TopologySelection(path=path)
 
     def create_universe(self, *coordinates: Any, **kwargs) -> mda.Universe:
@@ -164,7 +164,7 @@ class TrajectoryAnalysisConfig(BaseModel):
         pairs: Interaction pairs to study
         frames:
             A selection of frames to analyze.
-            
+
             This may either be a :obj:`RangeFrameSelection` with start/stop/step,
             or a list of frame numbers.
 
@@ -277,7 +277,7 @@ class DockingAnalysisConfig(BaseModel):
     There are two valid modes of selecting the system to analyze:
         - Only specifying <combined_topologies>
         - Specifying <protein> and <ligands> together
-    
+
     You must choose one mode or the other, you cannot mix the two (i.e. specify
     <combined_topologies> and <protein>).
 
