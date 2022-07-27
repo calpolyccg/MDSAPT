@@ -1,0 +1,7 @@
+{
+    "python.testing.pytestArgs": [
+        "mdsapt"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}

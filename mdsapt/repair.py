@@ -95,7 +95,9 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, sim_ph: float = 7.0) -> md
         fixer.findMissingResidues()
         fixer.findMissingAtoms()
         fixer.addMissingHydrogens(sys_ph)  # Adding protons at pH value
-        PDBFile.writeFile(fixer.topology, fixer.positions, open('resid_fixed.pdb', 'w'))
+
+        with open('resid_fixed.pdb', 'w', encoding='utf8') as file:
+            PDBFile.writeFile(fixer.topology, fixer.positions, file)
 
         res_fixed = mda.Universe('resid_fixed.pdb')
         amino: mda.AtomGroup = res_fixed.select_atoms("resname *")
@@ -126,8 +128,8 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, sim_ph: float = 7.0) -> md
             backbone = bkbone.select_atoms('backbone')
             protonated: mda.Universe = mda.Universe.empty(n_atoms=bkbone.n_atoms + 1,
                                                           trajectory=True)
-            protonated.add_TopologyAttr('masses', bkbone.masses + [1])
-            protonated.add_TopologyAttr('name', bkbone.names + ['Hc'])
+            protonated.add_TopologyAttr('masses', np.append(bkbone.masses, [1]))
+            protonated.add_TopologyAttr('name', np.append(bkbone.names, ['Hc']))
             protonated.add_TopologyAttr('types', guess_types(protonated.atoms.names))
             protonated.add_TopologyAttr('elements', [guess_atom_element(atom) for
                                                      atom in protonated.atoms.names])

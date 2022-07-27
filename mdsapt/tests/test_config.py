@@ -2,6 +2,7 @@
 Tests for the config objects
 """
 from pathlib import Path
+from tempfile import mktemp
 from typing import Dict, Any
 
 import pydantic
@@ -180,7 +181,8 @@ def test_separated_docking_list() -> None:
         ligands=[resources_dir / 'docking_sep_test/ligands/15U0.pdb',
                  resources_dir / 'docking_sep_test/ligands/15U1.pdb',
                  resources_dir / 'docking_sep_test/ligands/98P_1.pdb'],
-        pairs=[(13, 18)]
+        pairs=[(13, 18)],
+        output=mktemp(),
     )
 
     cfg: DockingAnalysisConfig = DockingAnalysisConfig(**config_dict)
@@ -198,7 +200,8 @@ def test_seperated_docking_dir() -> None:
         type='docking',
         protein=resources_dir / 'docking_sep_test/2hnt.pdb',
         ligands=resources_dir / 'docking_sep_test/ligands',
-        pairs=[(13, 18)]
+        pairs=[(13, 18)],
+        output=mktemp(),
     )
 
     cfg: DockingAnalysisConfig = DockingAnalysisConfig(**config_dict)
@@ -214,7 +217,8 @@ def test_combined_docking_list() -> None:
         type='docking',
         combined_topologies=[resources_dir / 'docking_merged_test/2hnt_15U0.pdb',
                              resources_dir / 'docking_merged_test/2hnt_98P.pdb'],
-        pairs=[(13, 18)]
+        pairs=[(13, 18)],
+        output=mktemp(),
     )
 
     cfg: DockingAnalysisConfig = DockingAnalysisConfig(**config_dict)
@@ -229,7 +233,8 @@ def test_combined_docking_dir() -> None:
     config_dict: Dict[str, Any] = dict(
         type='docking',
         combined_topologies=resources_dir / 'docking_merged_test',
-        pairs=[(13, 18)]
+        pairs=[(13, 18)],
+        output=mktemp(),
     )
 
     cfg: DockingAnalysisConfig = DockingAnalysisConfig(**config_dict)
