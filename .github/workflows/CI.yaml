@@ -179,7 +179,7 @@ jobs:
 
     - name: Lint code
       run: |
-        pylint --disable=E,R mdsapt
+        pylint --fail-under=9.5 --disable=E,R mdsapt
 
     - name: Ensure formatting
       run: |
