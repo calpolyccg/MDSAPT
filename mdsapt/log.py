@@ -1,3 +1,4 @@
+# type: ignore
 # pylint: skip-file
 """
 Based on log.py https://github.com/Becksteinlab/MDPOW/blob/develop/mdpow/log.py

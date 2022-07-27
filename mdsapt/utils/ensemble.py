@@ -16,6 +16,8 @@ A set of objects for manging and analyzing collections of similar MD simulations
 
 """
 import os
+from os import PathLike
+from pathlib import Path
 from typing import Optional, List, Tuple, Union, Dict, Iterable, Set
 
 import MDAnalysis as mda
@@ -101,15 +103,17 @@ class Ensemble:
     def __getitem__(self, index: str) -> mda.Universe:
         """Allows dictionary like indexing"""
         return self._ensemble[index]
-
+    
     def keys(self) -> Iterable[str]:
         """Returns list of system keys"""
         return self._ensemble.keys()
 
     def items(self) -> Iterable[Tuple[str, mda.Universe]]:
+        """Returns an iterable of key/value pairs"""
         return self._ensemble.items()
 
     def values(self) -> Iterable[mda.Universe]:
+        """Returns an iterable of values"""
         return self._ensemble.values()
 
     def merge(self, *args, ligand_id: int = -1) -> 'Ensemble':
@@ -119,9 +123,9 @@ class Ensemble:
         """
         _ens: Dict[str, mda.Universe] = {}
 
-        for k in self.items():
+        for k, univ in self.items():
             self[k].universe.residues.resids = [ligand_id]
-            _ens[k] = Merge(self[k].select_atoms('name *'), *args)
+            _ens[k] = Merge(univ.select_atoms('name *'), *args)
 
         return Ensemble(_ens)
 
@@ -161,7 +165,7 @@ class Ensemble:
             return Ensemble(_ens)
 
     @classmethod
-    def build_from_files(cls, topologies: List[os.PathLike], **universe_kwargs) -> 'Ensemble':
+    def build_from_files(cls, topologies: List[Union[str, Path]], **universe_kwargs) -> 'Ensemble':
         """Constructs an ensemble from a list of files."""
         _ens: Dict[str, mda.Universe] = {}
         for top in topologies:

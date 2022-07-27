@@ -135,7 +135,7 @@ class TrajectorySAPT(AnalysisBase):
         try:
             # Ensuring config type is correct
             if not isinstance(config.analysis, TrajectoryAnalysisConfig):
-                raise ValidationError("config.analysis.type is not trajectory")
+                raise ValidationError("config.analysis.type is not trajectory", self.__class__)
         except ValidationError as err:
             logger.exception(err)
             raise err

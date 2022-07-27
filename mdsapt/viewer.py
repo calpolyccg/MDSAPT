@@ -20,6 +20,10 @@ Required Input:
     :inherited-members:
 """
 
+# TODO: This code needs to be updated to be docking-aware.
+# type: ignore
+# pylint: skip-file
+
 from typing import Union
 
 try:
@@ -62,8 +66,8 @@ class Viewer:
                 number of selected residue in polypeptide chain
             *nglview_kwargs*
                 arguments passed to the viewer"""
-        resid: mda.AtomGroup = self._unv.select_atoms(f'resid {resid} and protein')
-        return self._launch_viewer(resid, **nglview_kwargs)
+        resid_ag: mda.AtomGroup = self._unv.select_atoms(f'resid {resid} and protein')
+        return self._launch_viewer(resid_ag, **nglview_kwargs)
 
     def view_interaction_pair(self, resid1: int, resid2: int, **nglview_kwargs) -> nv.NGLWidget:
         """Shows selected pair of residues.

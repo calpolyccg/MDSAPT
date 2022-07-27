@@ -116,10 +116,12 @@ class TopologySelection:
         Validates the topology. You should not call this directly.
         """
         result = pydantic.parse_obj_as(Union[FilePath, cls._TopologySelection], values)
-        if isinstance(result, PathLike):
-            return TopologySelection(path=Path(result))
-        return TopologySelection(path=result.path, topology_format=result.topology_format,
+        try:
+            path = Path(result)
+        except TypeError:
+            return TopologySelection(path=result.path, topology_format=result.topology_format,
                                  charge_overrides=result.charge_overrides)
+        return TopologySelection(path=path)
 
     def create_universe(self, *coordinates: Any, **kwargs) -> mda.Universe:
         """Create a universe based on this topology and the given arguments.."""
@@ -374,7 +376,7 @@ class Config(BaseModel):
         Field(..., discriminator='type')
 
 
-def load_from_yaml_file(path: os.PathLike) -> Config:
+def load_from_yaml_file(path: Union[str, PathLike]) -> Config:
     """
     Loads a config from a YAML file.
     """
