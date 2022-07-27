@@ -23,7 +23,9 @@ dependencies:
 
   # Development deps
   - autopep8
-  - pyright # type-checking
   - pylint
+  - pyright # type-checking
   - pytest
   - pytest-cov
+  - sphinx
+  - sphinx_rtd_theme

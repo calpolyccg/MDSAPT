@@ -1,0 +1,18 @@
+topology_directory: ''
+selection_resid_num:
+  -
+int_pairs:
+  # Place pair names defined above in list in a list
+  - []
+system_settings:
+  ncpus:
+  memory:
+  time:
+opt_settings:
+  pH: 7.0
+sapt_settings:
+  method: 'sapt'
+  basis: 'jun-cc-pvdz'
+  settings:
+    reference: 'rhf'
+  save_psi4_output: true

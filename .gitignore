@@ -1,3 +1,10 @@
+# generated files
+/timer.dat
+/resid_fixed.pdb
+/resid.pdb
+/*.out
+/sapt_test.csv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
