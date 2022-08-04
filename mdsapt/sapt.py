@@ -35,11 +35,9 @@ import psi4
 
 from pydantic import ValidationError
 
-from rdkit import Chem
-
 from .config import Config, TrajectoryAnalysisConfig, DockingAnalysisConfig, \
     Psi4Config, SysLimitsConfig
-from .repair import rebuild_resid, get_spin_multiplicity
+from .repair import ChargeStrategy, MoleculeElectronInfo, rebuild_resid
 from .utils.ensemble import Ensemble, EnsembleAtomGroup
 
 logger = logging.getLogger('mdsapt.sapt')
@@ -47,18 +45,19 @@ logger = logging.getLogger('mdsapt.sapt')
 MHT_TO_KCALMOL: Final[float] = 627.509
 
 
-def build_psi4_input_str(resid: int, residue: mda.AtomGroup) -> str:
+def build_psi4_input_str(resid: int, residue: mda.AtomGroup, strategy: ChargeStrategy, charge_overrides: Optional[Dict[int, int]] = None) -> str:
     """
     Generates Psi4 input file the specified residue. Prepares amino acids for SAPT using
     :class:`mdsapt.optimizer.Optimizer`. Adds charge and spin multiplicity to top of cooridnates.
     """
     repaired_resid: mda.AtomGroup = rebuild_resid(resid, residue)
-    rd_mol = atomgroup_to_mol(repaired_resid)
+    result: MoleculeElectronInfo = strategy.calculate(repaired_resid, charge_overrides)
 
-    coords: str = f'{Chem.GetFormalCharge(rd_mol)} {get_spin_multiplicity(rd_mol)}'
+    lines: List[str] = [f'{result.charge} {result.spin_multiplicity}']
     for atom in repaired_resid.atoms:
-        coords += f'\n{atom.element} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
-    return coords
+        lines.append(f'{atom.element} {atom.position[0]} {atom.position[1]} {atom.position[2]}')
+
+    return '\n'.join(lines)
 
 
 def calc_sapt(psi4_input: str, psi4_cfg: Psi4Config, sys_cfg: SysLimitsConfig,
@@ -149,6 +148,8 @@ class TrajectorySAPT(AnalysisBase):
             for x in ag_sel
         }
 
+        self._charge_overrides = config.analysis.topology.charge_overrides
+
         self._sel_pairs = config.analysis.pairs
         AnalysisBase.__init__(self, self._unv.trajectory)
 
@@ -158,7 +159,16 @@ class TrajectorySAPT(AnalysisBase):
 
     def _single_frame(self) -> None:
         outfile: Optional[str] = None
-        xyz_dict = {k: build_psi4_input_str(k, self._sel[k]) for k in self._sel.keys()}
+        xyz_dict = {
+            k: build_psi4_input_str(
+                k,
+                resid,
+                self._cfg.simulation.charge_guesser.charge_strategy,
+                charge_overrides=self._charge_overrides
+            )
+            for k, resid in self._sel.items()
+        }
+
         for pair in self._sel_pairs:
             coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
 

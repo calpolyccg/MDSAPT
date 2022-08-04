@@ -6,7 +6,7 @@ r"""
 
 .. autofunction:: get_lone_electrons
 """
-from typing import Optional, NamedTuple
+from typing import Callable, Optional, NamedTuple
 
 
 _ELEMENT_TO_VALENCE = {
@@ -35,7 +35,7 @@ class ElectronInfo(NamedTuple):
     radical: int
 
 
-def calculate_electron_info(element: str, bonds: int, fc: Optional[int] = None) -> int:
+def calculate_electron_info(element: str, bonds: int, fc: Optional[int] = None) -> ElectronInfo:
     """
     Calculates various electron-related properties of an atom.
 
@@ -74,6 +74,17 @@ def calculate_electron_info(element: str, bonds: int, fc: Optional[int] = None) 
         lone=lone,
         radical=radical,
     )
+
+
+def calculate_spin_multiplicity(total_radicals: int) -> int:
+    """
+    Calculates the spin multiplicity of a molecule, given the total number of radical electrons.
+    
+    :param total_radicals: The number of radical electrons that exist across the molecule.
+    """
+    total_spin: int = n_radical_electrons // 2
+    spin_mult: int = total_spin + 1
+    return spin_mult
 
 
 def _get_fc(element: str, valence: int, bonds: int) -> int:

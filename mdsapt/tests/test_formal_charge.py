@@ -1,6 +1,6 @@
 from typing import Optional
 import pytest
-from ..utils.formal_charge import _get_fc, calculate_electron_info, ElectronInfo
+from ..utils.formal_charge import calculate_electron_info, ElectronInfo
 
 
 @pytest.mark.parametrize('element, bonds, fc, fields', [

@@ -25,6 +25,7 @@ from pydantic import BaseModel, conint, Field, root_validator, \
 import yaml
 
 import MDAnalysis as mda
+from mdsapt.repair import ChargeStrategy, StandardChargeGuesser
 
 from mdsapt.utils.ensemble import Ensemble
 
@@ -69,6 +70,13 @@ class ChargeGuesser(Enum):
     """
     STANDARD = 'standard'
     RDKIT = 'rdkit'
+
+    @property
+    def charge_strategy(self) -> ChargeStrategy:
+        if self == ChargeGuesser.STANDARD:
+            return StandardChargeGuesser()
+        if self == ChargeGuesser.RDKIT:
+            raise NotImplemented('RDKit guesser is not implemented yet.')
 
 
 class SimulationConfig(BaseModel):

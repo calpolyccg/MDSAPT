@@ -20,40 +20,60 @@ Required Input:
 
 """
 
-from typing import Set, Union
+from abc import ABC
+from typing import Dict, NamedTuple, Optional, Set, Tuple, Union
 
 import logging
 
 import numpy as np
 
 import MDAnalysis as mda
-from MDAnalysis.converters.RDKit import atomgroup_to_mol
+from MDAnalysis.core.groups import Atom
 from MDAnalysis.topology.guessers import guess_types, guess_atom_element
-
-from rdkit import Chem
 
 from pdbfixer import PDBFixer
 from simtk.openmm.app import PDBFile
 
+from mdsapt.utils.formal_charge import ElectronInfo, calculate_electron_info, calculate_spin_multiplicity
+
 logger = logging.getLogger('mdsapt.optimizer')
 
 
-def get_spin_multiplicity(molecule: Chem.Mol) -> int:
-    """Returns the spin multiplicity of a :class:`RDKIT.Mol`.
-    Based on method in http://www.mayachemtools.org/docs/modules/html/code/RDKitUtil.py.html .
+class MoleculeElectronInfo(NamedTuple):
+    charge: int
+    radical: int
 
-    :Arguments:
-        *molecule*
-            :class:`RDKIT.Mol` object
-    """
-    radical_electrons: int = 0
 
-    for atom in molecule.GetAtoms():
-        radical_electrons += atom.GetNumRadicalElectrons()
+class ChargeStrategy(ABC):
+    def calculate(self, ag: mda.AtomGroup, charge_overrides: Optional[Dict[int, int]] = None) -> MoleculeElectronInfo:
+        """For the given atom group, returns a pair of (formal charge, number of radical electrons)"""
+        raise NotImplemented
 
-    total_spin: int = radical_electrons // 2
-    spin_mult: int = total_spin + 1
-    return spin_mult
+
+class StandardChargeGuesser(ChargeStrategy):
+    def calculate(self, ag: mda.AtomGroup, charge_overrides: Optional[Dict[int, int]] = None) -> MoleculeElectronInfo:
+        if charge_overrides is None:
+            charge_overrides = {}
+
+        results = [StandardChargeGuesser._calc_single_atom(a, charge_overrides.get(a.idx)) for a in ag]
+
+        fc = sum((pair[0] for pair in results))
+        total_radicals = sum((pair[1] for pair in results))
+
+        return MoleculeElectronInfo(fc, calculate_spin_multiplicity(total_radicals))
+
+    @staticmethod
+    def _calc_single_atom(atom: Atom, charge_override: Optional[int] = None) -> MoleculeElectronInfo:
+        bonds = atom.get_connections('bonds', outside=True)
+        orders = [b.order for b in bonds]
+
+        # Assume any atom with an aromatic bond has fc=0 and radicals=0
+        if 1.5 in bonds or 'ar' in bonds:
+            return 0, 0
+
+        bond_count: int = sum(orders)
+        info: ElectronInfo = calculate_electron_info(atom.element, bond_count, charge_override)
+        return info.fc, info.radical
 
 
 def is_amino(unv: mda.Universe, resid: int) -> bool:
