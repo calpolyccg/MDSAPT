@@ -28,7 +28,6 @@ import MDAnalysis as mda
 
 from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.topology.guessers import guess_types
-from MDAnalysis.converters.RDKit import atomgroup_to_mol
 from MDAnalysis.lib.log import ProgressBar
 
 import psi4
@@ -53,7 +52,7 @@ def build_psi4_input_str(resid: int, residue: mda.AtomGroup, strategy: ChargeStr
     repaired_resid: mda.AtomGroup = rebuild_resid(resid, residue)
     result: MoleculeElectronInfo = strategy.calculate(repaired_resid, charge_overrides)
 
-    lines: List[str] = [f'{result.charge} {result.spin_multiplicity}']
+    lines: List[str] = [f'{result.total_charge} {result.spin_multiplicity}']
     for atom in repaired_resid.atoms:
         lines.append(f'{atom.element} {atom.position[0]} {atom.position[1]} {atom.position[2]}')
 
@@ -250,7 +249,15 @@ class DockingSAPT:
         self._pair_names = {pair: f'{pair[0]}-{pair[1]}' for pair in self._sel_pairs}
 
     def _single_system(self) -> None:
-        xyz_dict = {k: build_psi4_input_str(k, self._sel[k][self._key]) for k in self._sel.keys()}
+        xyz_dict = {
+            k: build_psi4_input_str(
+                k,
+                resid,
+                self._cfg.simulation.charge_guesser.charge_strategy,
+                charge_overrides=self._charge_overrides
+            )
+            for k, resid in self._sel.items()
+        }
         outfile: Optional[str] = None
 
         for pair in self._sel_pairs:
