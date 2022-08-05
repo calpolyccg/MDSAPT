@@ -6,7 +6,7 @@ r"""
 
 .. autofunction:: get_lone_electrons
 """
-from typing import Callable, Optional, NamedTuple
+from typing import Optional, NamedTuple
 
 
 _ELEMENT_TO_VALENCE = {
@@ -82,7 +82,7 @@ def calculate_spin_multiplicity(total_radicals: int) -> int:
     
     :param total_radicals: The number of radical electrons that exist across the molecule.
     """
-    total_spin: int = n_radical_electrons // 2
+    total_spin: int = total_radicals // 2
     spin_mult: int = total_spin + 1
     return spin_mult
 

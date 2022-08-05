@@ -49,7 +49,7 @@ def build_psi4_input_str(resid: int, residue: mda.AtomGroup, strategy: ChargeStr
     Generates Psi4 input file the specified residue. Prepares amino acids for SAPT using
     :class:`mdsapt.optimizer.Optimizer`. Adds charge and spin multiplicity to top of cooridnates.
     """
-    repaired_resid: mda.AtomGroup = rebuild_resid(resid, residue)
+    repaired_resid: mda.AtomGroup = rebuild_resid(resid, residue, strategy, charge_overrides=charge_overrides)
     result: MoleculeElectronInfo = strategy.calculate(repaired_resid, charge_overrides)
 
     lines: List[str] = [f'{result.total_charge} {result.spin_multiplicity}']

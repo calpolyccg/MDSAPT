@@ -73,7 +73,7 @@ class StandardChargeStrategy(ChargeStrategy):
 
         def calc_atom(atom: Atom) -> ElectronInfo:
             bonds = atom.get_connections('bonds', outside=True)
-            orders = [b.order for b in bonds if b.order is not None]
+            orders = [1 if b.order is None else b.order for b in bonds]
 
             # Assume any atom with an aromatic bond has fc=0 and radicals=0. Return None to signal this.
             if 1.5 in orders or 'ar' in orders:
