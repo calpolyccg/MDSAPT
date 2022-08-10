@@ -21,7 +21,7 @@ Required Input:
 """
 
 from abc import ABC
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Set, Union
 
 import logging
 
@@ -57,17 +57,34 @@ class MoleculeElectronInfo(NamedTuple):
 
 
 class ChargeStrategy(ABC):
-    def calculate(self, ag: mda.AtomGroup, charge_overrides: Dict[int, int]) -> MoleculeElectronInfo:
+    """
+    An interface for specifying a charge/radical electron guessing algorithm.
+    """
+
+    def calculate(
+        self,
+        ag: mda.AtomGroup,
+        charge_overrides: Dict[int, int]
+    ) -> MoleculeElectronInfo:
         """
         Calculates :class:`MoleculeElectronInfo` for the given :class:`mda.AtomGroup`.
 
         :param ag: The :class:`mda.AtomGroup`
         """
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class StandardChargeStrategy(ChargeStrategy):
-    def calculate(self, ag: mda.AtomGroup, charge_overrides: Dict[int, int]) -> MoleculeElectronInfo:
+    """
+    The standard charge guessing strategy. This is usually the one you would want to use.
+    """
+
+    def calculate(
+        self,
+        ag: mda.AtomGroup,
+        charge_overrides: Dict[int, int]
+    ) -> MoleculeElectronInfo:
+
         if charge_overrides is None:
             charge_overrides = {}
 
@@ -119,7 +136,13 @@ def is_amino(unv: mda.Universe, resid: int) -> bool:
     return resname_atr.values[resid - 1] in std_resids
 
 
-def rebuild_resid(resid: int, residue: mda.AtomGroup, charge_strategy: ChargeStrategy, sim_ph: float = 7.0, charge_overrides: Optional[Dict[int, int]] = None) -> mda.AtomGroup:
+def rebuild_resid(
+    resid: int,
+    residue: mda.AtomGroup,
+    charge_strategy: ChargeStrategy,
+    sim_ph: float = 7.0,
+    charge_overrides: Optional[Dict[int, int]] = None
+) -> mda.AtomGroup:
     """Rebuilds residue by replacing missing protons and adding a new proton
      on the C terminus. Raises key error if class
     has no value for that optimization."""

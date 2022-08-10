@@ -268,7 +268,7 @@ class DockingSAPT:
             pair_name = self._pair_names[(a, b)]
             coords = xyz_dict[a] + '\n--\n' + xyz_dict[b] + '\nunits angstrom'
 
-            logger.info(f'Starting SAPT for {a}, {b}')
+            logger.info(f'Starting SAPT for %a, %b', a, b)
 
             if self._cfg.psi4.save_output:
                 outfile = f'sapt_{key_name}_{pair_name}.out'

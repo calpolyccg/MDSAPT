@@ -61,7 +61,7 @@ def calculate_electron_info(element: str, bonds: int, fc: Optional[int] = None) 
     lone = valence - fc - bonds
 
     # Calculation of radical electrons. This formula appears to work in most cases.
-    if bonds == 1 and lone <= 4: 
+    if bonds == 1 and lone <= 4:
         radical = [0, 1, 0, 3, 2][lone]  # lookup table
     else:
         radical = lone % 2
@@ -79,7 +79,7 @@ def calculate_electron_info(element: str, bonds: int, fc: Optional[int] = None) 
 def calculate_spin_multiplicity(total_radicals: int) -> int:
     """
     Calculates the spin multiplicity of a molecule, given the total number of radical electrons.
-    
+
     :param total_radicals: The number of radical electrons that exist across the molecule.
     """
     total_spin: int = total_radicals // 2

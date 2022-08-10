@@ -22,7 +22,6 @@ import logging
 import pydantic
 from pydantic import BaseModel, conint, Field, root_validator, \
     FilePath, ValidationError, DirectoryPath
-from pyrsistent import v
 import yaml
 
 import MDAnalysis as mda
@@ -39,7 +38,8 @@ class Psi4Config(BaseModel):
     Attributes:
         method:
             The SAPT method to use.
-            NOTE: You can use any valid Psi4 method, but it might fail if you don't use a SAPT method.
+            NOTE: You can use any valid Psi4 method, but it might fail if you don't
+            use a valid one.
         basis:
             The basis to use.
             NOTE: We do not verify if this is a valid basis set or not.
@@ -78,6 +78,7 @@ class ChargeGuesser(Enum):
             return StandardChargeStrategy()
         if self == ChargeGuesser.RDKIT:
             raise NotImplemented('RDKit guesser is not implemented yet.')
+        raise ValueError(f'Unknown charge guesser {self}')
 
 
 class SimulationConfig(BaseModel):
@@ -95,13 +96,14 @@ class SimulationConfig(BaseModel):
 @dataclass
 class TopologySelection:
     """
-    A configuration item for selecting a single topology. To successfully import a topology,
-    it must be supported by MDAnalysis.
+    A configuration item for selecting a single topology. To successfully
+    import a topology, it must be supported by MDAnalysis.
 
     Attributes:
         path: Where the topology file is located.
         topology_format: If specified, overrides the format to import with.
-        charge_overrides: An optional dictionary, where keys are atom numbers and values are their charges.
+            charge_overrides: An optional dictionary, where keys are atom numbers and
+            values are their charges.
 
     .. seealso::
         `List of topology formats that MDAnalysis supports <https://docs.mdanalysis.org/1.1.1/documentation_pages/topology/init.html>`_
@@ -330,8 +332,8 @@ class DockingAnalysisConfig(BaseModel):
                                             ligands=values.get('ligands'))
         missing_selections: List[int] = []
 
-        for v in ens.values():
-            missing_selections += get_invalid_residue_selections(protein_selections, v)
+        for val in ens.values():
+            missing_selections += get_invalid_residue_selections(protein_selections, val)
 
         if len(missing_selections) > 0:
             errors.append(f'Selected residues are missing from topology: {missing_selections}')
@@ -339,10 +341,13 @@ class DockingAnalysisConfig(BaseModel):
         return values
 
     def build_ensemble(self) -> Ensemble:
+        """
+        Builds an ensemble from this configuration data.
+        """
         return self._build_ensemble(combined_topologies=self.combined_topologies,
                                     protein=self.protein,
                                     ligands=self.ligands)
-    
+
     def build_overrides_dict(self) -> Dict[str, Dict[int, int]]:
         if self.combined_topologies is not None and (self.protein, self.ligands) == (None, None):
             sels = self.combined_topologies.get_individual_topologies()
@@ -359,6 +364,8 @@ class DockingAnalysisConfig(BaseModel):
             }
             result[str(self.protein.path)] = self.protein.charge_overrides
             return result
+
+        raise ValueError('Must provide `protein` and `ligands` keys, or only `combined_topologies`')
 
     @classmethod
     def _build_ensemble(
