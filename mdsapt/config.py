@@ -22,6 +22,7 @@ import logging
 import pydantic
 from pydantic import BaseModel, conint, Field, root_validator, \
     FilePath, ValidationError, DirectoryPath
+from pyrsistent import v
 import yaml
 
 import MDAnalysis as mda
@@ -341,6 +342,23 @@ class DockingAnalysisConfig(BaseModel):
         return self._build_ensemble(combined_topologies=self.combined_topologies,
                                     protein=self.protein,
                                     ligands=self.ligands)
+    
+    def build_overrides_dict(self) -> Dict[str, Dict[int, int]]:
+        if self.combined_topologies is not None and (self.protein, self.ligands) == (None, None):
+            sels = self.combined_topologies.get_individual_topologies()
+            return {
+                str(top.path): top.charge_overrides
+                for top in sels
+            }
+
+        if self.combined_topologies is None and None not in (self.protein, self.ligands):
+            ligand_sels = self.ligands.get_individual_topologies()
+            result = {
+                str(top.path): top.charge_overrides
+                for top in ligand_sels
+            }
+            result[str(self.protein.path)] = self.protein.charge_overrides
+            return result
 
     @classmethod
     def _build_ensemble(

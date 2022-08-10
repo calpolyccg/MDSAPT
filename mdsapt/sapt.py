@@ -234,6 +234,7 @@ class DockingSAPT:
             raise err
 
         self._ens = self._cfg.analysis.build_ensemble()
+        self._charge_overrides = self._cfg.analysis.build_overrides_dict()
 
         self._sel_pairs = self._cfg.analysis.pairs
 
@@ -249,29 +250,32 @@ class DockingSAPT:
         self._pair_names = {pair: f'{pair[0]}-{pair[1]}' for pair in self._sel_pairs}
 
     def _single_system(self) -> None:
+        key_name = self._key_names[self._key]
+        charge_overrides = self._charge_overrides[self._key]
+
         xyz_dict = {
             k: build_psi4_input_str(
                 k,
-                resid,
+                self._sel[k][self._key],
                 self._cfg.simulation.charge_guesser.charge_strategy,
-                charge_overrides=self._charge_overrides
+                charge_overrides=charge_overrides
             )
             for k, resid in self._sel.items()
         }
         outfile: Optional[str] = None
 
-        for pair in self._sel_pairs:
+        for a, b in self._sel_pairs:
+            pair_name = self._pair_names[(a, b)]
+            coords = xyz_dict[a] + '\n--\n' + xyz_dict[b] + '\nunits angstrom'
 
-            coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
-
-            logger.info(f'Starting SAPT for {pair}')
+            logger.info(f'Starting SAPT for {a}, {b}')
 
             if self._cfg.psi4.save_output:
-                outfile = f'sapt_{self._key_names[self._key]}_{self._pair_names[pair]}.out'
+                outfile = f'sapt_{key_name}_{pair_name}.out'
 
             sapt_result = calc_sapt(coords, self._cfg.psi4, self._cfg.system_limits, outfile)
             result: List[Union[str, float]] = \
-                [self._key_names[self._key], self._pair_names[pair]] + \
+                [key_name, pair_name] + \
                 [sapt_result[k] for k in self._SAPT_KEYS]
 
             for i, res in enumerate(result):
@@ -290,8 +294,8 @@ class DockingSAPT:
         trajectory frames.
         """
         logger.info("Setting up systems")
+        self._prepare()
         for self._key in ProgressBar(self._ens.keys(), verbose=True):
-            self._prepare()
             self._single_system()
             logger.info("Moving to next universe")
         logger.info("Finishing up")
