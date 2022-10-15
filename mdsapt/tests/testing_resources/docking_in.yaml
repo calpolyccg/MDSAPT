@@ -1,0 +1,20 @@
+psi4:
+  method: 'sapt0'
+  basis: 'jun-cc-pvdz'
+  save_output: true
+  settings:
+    reference: 'rhf'
+simulation:
+  ph: 7.0
+  charge_guesser: 'standard'
+  # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+system_limits:
+  ncpus: 5
+  memory: '1GB'
+analysis:
+  ### This section is for running TrajectorySAPT. To run other types of analyses, see below.
+  type: 'docking'
+  combined_topologies: 'mdsapt/tests/testing_resources/docking_merged_test'
+  pairs:
+    - [11, 119]
+  output: 'dock_out.csv'

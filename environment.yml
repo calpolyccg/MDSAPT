@@ -6,14 +6,29 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - mdanalysis
-  - nglview
+  # This must be specified FIRST to avoid packaging errors.
+  - psi4>=1.6.1,<1.7
+
+  - mdanalysis>=2.2.0,<2.3
+  - click
   - numpy
   - openmm
   - pandas
   - pdbfixer
-  - psi4
   - pytest
+  - pydantic
   - pytest-cov
   - pyyaml
   - rdkit
+
+  # Optional deps
+  - nglview
+
+  # Development deps
+  - autopep8
+  - pylint
+  - pyright # type-checking
+  - pytest
+  - pytest-cov
+  - sphinx
+  - sphinx_rtd_theme
