@@ -107,4 +107,3 @@ def ensure_safe_to_overwrite(path: str, force: bool):
     logger.error("Halting, file already exists: %s", path)
     logger.error("If you want to overwrite that file, add the -f flag")
     sys.exit(-1)
-
