@@ -3,6 +3,7 @@ import os
 import sys
 
 import click
+from mdsapt.config import RangeFrameSelection
 
 # Note that we do not import MDSAPT. This is a speed optimization; it is imported later.
 
@@ -78,12 +79,14 @@ def run(in_file: str, out_file: str, force: bool):
 
     ensure_safe_to_overwrite(out_file, force)
 
-    settings = mdsapt.InputReader(in_file)
-    optimizer = mdsapt.Optimizer(settings)
-    if optimizer.num_failed_residue != 0:
-        logger.error('optimization failed see log for list of failed residues')
-
-    sapt = mdsapt.TrajectorySAPT(settings, optimizer).run(settings.start, settings.stop, settings.step)
+    config = mdsapt.load_from_yaml_file(in_file)
+    if isinstance(config.analysis, mdsapt.config.TrajectoryAnalysisConfig):
+        sapt = mdsapt.TrajectorySAPT(config)
+        frames = config.analysis.frames
+        sapt.run(frames.start, frames.stop, frames.step)
+    elif isinstance(config.analysis, mdsapt.config.DockingAnalysisConfig):
+        sapt = mdsapt.DockingSAPT(config)
+        sapt.run()
 
     logger.info('saving results to CSV')
     sapt.results.to_csv(out_file)
