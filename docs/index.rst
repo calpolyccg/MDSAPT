@@ -24,4 +24,3 @@ For the poster we presented at ACS Spring 2022, `click here <./_static/mdsapt_po
    optimizer
    reader
    viewer
-   scripts

@@ -32,7 +32,6 @@ def test_frame_range_selection() -> None:
 @pytest.mark.parametrize('key,var', [
     ('trajectories', [f'{resources_dir}/test_read_error.dcd']),
     ('frames', {'start': 1, 'stop': 120}),
-    ('frames', [1, 4, 6, 120]),
     ('pairs', [(250, 251)])
 ])
 def test_traj_analysis_config(key: str, var: Any) -> None:
@@ -44,7 +43,7 @@ def test_traj_analysis_config(key: str, var: Any) -> None:
         topology=f'{resources_dir}/testtop.psf',
         trajectories=[f'{resources_dir}/testtraj.dcd'],
         pairs=[(132, 152), (34, 152)],
-        frames=[1, 4, 6],
+        frames={'start': 1, 'stop': 4},
         output=True
     )
 
@@ -63,7 +62,7 @@ def test_traj_sel() -> None:
         topology=f'{resources_dir}/testtop.psf',
         trajectories=[f'{resources_dir}/testtraj.dcd'],
         pairs=[(132, 152), (34, 152)],
-        frames=[1, 4, 6],
+        frames={'start': 1, 'stop': 4},
         output=True)
 
     cfg: TrajectoryAnalysisConfig = TrajectoryAnalysisConfig(**traj_analysis_dict)

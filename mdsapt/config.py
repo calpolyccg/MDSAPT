@@ -140,7 +140,7 @@ class RangeFrameSelection(BaseModel):
     """
     start: Optional[conint(ge=0)]
     stop: Optional[conint(ge=0)]
-    step: Optional[conint(ge=1)]
+    step: Optional[conint(ge=1)] = 1
 
     @root_validator()
     def _check_start_before_stop(cls, values: Dict[str, int]) -> Dict[str, int]:
@@ -165,20 +165,14 @@ class TrajectoryAnalysisConfig(BaseModel):
         frames:
             A selection of frames to analyze.
 
-            This may either be a :obj:`RangeFrameSelection` with start/stop/step,
-            or a list of frame numbers.
-
-            Serialization behavior
-            ----------------------
-            If this value is a range, it will be serialized using start/stop/step.
-            Otherwise, it will be serialized into a List[int].
+            This must be a :obj:`RangeFrameSelection` with start/stop/step.
         output: A file to write an output CSV to.
     """
     type: Literal['trajectory']
     topology: TopologySelection
     trajectories: List[FilePath]
     pairs: List[Tuple[conint(ge=0), conint(ge=0)]]
-    frames: Union[List[int], RangeFrameSelection]
+    frames: RangeFrameSelection
     output: str
 
     # noinspection PyMethodParameters
@@ -192,7 +186,7 @@ class TrajectoryAnalysisConfig(BaseModel):
         topology: TopologySelection = values['topology']
         trajectories: List[FilePath] = values['trajectories']
         ag_pair: List[Tuple[conint(ge=0), conint(ge=0)]] = values['pairs']
-        frames: Union[List[int], RangeFrameSelection] = values['frames']
+        frames: RangeFrameSelection = values['frames']
 
         try:
             unv = topology.create_universe([str(p) for p in trajectories])
@@ -204,14 +198,8 @@ class TrajectoryAnalysisConfig(BaseModel):
             errors.append(f'Selected residues are missing from topology: {missing_selections}')
 
         trajlen: int = len(unv.trajectory)
-        if isinstance(frames, RangeFrameSelection):
-            if trajlen <= frames.stop:
-                errors.append(f'Stop {frames.stop} exceeds trajectory length {trajlen}.')
-        else:
-            frames: List[int]
-            for frame in frames:
-                if frame >= trajlen:
-                    errors.append(f'Frame {frame} exceeds trajectory length {trajlen}')
+        if trajlen <= frames.stop:
+            errors.append(f'Stop {frames.stop} exceeds trajectory length {trajlen}.')
 
         if len(errors) > 0:
             raise ValidationError([errors], cls)

@@ -28,15 +28,9 @@ analysis:
     - [132, 152]
     - [34, 152]
   frames:
-    # To select a set of specific frames:
-    - 1
-    - 4
-    - 8
-
-    # # Alternatively, to select a range of frames: (these are mutually exclusive)
-    # start:
-    # stop:
-    # step:
+    start: 10
+    stop: 30
+    #step: 2
 
   output: 'output.csv'
 

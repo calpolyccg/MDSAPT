@@ -27,14 +27,9 @@ analysis:
   pairs:
     - [11, 119]
   frames:
-    # To select a set of specific frames:
-    - 1
-    - 2
-
-    # # Alternatively, to select a range of frames: (these are mutually exclusive)
-    # start:
-    # stop:
-    # step:
+    start: 1
+    stop: 2
+    #step: 3
 
   output: 'output.csv'
 
