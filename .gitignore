@@ -1,4 +1,5 @@
 # generated files
+psi.*.clean
 out.csv
 /timer.dat
 /resid_fixed.pdb
