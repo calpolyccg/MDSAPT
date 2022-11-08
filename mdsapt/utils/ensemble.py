@@ -168,10 +168,11 @@ class Ensemble:
     def build_from_files(cls, topologies: List[Union[str, Path]], **universe_kwargs) -> 'Ensemble':
         """Constructs an ensemble from a list of files."""
         _ens: Dict[str, mda.Universe] = {}
-        for top in topologies:
-            name: str = str(top)
+        for path in topologies:
+            name: str = str(path)
             try:
-                _ens[name] = mda.Universe(name, **universe_kwargs)
+                unv = mda.Universe(name, **universe_kwargs)
+                _ens[name] = unv
             except (mda.exceptions.NoDataError, OSError, ValueError) as err:
                 logger.exception(err)
                 raise err

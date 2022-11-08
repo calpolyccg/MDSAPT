@@ -20,40 +20,92 @@ Required Input:
 
 """
 
-from typing import Set, Union
+from abc import ABC
+from typing import Dict, List, NamedTuple, Optional, Set, Union
 
 import logging
 
 import numpy as np
 
 import MDAnalysis as mda
-from MDAnalysis.converters.RDKit import atomgroup_to_mol
+from MDAnalysis.core.groups import Atom
 from MDAnalysis.topology.guessers import guess_types, guess_atom_element
-
-from rdkit import Chem
 
 from pdbfixer import PDBFixer
 from simtk.openmm.app import PDBFile
 
+from mdsapt.utils.formal_charge import ElectronInfo, calculate_electron_info, calculate_spin_multiplicity
+
 logger = logging.getLogger('mdsapt.optimizer')
 
 
-def get_spin_multiplicity(molecule: Chem.Mol) -> int:
-    """Returns the spin multiplicity of a :class:`RDKIT.Mol`.
-    Based on method in http://www.mayachemtools.org/docs/modules/html/code/RDKitUtil.py.html .
+class MoleculeElectronInfo(NamedTuple):
+    charges: List[int]
+    radicals: List[int]
 
-    :Arguments:
-        *molecule*
-            :class:`RDKIT.Mol` object
+    @property
+    def total_charge(self):
+        return sum(self.charges)
+
+    @property
+    def total_radicals(self):
+        return sum(self.radicals)
+
+    @property
+    def spin_multiplicity(self):
+        return calculate_spin_multiplicity(self.total_radicals)
+
+
+class ChargeStrategy(ABC):
     """
-    radical_electrons: int = 0
+    An interface for specifying a charge/radical electron guessing algorithm.
+    """
 
-    for atom in molecule.GetAtoms():
-        radical_electrons += atom.GetNumRadicalElectrons()
+    def calculate(
+        self,
+        ag: mda.AtomGroup,
+        charge_overrides: Dict[int, int]
+    ) -> MoleculeElectronInfo:
+        """
+        Calculates :class:`MoleculeElectronInfo` for the given :class:`mda.AtomGroup`.
 
-    total_spin: int = radical_electrons // 2
-    spin_mult: int = total_spin + 1
-    return spin_mult
+        :param ag: The :class:`mda.AtomGroup`
+        """
+        raise NotImplementedError
+
+
+class StandardChargeStrategy(ChargeStrategy):
+    """
+    The standard charge guessing strategy. This is usually the one you would want to use.
+    """
+
+    def calculate(
+        self,
+        ag: mda.AtomGroup,
+        charge_overrides: Dict[int, int]
+    ) -> MoleculeElectronInfo:
+
+        if charge_overrides is None:
+            charge_overrides = {}
+
+        def calc_atom(atom: Atom) -> ElectronInfo:
+            bonds = atom.get_connections('bonds', outside=True)
+            orders = [1 if b.order is None else b.order for b in bonds]
+
+            # Assume any atom with an aromatic bond has fc=0 and radicals=0. Return None to signal this.
+            if 1.5 in orders or 'ar' in orders:
+                return None
+
+            bond_count: int = sum(orders)
+            return calculate_electron_info(atom.element, bond_count, charge_overrides.get(atom.ix))
+
+        # Drop aromatics from the results
+        results = [a for a in map(calc_atom, ag) if a is not None]
+
+        charges = [r.fc for r in results]
+        radicals = [r.radical for r in results]
+
+        return MoleculeElectronInfo(charges=charges, radicals=radicals)
 
 
 def is_amino(unv: mda.Universe, resid: int) -> bool:
@@ -84,7 +136,13 @@ def is_amino(unv: mda.Universe, resid: int) -> bool:
     return resname_atr.values[resid - 1] in std_resids
 
 
-def rebuild_resid(resid: int, residue: mda.AtomGroup, sim_ph: float = 7.0) -> mda.AtomGroup:
+def rebuild_resid(
+    resid: int,
+    residue: mda.AtomGroup,
+    charge_strategy: ChargeStrategy,
+    sim_ph: float = 7.0,
+    charge_overrides: Optional[Dict[int, int]] = None
+) -> mda.AtomGroup:
     """Rebuilds residue by replacing missing protons and adding a new proton
      on the C terminus. Raises key error if class
     has no value for that optimization."""
@@ -119,12 +177,12 @@ def rebuild_resid(resid: int, residue: mda.AtomGroup, sim_ph: float = 7.0) -> md
 
     def protonate_backbone(bkbone: mda.AtomGroup, length: float = 1.128) -> \
             Union[mda.AtomGroup, mda.Universe]:
-        mol_resid = atomgroup_to_mol(bkbone)
-        i: int = 0
-        for atom in mol_resid.GetAtoms():
-            i += atom.GetNumRadicalElectrons()
+        mol_info: MoleculeElectronInfo = charge_strategy.calculate(
+            bkbone,
+            {} if charge_overrides is None else charge_overrides
+        )
 
-        if i > 0:
+        if mol_info.total_radicals > 0:
             backbone = bkbone.select_atoms('backbone')
             protonated: mda.Universe = mda.Universe.empty(n_atoms=bkbone.n_atoms + 1,
                                                           trajectory=True)

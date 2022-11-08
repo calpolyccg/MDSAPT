@@ -7,7 +7,7 @@ from numpy.testing import assert_array_almost_equal
 
 import MDAnalysis as mda
 
-from ..repair import rebuild_resid
+from ..repair import StandardChargeStrategy, rebuild_resid
 
 resources_dir = Path(__file__).parent / 'testing_resources'
 
@@ -25,7 +25,7 @@ class TestRepair:
         Tests that a residue is correctly repaired.
         """
         r11: mda.AtomGroup = unv.select_atoms('resid 11')
-        r11_fixed: mda.AtomGroup = rebuild_resid(11, r11)
+        r11_fixed: mda.AtomGroup = rebuild_resid(11, r11, StandardChargeStrategy())
         assert_array_almost_equal(r11.select_atoms('name CA').positions,
                                   r11_fixed.select_atoms('name CA').positions,
                                   decimal=3)
@@ -44,7 +44,7 @@ class TestRepair:
         Tests last amino acid in chain to ensure it doesn't cap its carboxyl terminus.
         """
         r215 = unv.select_atoms('resid 214')
-        r215_fixed = rebuild_resid(214, r215)
+        r215_fixed = rebuild_resid(214, r215, StandardChargeStrategy())
         assert len(r215_fixed.select_atoms('name Hc')) == 0
 
     def test_non_amino(self) -> None:
@@ -52,5 +52,5 @@ class TestRepair:
         Tests non amino acid being passed into rebuild_resid
         """
         r126 = unv.select_atoms('resid 126')
-        r126_fixed = rebuild_resid(126, r126)
+        r126_fixed = rebuild_resid(126, r126, StandardChargeStrategy())
         assert len(r126_fixed.select_atoms('name Hc')) == 0

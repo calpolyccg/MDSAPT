@@ -28,18 +28,15 @@ import MDAnalysis as mda
 
 from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.topology.guessers import guess_types
-from MDAnalysis.converters.RDKit import atomgroup_to_mol
 from MDAnalysis.lib.log import ProgressBar
 
 import psi4
 
 from pydantic import ValidationError
 
-from rdkit import Chem
-
 from .config import Config, TrajectoryAnalysisConfig, DockingAnalysisConfig, \
     Psi4Config, SysLimitsConfig
-from .repair import rebuild_resid, get_spin_multiplicity
+from .repair import ChargeStrategy, MoleculeElectronInfo, rebuild_resid
 from .utils.ensemble import Ensemble, EnsembleAtomGroup
 
 logger = logging.getLogger('mdsapt.sapt')
@@ -47,18 +44,19 @@ logger = logging.getLogger('mdsapt.sapt')
 MHT_TO_KCALMOL: Final[float] = 627.509
 
 
-def build_psi4_input_str(resid: int, residue: mda.AtomGroup) -> str:
+def build_psi4_input_str(resid: int, residue: mda.AtomGroup, strategy: ChargeStrategy, charge_overrides: Optional[Dict[int, int]] = None) -> str:
     """
     Generates Psi4 input file the specified residue. Prepares amino acids for SAPT using
     :class:`mdsapt.optimizer.Optimizer`. Adds charge and spin multiplicity to top of cooridnates.
     """
-    repaired_resid: mda.AtomGroup = rebuild_resid(resid, residue)
-    rd_mol = atomgroup_to_mol(repaired_resid)
+    repaired_resid: mda.AtomGroup = rebuild_resid(resid, residue, strategy, charge_overrides=charge_overrides)
+    result: MoleculeElectronInfo = strategy.calculate(repaired_resid, charge_overrides)
 
-    coords: str = f'{Chem.GetFormalCharge(rd_mol)} {get_spin_multiplicity(rd_mol)}'
+    lines: List[str] = [f'{result.total_charge} {result.spin_multiplicity}']
     for atom in repaired_resid.atoms:
-        coords += f'\n{atom.element} {atom.position[0]} {atom.position[1]} {atom.position[2]}'
-    return coords
+        lines.append(f'{atom.element} {atom.position[0]} {atom.position[1]} {atom.position[2]}')
+
+    return '\n'.join(lines)
 
 
 def calc_sapt(psi4_input: str, psi4_cfg: Psi4Config, sys_cfg: SysLimitsConfig,
@@ -149,6 +147,8 @@ class TrajectorySAPT(AnalysisBase):
             for x in ag_sel
         }
 
+        self._charge_overrides = config.analysis.topology.charge_overrides
+
         self._sel_pairs = config.analysis.pairs
         AnalysisBase.__init__(self, self._unv.trajectory)
 
@@ -158,7 +158,16 @@ class TrajectorySAPT(AnalysisBase):
 
     def _single_frame(self) -> None:
         outfile: Optional[str] = None
-        xyz_dict = {k: build_psi4_input_str(k, self._sel[k]) for k in self._sel.keys()}
+        xyz_dict = {
+            k: build_psi4_input_str(
+                k,
+                resid,
+                self._cfg.simulation.charge_guesser.charge_strategy,
+                charge_overrides=self._charge_overrides
+            )
+            for k, resid in self._sel.items()
+        }
+
         for pair in self._sel_pairs:
             coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
 
@@ -225,6 +234,7 @@ class DockingSAPT:
             raise err
 
         self._ens = self._cfg.analysis.build_ensemble()
+        self._charge_overrides = self._cfg.analysis.build_overrides_dict()
 
         self._sel_pairs = self._cfg.analysis.pairs
 
@@ -240,21 +250,32 @@ class DockingSAPT:
         self._pair_names = {pair: f'{pair[0]}-{pair[1]}' for pair in self._sel_pairs}
 
     def _single_system(self) -> None:
-        xyz_dict = {k: build_psi4_input_str(k, self._sel[k][self._key]) for k in self._sel.keys()}
+        key_name = self._key_names[self._key]
+        charge_overrides = self._charge_overrides[self._key]
+
+        xyz_dict = {
+            k: build_psi4_input_str(
+                k,
+                self._sel[k][self._key],
+                self._cfg.simulation.charge_guesser.charge_strategy,
+                charge_overrides=charge_overrides
+            )
+            for k, resid in self._sel.items()
+        }
         outfile: Optional[str] = None
 
-        for pair in self._sel_pairs:
+        for a, b in self._sel_pairs:
+            pair_name = self._pair_names[(a, b)]
+            coords = xyz_dict[a] + '\n--\n' + xyz_dict[b] + '\nunits angstrom'
 
-            coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
-
-            logger.info(f'Starting SAPT for {pair}')
+            logger.info(f'Starting SAPT for %a, %b', a, b)
 
             if self._cfg.psi4.save_output:
-                outfile = f'sapt_{self._key_names[self._key]}_{self._pair_names[pair]}.out'
+                outfile = f'sapt_{key_name}_{pair_name}.out'
 
             sapt_result = calc_sapt(coords, self._cfg.psi4, self._cfg.system_limits, outfile)
             result: List[Union[str, float]] = \
-                [self._key_names[self._key], self._pair_names[pair]] + \
+                [key_name, pair_name] + \
                 [sapt_result[k] for k in self._SAPT_KEYS]
 
             for i, res in enumerate(result):
@@ -273,8 +294,8 @@ class DockingSAPT:
         trajectory frames.
         """
         logger.info("Setting up systems")
+        self._prepare()
         for self._key in ProgressBar(self._ens.keys(), verbose=True):
-            self._prepare()
             self._single_system()
             logger.info("Moving to next universe")
         logger.info("Finishing up")
