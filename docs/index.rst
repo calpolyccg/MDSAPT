@@ -20,7 +20,7 @@ For the poster we presented at ACS Spring 2022, `click here <./_static/mdsapt_po
 
    install
    quick
+   config
+   repair
    sapt
-   optimizer
-   reader
    viewer
