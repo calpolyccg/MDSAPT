@@ -5,6 +5,11 @@ channels:
 dependencies:
   - python
   - pip
+
+  - pydantic
+  - pyyaml
+  - click
+
   - sphinx
   - sphinx_rtd_theme
 

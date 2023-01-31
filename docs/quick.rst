@@ -8,18 +8,20 @@ _____________
 
 Ensure that you have the following things set up:
 
- - You have existing MD trajectory and topology files in any form that `MDAnalysis <https://mdanalysis.readthedocs.io/en/latest/`_ supports
- - You have already installed MDSAPT, following the :installation guide:`install`
+ - You have existing MD trajectory and topology files in any form that `MDAnalysis <https://mdanalysis.org>`_ You have
+already installed MDSAPT, following the :ref:`installation page <install>`.
 
 .. note:
     If your `PATH` environment variable is not set up to point to installed Python modules, then invoking `mdsapt` directly, as shown in this guide, may not work. In that case, try running `python3 -m mdsapt` instead.
 
+.. _gen-input:
 Generating an input file
 ________________________
 
 The following steps describe how to set up the input YAML file.
 
- 1. Run `mdsapt generate [filename]` to generate a blank Trajectory SAPT input file at the given filename. Don't worry, it will not overwrite any files unless you explicitly provide the `-f` flag.
+ 1. Run ``mdsapt generate [filename]`` to generate a blank Trajectory SAPT input file at the given filename. Don't
+worry, it will not overwrite any files unless you explicitly provide the `-f` flag.
 
  2. Specify the MD file locations in the input file
 
@@ -32,31 +34,40 @@ The following steps describe how to set up the input YAML file.
 Here is an example of a filled-out YAML file:
 
 .. code-block:: yaml
-    topology_path: 'testtop.psf'
-    trajectory_paths:
-      - 'testtraj.dcd'
-    selection_resid_num:
-      - 11
-      - 199
-    int_pairs:
-      # Place pair of  selections defined above in a list of lists
-      - [11, 199]
-    trajectory_settings:
-      start: 0
-      stop: 98
-      step: 1
-    system_settings:
-      ncpus: '12'
-      memory: '12GB'
-      time: '24:00:00'
-    opt_settings:
-      pH: 7
-    sapt_settings:
-      method: 'sapt0'
-      basis: 'jun-cc-pvdz'
+
+    psi4:
+      method: "sapt0"
+      basis: "jun-cc-pvdz"
       settings:
-        reference: 'rhf'
-      save_psi4_output: true
+        reference: "rhf"
+      save_output: true
+    simulation:
+      ph: 7.0
+      charge_guesser: "standard"
+      # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+    system_limits:
+      ncpus: 32
+      memory: "80GB"
+    analysis:
+      ### This section is for running TrajectorySAPT. To run other types of analyses, see below.
+      type: "trajectory"
+
+      topology: testtop.psf
+      trajectories:
+        - testtraj.dcd
+      pairs:
+        # Place pair of  selections defined above in a list of lists
+        - [109, 196]
+        - [197, 199]
+        - [208, 200]
+        - [156, 44]
+        - [84, 13]
+      frames:
+        start: 78
+        stop: 97
+        step: 1
+      output: "output.csv"
+
 
 Running SAPT
 ____________
@@ -98,11 +109,10 @@ Here is some code demonstrating it:
     import mdsapt
 
 
-    Settings = mdsapt.InputReader('runinput.yaml')
-    Opt = mdsapt.Optimizer(Settings)
-    SAPT_run = mdsapt.TrajectorySAPT(Settings, Opt)
-    SAPT_run.run(Settings.start, Settings.stop, Settings.step)
-    SAPT_run.results.to_csv('results.csv')
+    config = mdsapt.load_from_yaml_file('runinput.yaml')
+    sapt_run = mdsapt.TrajectorySAPT(config)
+    sapt_run.run(config.start, config.stop, config.step)
+    sapt_run.results.to_csv('results.csv')
 
 See also `the Binder demo <https://mybinder.org/v2/gh/calpolyccg/MDSAPT_demo/master?labpath=MD-SAPT_demo.ipynb>`_ for a bigger example.
 

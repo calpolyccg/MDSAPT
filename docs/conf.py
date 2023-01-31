@@ -20,14 +20,16 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'MD-SAPT'
-copyright = ("2021, Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald. Cal Poly Computational Chemistry Group. Project structure based on the "
+copyright = ("2021-2023, Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald. Cal Poly Computational Chemistry "
+             "Group. "
+             "Project structure based on the "
              "Computational Molecular Science Python Cookiecutter version 1.6")
-author = 'Alia Lescoulie'
+author = 'Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald'
 
 # The short X.Y version
-version = '1.1'
+version = '2.1'
 # The full version, including alpha/beta/rc tags
-release = '1.1.0'
+release = '2.1.0'
 
 
 # -- General configuration ---------------------------------------------------

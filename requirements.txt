@@ -1,0 +1,12 @@
+pytest~=7.1.2
+mdanalysis~=2.0.0
+pydantic~=1.9.0
+numpy~=1.22.3
+pandas~=1.4.2
+psi4~=1.6+77475b5
+rdkit~=2022.03.2
+yaml~=0.2.5
+pyyaml~=6.0
+pdbfixer~=1.6
+nglview~=3.0.3
+setuptools~=61.2.0

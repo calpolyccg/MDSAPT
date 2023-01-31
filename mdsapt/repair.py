@@ -1,20 +1,11 @@
 r"""
-:mod:`mdsapt.optimizer` -- Prepare residues for SAPT calculations
+:mod:`mdsapt.repair` -- Prepare residues for SAPT calculations
 =================================================================
 
-Prepares residues for SAPT calculations by adding protons and replacing missing atoms
-
 When pulled out of the peptide backbone residues are missing protons on both the C and N
-terminus giving an unbalanced spin multiplicity. This causes SAPT calculations to fail.
-
-Required Input:
-
-- :class:`mdsapt.reader.InputReader`
-
-
-.. autofunction:: get_spin_multiplicity
-
-.. autofunction:: is_amino
+terminus giving an unbalanced spin multiplicity.
+This causes SAPT calculations to fail.
+MD-SAPT corrects this with the function `rebuild_resid`, which is documented below.
 
 .. autofunction:: rebuild_resid
 
@@ -35,7 +26,7 @@ from rdkit import Chem
 from pdbfixer import PDBFixer
 from simtk.openmm.app import PDBFile
 
-logger = logging.getLogger('mdsapt.optimizer')
+logger = logging.getLogger('mdsapt.repair')
 
 
 def get_spin_multiplicity(molecule: Chem.Mol) -> int:
@@ -85,9 +76,9 @@ def is_amino(unv: mda.Universe, resid: int) -> bool:
 
 
 def rebuild_resid(resid: int, residue: mda.AtomGroup, sim_ph: float = 7.0) -> mda.AtomGroup:
-    """Rebuilds residue by replacing missing protons and adding a new proton
-     on the C terminus. Raises key error if class
-    has no value for that optimization."""
+    """Rebuilds a residue by replacing missing N-terminus protons and adding a new proton
+     on the C terminus.
+    """
 
     def fix_amino(amino: mda.AtomGroup, sys_ph: float = 7.0) -> mda.AtomGroup:
         amino.write('resid.pdb', file_format='PDB')  # Saving residue

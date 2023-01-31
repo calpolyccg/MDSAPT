@@ -10,11 +10,6 @@ in a Jupyter Notebook.
     automatically installed by your package manager because it is an optional
     dependency.
 
-Required Input:
-
-- :class:`-mdsapt.reader.InputReader
-- :class:`-mdsapt.optimizer.Optimizer
-
 .. autoclass:: Viewer
     :members:
     :inherited-members:
