@@ -32,8 +32,8 @@ ___________________
 Input files allow MD-SAPT to be used without writing code.
 They contain the information needed for running analyses, and are written in a yaml format.
 There are two similar but distinct input formats, one each of MD-SAPT's two analysis methods.
-An example of each is provided below, and blank versions can be generated
-#TODO: figure out how to make input
+An example of each is provided below, and blank versions can be generated is given in the :ref:`generating an input
+<gen-input>` section of quickstart.
 
 Example Trajectory Input
 ^^^^^^^^^^^^^^^^^^^^^^^^

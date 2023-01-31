@@ -14,12 +14,14 @@ already installed MDSAPT, following the :ref:`installation page <install>`.
 .. note:
     If your `PATH` environment variable is not set up to point to installed Python modules, then invoking `mdsapt` directly, as shown in this guide, may not work. In that case, try running `python3 -m mdsapt` instead.
 
+.. _gen-input:
 Generating an input file
 ________________________
 
 The following steps describe how to set up the input YAML file.
 
- 1. Run `mdsapt generate [filename]` to generate a blank Trajectory SAPT input file at the given filename. Don't worry, it will not overwrite any files unless you explicitly provide the `-f` flag.
+ 1. Run ``mdsapt generate [filename]`` to generate a blank Trajectory SAPT input file at the given filename. Don't
+worry, it will not overwrite any files unless you explicitly provide the `-f` flag.
 
  2. Specify the MD file locations in the input file
 
@@ -33,38 +35,38 @@ Here is an example of a filled-out YAML file:
 
 .. code-block:: yaml
 
-psi4:
-  method: "sapt0"
-  basis: "jun-cc-pvdz"
-  settings:
-    reference: "rhf"
-  save_output: true
-simulation:
-  ph: 7.0
-  charge_guesser: "standard"
-  # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
-system_limits:
-  ncpus: 32
-  memory: "80GB"
-analysis:
-  ### This section is for running TrajectorySAPT. To run other types of analyses, see below.
-  type: "trajectory"
+    psi4:
+      method: "sapt0"
+      basis: "jun-cc-pvdz"
+      settings:
+        reference: "rhf"
+      save_output: true
+    simulation:
+      ph: 7.0
+      charge_guesser: "standard"
+      # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+    system_limits:
+      ncpus: 32
+      memory: "80GB"
+    analysis:
+      ### This section is for running TrajectorySAPT. To run other types of analyses, see below.
+      type: "trajectory"
 
-  topology: testtop.psf
-  trajectories:
-    - testtraj.dcd
-  pairs:
-    # Place pair of  selections defined above in a list of lists
-    - [109, 196]
-    - [197, 199]
-    - [208, 200]
-    - [156, 44]
-    - [84, 13]
-  frames:
-    start: 78
-    stop: 97
-    step: 1
-  output: "output.csv"
+      topology: testtop.psf
+      trajectories:
+        - testtraj.dcd
+      pairs:
+        # Place pair of  selections defined above in a list of lists
+        - [109, 196]
+        - [197, 199]
+        - [208, 200]
+        - [156, 44]
+        - [84, 13]
+      frames:
+        start: 78
+        stop: 97
+        step: 1
+      output: "output.csv"
 
 
 Running SAPT
