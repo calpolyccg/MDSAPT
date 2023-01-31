@@ -6,7 +6,7 @@ In MD-SAPT, :obj:`mdsapt.config.Config` objects store user settings, which are n
 The config system was designed with a type driven development approach with the main object,
 :obj:`mdsapt.config.Config`, containing a set objects each holding the settings for a portion of the overall MD-SAPT
 process.
-This design, along with `Pydantic<https.pydantic.readthedocs.io>_` checks on each object, ensures that
+This design, along with `Pydantic <https://docs.pydantic.dev>`_ checks on each object, ensures that
 any instance of :obj:`mdsapt.config.Config` is valid.
 If any issues are detected, such as an error in the file paths, will raise an Error explaining that issue.
 
