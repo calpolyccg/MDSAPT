@@ -2,6 +2,132 @@ r"""
 :mod:`mdsapt.config` -- Reads input file and saves configuration
 ================================================================
 
+In MD-SAPT, :obj:`mdsapt.config.Config` objects store user settings, which are needed for running analyses.
+The config system was designed with a type driven development approach with the main object,
+:obj:`mdsapt.config.Config`, containing a set objects each holding the settings for a portion of the overall MD-SAPT
+process.
+This design, along with `Pydantic<https.pydantic.readthedocs.io>_` checks on each object, ensures that
+any instance of :obj:`mdsapt.config.Config` is valid.
+If any issues are detected, such as an error in the file paths, will raise an Error explaining that issue.
+
+Summary of Config
+_________________
+
+:obj:`mdsapt.config.Config` contains:
+
+- :obj:`mdsapt.config.Psi4Config`
+- :obj:`mdsapt.config.SimulationConfig`
+- :obj:`mdsapt.config.SystemLimitsConfig`
+- :obj:`mdsapt.config.TrajectoryAnalysisConfig` or :obj:`mdsapt.config.DockingAnalysisConfig`
+
+In most cases user configurations are provided with a yaml input file.
+The input file is read using the :obj:`mdsapt.config.load_yaml_file` function, which returns a
+:obj:`mdsapt.config.Config`.
+
+.. autofunction:: load_from_yaml_file
+
+Writing Input Files
+___________________
+
+Input files allow MD-SAPT to be used without writing code.
+They contain the information needed for running analyses, and are written in a yaml format.
+There are two similar but distinct input formats, one each of MD-SAPT's two analysis methods.
+An example of each is provided below, and blank versions can be generated
+#TODO: figure out how to make input
+
+Example Trajectory Input
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: yaml
+
+    psi4:
+      method: 'sapt0'
+      basis: 'jun-cc-pvdz'
+      save_output: true
+      settings:
+        reference: 'rhf'
+    simulation:
+      ph: 7.0
+      charge_guesser: 'standard'
+      # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+    system_limits:
+      ncpus: 5
+      memory: '1GB'
+    analysis:
+      ### This section is for running TrajectorySAPT. To run other types of analyses, see below.
+      type: 'trajectory'
+
+      topology: 'mdsapt/tests/testing_resources/testtop.psf'
+      # If you want to override the charges of specific, you may specify it this way.
+      # topology:
+      #    path: 'your/file/path.pdb'
+      #    charge_overrides:
+      #      132: -2
+
+      trajectories:
+        - 'mdsapt/tests/testing_resources/testtraj.dcd'
+      pairs:
+        - [11, 119]
+      frames:
+        start: 1
+        stop: 2
+        #step: 3
+
+      output: 'output.csv'
+
+Example Docking Input
+^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: yaml
+
+    psi4:
+      method: 'sapt0'
+      basis: 'jun-cc-pvdz'
+      save_output: true
+      settings:
+        reference: 'rhf'
+    simulation:
+      ph: 7.0
+      charge_guesser: 'standard'
+      # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+    system_limits:
+      ncpus: 5
+      memory: '1GB'
+    analysis:
+      ### This section is for running TrajectorySAPT. To run other types of analyses, see below.
+      type: 'docking'
+      combined_topologies: 'mdsapt/tests/testing_resources/docking_merged_test'
+      pairs:
+        - [11, 119]
+      output: 'dock_out.csv'
+
+Documentation for Configuration Objects
+_______________________________________
+
+.. autoclass:: Config
+    :members:
+    :inherited-members:
+
+.. autoclass:: Psi4Config
+    :members:
+    :inherited-members:
+
+.. autoclass:: SimulationConfig
+    :members:
+    :inherited-members:
+
+.. autoclass:: SystemLimitsConfig
+    :members:
+    :inherited-members:
+
+.. autoclass:: TrajectoryAnalysisConfig
+    :members:
+    :inherited-members:
+
+.. autoclass:: DockingAnalysisConfig
+    :members:
+    :inherited-members:
+
 """
 
 # There's lots of implicit class methods because pydantic decorators are stupid.
@@ -12,7 +138,6 @@ import dataclasses
 from dataclasses import dataclass
 from enum import Enum
 from os import PathLike
-import os
 from pathlib import Path
 from typing import List, Dict, Tuple, Literal, Optional, \
     Union, Any, Set, Iterable
@@ -226,7 +351,7 @@ def get_invalid_residue_selections(residues: Iterable[int], unv: mda.Universe) -
     ]
 
 
-DockingElement = Union[Literal['L'], conint(ge=-1)]
+DockingElement: type = Union[Literal['L'], conint(ge=-1)]
 """
 A single element to analyze in docking.
 
@@ -367,6 +492,7 @@ class Config(BaseModel):
 def load_from_yaml_file(path: Union[str, PathLike]) -> Config:
     """
     Loads a config from a YAML file.
+    It can read both docking and trajectory inputs.
     """
     with Path(path).open('r', encoding='utf8') as file:
         try:
