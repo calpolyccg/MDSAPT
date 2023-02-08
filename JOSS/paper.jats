@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE article PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Publishing DTD v1.2 20190208//EN"
+                  "JATS-publishing1.dtd">
+<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" dtd-version="1.2" article-type="other">
+<front>
+<journal-meta>
+<journal-id></journal-id>
+<journal-title-group>
+<journal-title>Journal of Open Source Software</journal-title>
+<abbrev-journal-title>JOSS</abbrev-journal-title>
+</journal-title-group>
+<issn publication-format="electronic">2475-9066</issn>
+<publisher>
+<publisher-name>Open Journals</publisher-name>
+</publisher>
+</journal-meta>
+<article-meta>
+<article-id pub-id-type="publisher-id">0</article-id>
+<article-id pub-id-type="doi">N/A</article-id>
+<title-group>
+<article-title>MD-SAPT: Python Based Toolkit for Running Symmetry
+Adapted Perturbation Theory Calculations on Molecular Dynamics
+Trajectories</article-title>
+</title-group>
+<contrib-group>
+<contrib contrib-type="author">
+<name>
+<surname>Lescoulie</surname>
+<given-names>Alia E.</given-names>
+</name>
+<xref ref-type="aff" rid="aff-1"/>
+</contrib>
+<contrib contrib-type="author">
+<name>
+<surname>Yu</surname>
+<given-names>Astrid M.</given-names>
+</name>
+<xref ref-type="aff" rid="aff-2"/>
+</contrib>
+<contrib contrib-type="author" corresp="yes">
+<name>
+<surname>Ringer-McDonald</surname>
+<given-names>Ashley</given-names>
+</name>
+<xref ref-type="aff" rid="aff-1"/>
+<xref ref-type="corresp" rid="cor-1"><sup>*</sup></xref>
+</contrib>
+<aff id="aff-1">
+<institution-wrap>
+<institution>Department of Chemistry and Biochemistry, College of
+Science and Mathematics, California Polytechnic State University, San
+Luis Obispo, CA, 93407</institution>
+</institution-wrap>
+</aff>
+<aff id="aff-2">
+<institution-wrap>
+<institution>Department of Computer Science and Software Engineering,
+College of Engineering, California Polytechnic State University, San
+Luis Obispo, CA, 93407</institution>
+</institution-wrap>
+</aff>
+</contrib-group>
+<author-notes>
+<corresp id="cor-1">* E-mail: <email></email></corresp>
+</author-notes>
+<pub-date date-type="pub" publication-format="electronic" iso-8601-date="2023-01-17">
+<day>17</day>
+<month>1</month>
+<year>2023</year>
+</pub-date>
+<volume>¿VOL?</volume>
+<issue>¿ISSUE?</issue>
+<fpage>¿PAGE?</fpage>
+<permissions>
+<copyright-statement>Authors of papers retain copyright and release the
+work under a Creative Commons Attribution 4.0 International License (CC
+BY 4.0)</copyright-statement>
+<copyright-year>2022</copyright-year>
+<copyright-holder>The article authors</copyright-holder>
+<license license-type="open-access" xlink:href="https://creativecommons.org/licenses/by/4.0/">
+<license-p>Authors of papers retain copyright and release the work under
+a Creative Commons Attribution 4.0 International License (CC BY
+4.0)</license-p>
+</license>
+</permissions>
+<kwd-group kwd-group-type="author">
+<kwd>Python</kwd>
+<kwd>MDAnalysis</kwd>
+<kwd>Computational Chemistry</kwd>
+<kwd>Molecular Dynamics</kwd>
+<kwd>Quantum Mechanics</kwd>
+</kwd-group>
+</article-meta>
+</front>
+<body>
+<sec id="summary">
+  <title>Summary</title>
+  <p>Molecular dynamics (MD) simulations can identify important
+  interactions in biomolecular systems and examine how these
+  interactions change over the course of the simulation. Biomolecular
+  interactions modeled with MD can be also analyzed in more detail using
+  correlated electronic structure methods. To accomplish this, we
+  developed MD-SAPT, an open-source Python package, to perform quantum
+  calculations as a post-processing analysis of MD data to quantify and
+  decompose non-covalent interaction energy. MD-SAPT has two modes of
+  analysis: trajectory, which analyzes selected interaction pairs over
+  the frames of an MD simulation, and docking, to examine the binding
+  interactions between a protein and different ligands or compare
+  different docking poses for one particular ligand to determine the
+  relative magnitude of the interactions.</p>
+</sec>
+<sec id="statement-of-need">
+  <title>Statement of Need</title>
+  <p>Non-covalent interactions govern many of the important biochemical
+  processes, and are most accurately modeled by quantum chemical methods
+  (<xref alt="Sherrill, 2009" rid="ref-lipkowitz" ref-type="bibr">Sherrill,
+  2009</xref>;
+  <xref alt="Wilson &amp; Peterson, 2007" rid="ref-wilson" ref-type="bibr">Wilson
+  &amp; Peterson, 2007</xref>). Quantum methods can also offer more
+  detailed information about an interaction. Symmetry Adapted
+  Perturbation Theory (SAPT), which our project, offers the further
+  advantage of breaking down the interaction energy of the fragments
+  into electrostatic, dispersion, induction and exchange
+  (<xref alt="Patkowski, 2020" rid="ref-patkowski" ref-type="bibr">Patkowski,
+  2020</xref>).</p>
+  <p>The molecular mechanics methods used in MD simulations are
+  significantly less accurate that the aforementioned quantum mechanical
+  methods
+  (<xref alt="Sherrill, 2009" rid="ref-lipkowitz" ref-type="bibr">Sherrill,
+  2009</xref>). This is why we designed a mixed methods approach,
+  utilizing quantum methods as a post-processing technique on MD data.
+  This gives more detailed incite into the strength of interactions.
+  MD-SAPT automates this process in a reproducible way. It is released
+  as an open source Python library, and distributed using Anaconda on
+  the psi4 conda channel. It supports Mac OS and Linux. Its designed for
+  use as a CLI tool, in an interactive Jupyter Notebook, or as an
+  importable Python library.</p>
+  <p>MD-SAPT automates the process of applying SAPT calculations to MD
+  protein simulations. It handles selecting the specific residues;
+  adding protons where the residues were bound to the polypeptide chain;
+  determining the formal charge; passing the charge and coordinates into
+  psi4, and saving the results.</p>
+  <p>Currently, a number of python based analysis tools exist for MD
+  data. The most popular of which are MDtraj, pyLOOS, and MDAnalysis;
+  the latter of which we built MD-SAPT off of
+  (<xref alt="Gowers et al., 2016" rid="ref-gowers" ref-type="bibr">Gowers
+  et al., 2016</xref>;
+  <xref alt="McGibbon et al., 2015" rid="ref-mcgibbon" ref-type="bibr">McGibbon
+  et al., 2015</xref>;
+  <xref alt="Michaud-Agrawal et al., 2011" rid="ref-michaud" ref-type="bibr">Michaud-Agrawal
+  et al., 2011</xref>;
+  <xref alt="Romo et al., 2014" rid="ref-romo" ref-type="bibr">Romo et
+  al., 2014</xref>). Utilizing existing tools as the starting point for
+  an analysis allows for the development of more complex user-specific
+  methodologies needs without requiring the reimplementation of the
+  basic file processing needed to access MD data.</p>
+  <p>We designed MD-SAPT as an MDA-kit, a plugin in the MDAnalysis
+  ecosystem, by extending its existing analysis interface. This is
+  similar to the existing pyLOOS ecosystem, where smaller packages are
+  built using the existing interface for analysis, while the library
+  processes the MD data into a standardized object
+  (<xref alt="Romo et al., 2014" rid="ref-romo" ref-type="bibr">Romo et
+  al., 2014</xref>). Furthermore, this model has the additional
+  advantage that users are only required to install the tools as well as
+  their associated dependencies specific to their work. This also has
+  the benefit minimizing dependencies for the MD software, since the
+  analysis tools are distributed separately and cross compatibility
+  between tools is not required.</p>
+</sec>
+<sec id="design">
+  <title>Design</title>
+  <p>MD-SAPT is designed using a combination of functional and
+  object-oriented programming paradigms. Our code uses immutable data
+  structures, along with well-defined type signatures, preventing
+  runtime errors. There are three core objects in MD-SAPT,
+  <monospace>Config</monospace>, <monospace>TrajectorySAPT</monospace>,
+  and <monospace>DockingSAPT</monospace>.</p>
+  <p>MD-SAPT is build using a number of dependencies which streamlined
+  the development process. MD-SAPT’s core dependencies are MDAnalysis
+  and Psi4, to read and access MD data and to run quantum chemical
+  calculations, respectively [smith;gowers; michaud]. It is a fully
+  open-source python library for use in both interactive Jupyter
+  Notebooks and on high performance computing (HPC) clusters. It can use
+  provided scripts or be integrated into a larger workflow by importing
+  it as a python library. MD-SAPT is designed such that coding
+  experience is not required to use the package. MD-SAPT is distributed
+  through anaconda in the Psi4 channel.</p>
+  <sec id="config">
+    <title>Config</title>
+    <p>The primary way of interacting with the program is by writing a
+    configuration file and feeding it into the MDSAPT CLI. This file is
+    written in YAML, a widely-used human-readable data exchange format.
+    Specifics about its layout are readily available on
+    [https://mdsapt.readthedocs.io]&lt;mdsapt.readthedocs.io&gt;.</p>
+    <p>We chose a custom YAML format as the user interface for several
+    reasons.</p>
+    <list list-type="bullet">
+      <list-item>
+        <p>YAML has a lot of tooling around it, including syntax
+        highlighting, on the user end, and parsing libraries, on the
+        library end.</p>
+      </list-item>
+      <list-item>
+        <p>It is more practical than a GUI because it can be very easily
+        read and edited when connected to HPC clusters, where a user may
+        only have access to a terminal-only text editor such as Vi or
+        Nano.</p>
+      </list-item>
+      <list-item>
+        <p>It can be extended easily to allow for more configurable
+        settings.</p>
+      </list-item>
+      <list-item>
+        <p>Because it is a file stored on disk, this allows users to
+        easily keep and record their inputs to the program.</p>
+      </list-item>
+    </list>
+  </sec>
+  <sec id="parsing-and-validation">
+    <title>Parsing and Validation</title>
+    <p>When the MD-SAPT CLI is invoked with the configuration file, it
+    will parse and validate the file, then carry out the configured SAPT
+    calculation. The Config module handles this task.</p>
+    <p>To ensure the correctness of this module, we adopted a
+    type-driven development approach, which is commonly used in
+    functional programming languages such as Haskell and Idris. The type
+    signatures of our objects reflect the types that we want at the end,
+    and our validation and other functions are used to achieve those
+    types while validating that they are also correct. So, if you have
+    an instance of a type, you can be guaranteed that it has valid
+    parameters. Pydantic is a Python library that supports this type of
+    approach to validation, and provides other useful features such as a
+    key-by-key breakdown of which items were not correctly parsed.</p>
+  </sec>
+  <sec id="repair">
+    <title>Repair</title>
+    <fig id="figU003Aresfix">
+      <caption><p>The process of preparing a residue from a polypeptide
+      for SAPT calculations. A: polypeptide backbone. B: backbone
+      structure of residue when selected from polypeptide. C: after
+      PDBfixer adds a hydrogen to the N-terminus. D: after adding a
+      hydrogen to C terminus </p></caption>
+      <graphic mimetype="image" mime-subtype="png" xlink:href="media/figures/resid_fix.png" xlink:title="" />
+    </fig>
+    <p>The repair module is responsible for preparing selected residues
+    for SAPT calculations. It addresses the molecule’s incomplete state
+    when removed from the peptide backbone. When selected, the residues
+    are removed from polypeptide chain, severing the bonds at the
+    carboxyl and amino terminuses (figure
+    <xref alt="[fig:resfix]" rid="figU003Aresfix">[fig:resfix]</xref>
+    A-B). This leaves radical electrons which are not reflective of the
+    molecule’s actual state. This is addressed through the
+    <monospace>rebuild_residue</monospace> function which takes the
+    selected residue and first determines if it is an amino acid. If so,
+    it then is saved as a pdb, and <italic>PDBRepair</italic> replaces
+    the amino terminus protons as they would exist at the pH provided in
+    <monospace>Config</monospace>. Afterwards the residue PDB is
+    reloaded into MDAnalysis. Subsequently, a new proton is placed on
+    the carboxyl terminus carbon through position vector geometry. This
+    ensures a trigonal planar geometry with a bond length determined via
+    molecular mechanics to be the same for all the standard amino acids.
+    Finally, the repaired residue is returned and ready for use in
+    SAPT.</p>
+  </sec>
+  <sec id="sapt-objects">
+    <title>SAPT Objects</title>
+    <p>MD-SAPT is designed for analysis of both MD trajectories and
+    docking topologies. At a basic level both involve the same process,
+    running SAPT calculations over a set of selected pairs, yet they
+    differ in the setup. This workflow uses the
+    <monospace>calc_sapt</monospace> function in the SAPT module and is
+    called in both SAPT objects. The workflow for obtaining SAPT data
+    starts with the <monospace>rebuild_residue</monospace> function from
+    the repair module preparing the selected residues. Next the formal
+    charge of each residue is determined, and the names and coordinates
+    of each atom and are formatted into a Psi4 input. This is only done
+    once per residue at the start of each object’s respective data
+    collection method. This ensures that the process is only does once
+    for each residue. An example of how this can save time is analyzing
+    a ligand with several residues. With each residue’s portion of the
+    SAPT input generated, the list of interaction pairs is iterated
+    over, with each loop starting the calculation for its pair and
+    saving the results.</p>
+    <p>The two objects differ in the data they process.
+    <monospace>TrajectorySAPT</monospace> analyzes the trajectory of a
+    single MD system; iterating over the frames and recording the SAPT
+    energies over time. It is build using analysis module of MDAnalysis,
+    to handle frame iteration [gowers; michaud].</p>
+    <p>In <monospace>DockingSAPT</monospace>, rather than iterating over
+    frames of a trajectory iterates over different topologies using an
+    <monospace>Ensemble</monospace> object, which is derived from a
+    dictionary, to store a collection of chemical systems and extending
+    some of the functionality of MDAnalysis’s
+    <monospace>Universe</monospace> class [lescoulie]. The typical use
+    cases for this module are comparing the relative interaction energy
+    between different ligands or different docking poses for one ligand
+    in the same protein.</p>
+  </sec>
+</sec>
+<sec id="demonstration">
+  <title>Demonstration</title>
+</sec>
+<sec id="ongoing-applications-in-research">
+  <title>Ongoing Applications in Research</title>
+  <p>The idea for MD-SAPT’s mixed methods approach emerged from our work
+  analyzing active site interactions within MD data.</p>
+</sec>
+<sec id="acknowledgements">
+  <title>Acknowledgements</title>
+</sec>
+</body>
+<back>
+<ref-list>
+  <ref id="ref-michaud">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Michaud-Agrawal</surname><given-names>Naveen</given-names></name>
+        <name><surname>Denning</surname><given-names>Elizabeth J.</given-names></name>
+        <name><surname>Woolf</surname><given-names>Thomas B.</given-names></name>
+        <name><surname>Beckstein</surname><given-names>Oliver</given-names></name>
+      </person-group>
+      <article-title>MDAnalysis: A toolkit for the analysis of molecular dynamics simulations</article-title>
+      <source>Journal of Computational Chemistry</source>
+      <year iso-8601-date="2011-07">2011</year><month>07</month>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2021-12-30">2021</year><month>12</month><day>30</day></date-in-citation>
+      <volume>32</volume>
+      <issue>10</issue>
+      <uri>https://onlinelibrary.wiley.com/doi/10.1002/jcc.21787</uri>
+      <pub-id pub-id-type="doi">10.1002/jcc.21787</pub-id>
+      <fpage>2319</fpage>
+      <lpage>2327</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-gowers">
+    <element-citation publication-type="paper-conference">
+      <person-group person-group-type="author">
+        <name><surname>Gowers</surname><given-names>Richard J.</given-names></name>
+        <name><surname>Linke</surname><given-names>Max</given-names></name>
+        <name><surname>Barnoud</surname><given-names>Jonathan</given-names></name>
+        <name><surname>Reddy</surname><given-names>Tyler J. E.</given-names></name>
+        <name><surname>Melo</surname><given-names>Manuel N.</given-names></name>
+        <name><surname>Seyler</surname><given-names>Sean L.</given-names></name>
+        <name><surname>Domański</surname><given-names>Jan</given-names></name>
+        <name><surname>Dotson</surname><given-names>David L.</given-names></name>
+        <name><surname>Buchoux</surname><given-names>Sébastien</given-names></name>
+        <name><surname>Kenney</surname><given-names>Ian M.</given-names></name>
+        <name><surname>Beckstein</surname><given-names>Oliver</given-names></name>
+      </person-group>
+      <article-title>MDAnalysis: A Python Package for the Rapid Analysis of Molecular Dynamics Simulations</article-title>
+      <source>Proceedings of the 15th Python in Science Conference</source>
+      <person-group person-group-type="editor">
+        <name><surname>Benthall</surname><given-names>Sebastian</given-names></name>
+        <name><surname>Rostrup</surname><given-names>Scott</given-names></name>
+      </person-group>
+      <year iso-8601-date="2016">2016</year>
+      <pub-id pub-id-type="doi">10.25080/Majora-629e541a-00e</pub-id>
+      <fpage>98 </fpage>
+      <lpage> 105</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-romo">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Romo</surname><given-names>Tod D.</given-names></name>
+        <name><surname>Leioatts</surname><given-names>Nicholas</given-names></name>
+        <name><surname>Grossfield</surname><given-names>Alan</given-names></name>
+      </person-group>
+      <article-title>Lightweight object oriented structure analysis: Tools for building tools to analyze molecular dynamics simulations</article-title>
+      <source>Journal of Computational Chemistry</source>
+      <year iso-8601-date="2014-12">2014</year><month>12</month>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2022-06-22">2022</year><month>06</month><day>22</day></date-in-citation>
+      <volume>35</volume>
+      <issue>32</issue>
+      <uri>https://onlinelibrary.wiley.com/doi/10.1002/jcc.23753</uri>
+      <pub-id pub-id-type="doi">10.1002/jcc.23753</pub-id>
+      <fpage>2305</fpage>
+      <lpage>2318</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-patkowski">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>Patkowski</surname><given-names>Konrad</given-names></name>
+      </person-group>
+      <article-title>Recent developments in symmetry‐adapted perturbation theory</article-title>
+      <source>WIREs Computational Molecular Science</source>
+      <year iso-8601-date="2020-05">2020</year><month>05</month>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2022-06-22">2022</year><month>06</month><day>22</day></date-in-citation>
+      <volume>10</volume>
+      <issue>3</issue>
+      <issn>1759-0876</issn>
+      <uri>https://onlinelibrary.wiley.com/doi/10.1002/wcms.1452</uri>
+      <pub-id pub-id-type="doi">10.1002/wcms.1452</pub-id>
+    </element-citation>
+  </ref>
+  <ref id="ref-wilson">
+    <element-citation publication-type="book">
+      <source>Electron Correlation Methodology</source>
+      <person-group person-group-type="editor">
+        <name><surname>Wilson</surname><given-names>Angela K.</given-names></name>
+        <name><surname>Peterson</surname><given-names>Kirk A.</given-names></name>
+      </person-group>
+      <publisher-name>American Chemical Society</publisher-name>
+      <publisher-loc>Washington, DC</publisher-loc>
+      <year iso-8601-date="2007-03">2007</year><month>03</month>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2022-06-23">2022</year><month>06</month><day>23</day></date-in-citation>
+      <volume>958</volume>
+      <isbn>978-0-8412-2076-8</isbn>
+      <uri>https://pubs.acs.org/doi/book/10.1021/bk-2007-0958</uri>
+      <pub-id pub-id-type="doi">10.1021/bk-2007-0958</pub-id>
+    </element-citation>
+  </ref>
+  <ref id="ref-lipkowitz">
+    <element-citation publication-type="chapter">
+      <person-group person-group-type="author">
+        <name><surname>Sherrill</surname><given-names>C. David</given-names></name>
+      </person-group>
+      <article-title>Computations of Noncovalent π Interactions</article-title>
+      <source>Reviews in Computational Chemistry</source>
+      <person-group person-group-type="editor">
+        <name><surname>Lipkowitz</surname><given-names>Kenny B.</given-names></name>
+        <name><surname>Cundari</surname><given-names>Thomas R.</given-names></name>
+      </person-group>
+      <publisher-name>John Wiley &amp; Sons, Inc.</publisher-name>
+      <publisher-loc>Hoboken, NJ, USA</publisher-loc>
+      <year iso-8601-date="2009-01">2009</year><month>01</month>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2022-06-23">2022</year><month>06</month><day>23</day></date-in-citation>
+      <isbn>978-0-470-38839-6</isbn>
+      <uri>https://onlinelibrary.wiley.com/doi/10.1002/9780470399545.ch1</uri>
+      <pub-id pub-id-type="doi">10.1002/9780470399545.ch1</pub-id>
+      <fpage>1</fpage>
+      <lpage>38</lpage>
+    </element-citation>
+  </ref>
+  <ref id="ref-mcgibbon">
+    <element-citation publication-type="article-journal">
+      <person-group person-group-type="author">
+        <name><surname>McGibbon</surname><given-names>Robert T.</given-names></name>
+        <name><surname>Beauchamp</surname><given-names>Kyle A.</given-names></name>
+        <name><surname>Harrigan</surname><given-names>Matthew P.</given-names></name>
+        <name><surname>Klein</surname><given-names>Christoph</given-names></name>
+        <name><surname>Swails</surname><given-names>Jason M.</given-names></name>
+        <name><surname>Hernández</surname><given-names>Carlos X.</given-names></name>
+        <name><surname>Schwantes</surname><given-names>Christian R.</given-names></name>
+        <name><surname>Wang</surname><given-names>Lee-Ping</given-names></name>
+        <name><surname>Lane</surname><given-names>Thomas J.</given-names></name>
+        <name><surname>Pande</surname><given-names>Vijay S.</given-names></name>
+      </person-group>
+      <article-title>MDTraj: A Modern Open Library for the Analysis of Molecular Dynamics Trajectories</article-title>
+      <source>Biophysical Journal</source>
+      <year iso-8601-date="2015-10">2015</year><month>10</month>
+      <date-in-citation content-type="access-date"><year iso-8601-date="2022-06-27">2022</year><month>06</month><day>27</day></date-in-citation>
+      <volume>109</volume>
+      <issue>8</issue>
+      <uri>https://linkinghub.elsevier.com/retrieve/pii/S0006349515008267</uri>
+      <pub-id pub-id-type="doi">10.1016/j.bpj.2015.08.015</pub-id>
+      <fpage>1528</fpage>
+      <lpage>1532</lpage>
+    </element-citation>
+  </ref>
+</ref-list>
+</back>
+</article>
