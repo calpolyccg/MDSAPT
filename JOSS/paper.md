@@ -11,7 +11,7 @@ authors:
       affiliation: 1
     - name: Astrid M. Yu
       affiliation: 2
-    - name: Ashley Ringer-McDonald
+    - name: Ashley Ringer McDonald
       corresponding: true
       affiliation: 1
 affiliations:
