@@ -20,7 +20,7 @@ from typing import List, Dict, Tuple, Literal, Optional, \
 import logging
 
 import pydantic
-from pydantic import BaseModel, conint, Field, root_validator, \
+from pydantic import BaseModel, TypeAdapter, conint, Field, model_validator, root_validator, \
     FilePath, ValidationError, DirectoryPath
 import yaml
 
@@ -97,31 +97,18 @@ class TopologySelection:
     .. seealso::
         `List of topology formats that MDAnalysis supports <https://docs.mdanalysis.org/1.1.1/documentation_pages/topology/init.html>`_
     """
-    class _TopologySelection(BaseModel):
-        path: FilePath
-        topology_format: Optional[str]
-        charge_overrides: Dict[int, int] = Field(default_factory=dict)
 
     path: Path
     topology_format: Optional[str] = None
     charge_overrides: Dict[int, int] = dataclasses.field(default_factory=dict)
 
+    @model_validator(mode='before')
     @classmethod
-    def __get_validators__(cls):
-        yield cls._validate
-
-    @classmethod
-    def _validate(cls, values):
-        """
-        Validates the topology. You should not call this directly.
-        """
-        result = pydantic.parse_obj_as(Union[FilePath, cls._TopologySelection], values)
+    def _accept_bare_string(cls, data: Any) -> Any:
         try:
-            path = Path(result)
+            return Path(data)
         except TypeError:
-            return TopologySelection(path=result.path, topology_format=result.topology_format,
-                                     charge_overrides=result.charge_overrides)
-        return TopologySelection(path=path)
+            return data
 
     def create_universe(self, *coordinates: Any, **kwargs) -> mda.Universe:
         """Create a universe based on this topology and the given arguments.."""
@@ -142,13 +129,14 @@ class RangeFrameSelection(BaseModel):
     stop: Optional[conint(ge=0)]
     step: Optional[conint(ge=1)] = 1
 
-    @root_validator()
-    def _check_start_before_stop(cls, values: Dict[str, int]) -> Dict[str, int]:
+    @model_validator(mode='after')
+    def _check_start_before_stop(self) -> 'RangeFrameSelection':
         """
         Ensures that a valid range is selected for frame iteration.
         """
-        assert values['start'] <= values['stop'], "start must be before stop"
-        return values
+        if self.start is not None and self.stop is not None and self.start > self.stop:
+            raise ValueError('Start must be before stop')
+        return self
 
 
 class TrajectoryAnalysisConfig(BaseModel):
@@ -174,36 +162,6 @@ class TrajectoryAnalysisConfig(BaseModel):
     pairs: List[Tuple[conint(ge=0), conint(ge=0)]]
     frames: RangeFrameSelection
     output: str
-
-    # noinspection PyMethodParameters
-    @root_validator
-    def check_valid_md_system(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validates that setting work with the selected MD system
-        """
-        errors: List[str] = []
-
-        topology: TopologySelection = values['topology']
-        trajectories: List[FilePath] = values['trajectories']
-        ag_pair: List[Tuple[conint(ge=0), conint(ge=0)]] = values['pairs']
-        frames: RangeFrameSelection = values['frames']
-
-        try:
-            unv = topology.create_universe([str(p) for p in trajectories])
-        except OSError as err:
-            raise ValueError("Error while creating the universe") from err
-
-        missing_selections = get_invalid_residue_selections({r for p in ag_pair for r in p}, unv)
-        if len(missing_selections) > 0:
-            errors.append(f'Selected residues are missing from topology: {missing_selections}')
-
-        trajlen: int = len(unv.trajectory)
-        if trajlen <= frames.stop:
-            errors.append(f'Stop {frames.stop} exceeds trajectory length {trajlen}.')
-
-        if len(errors) > 0:
-            raise ValidationError([errors], cls)
-        return values
 
     def create_universe(self, **universe_kwargs) -> mda.Universe:
         """
@@ -234,27 +192,13 @@ The literal 'L' specifies the ligand, whereas an integer specifies the protein r
 """
 
 
-class TopologyGroupSelection(BaseModel):
-    """
-    A selection of a group of topologies.
+TopologyGroupSelection = Union[DirectoryPath, List[TopologySelection]]
+"""
+A selection of a group of topologies.
 
-    In a YAML config, this may either be a path to a flat directory full of topologies
-    or a list of :obj:`TopologySelection`s.
-    """
-    __root__: Union[DirectoryPath, List[TopologySelection]]
-
-    def get_individual_topologies(self) -> List[TopologySelection]:
-        """
-        It
-        """
-        if isinstance(self.__root__, list):
-            return self.__root__
-
-        return [
-            TopologySelection(path=f)
-            for f in self.__root__.iterdir()
-            if f.is_file()
-        ]
+In a YAML config, this may either be a path to a flat directory full of topologies
+or a list of :obj:`TopologySelection`s.
+"""
 
 
 # noinspection PyMethodParameters
@@ -292,30 +236,6 @@ class DockingAnalysisConfig(BaseModel):
     protein: Optional[TopologySelection]
     ligands: Optional[TopologyGroupSelection]
     output: str
-
-    @root_validator
-    def _check_valid_config(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validates that the provided settings are valid.
-        """
-        errors: List[str] = []
-
-        pairs: List[Tuple[DockingElement, DockingElement]] = values['pairs']
-        protein_selections: Set[int] = {
-            i for pair in pairs for i in pair if i != 'L'
-        }
-        ens: Ensemble = cls._build_ensemble(combined_topologies=values.get('combined_topologies'),
-                                            protein=values.get('protein'),
-                                            ligands=values.get('ligands'))
-        missing_selections: List[int] = []
-
-        for v in ens.values():
-            missing_selections += get_invalid_residue_selections(protein_selections, v)
-
-        if len(missing_selections) > 0:
-            errors.append(f'Selected residues are missing from topology: {missing_selections}')
-
-        return values
 
     def build_ensemble(self) -> Ensemble:
         return self._build_ensemble(combined_topologies=self.combined_topologies,
