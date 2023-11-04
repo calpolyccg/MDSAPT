@@ -106,7 +106,7 @@ class TopologySelection:
     @classmethod
     def _accept_bare_string(cls, data: Any) -> Any:
         try:
-            return Path(data)
+            return {'path': Path(data), 'charge_overrides': {}}
         except TypeError:
             return data
 
@@ -200,6 +200,15 @@ In a YAML config, this may either be a path to a flat directory full of topologi
 or a list of :obj:`TopologySelection`s.
 """
 
+def get_individual_topologies(sel: TopologyGroupSelection) -> List[TopologySelection]:
+    if isinstance(sel, list): return sel
+
+    return [
+        TopologySelection(path=f)
+        for f in sel.iterdir()
+        if f.is_file()
+    ]
+
 
 # noinspection PyMethodParameters
 class DockingAnalysisConfig(BaseModel):
@@ -232,10 +241,17 @@ class DockingAnalysisConfig(BaseModel):
     """
     type: Literal['docking']
     pairs: List[Tuple[DockingElement, DockingElement]]
-    combined_topologies: Optional[TopologyGroupSelection]
-    protein: Optional[TopologySelection]
-    ligands: Optional[TopologyGroupSelection]
+    combined_topologies: Optional[TopologyGroupSelection] = None
+    protein: Optional[TopologySelection] = None
+    ligands: Optional[TopologyGroupSelection] = None
     output: str
+
+    @model_validator(mode='after')
+    def ensure_presence_of_args(self) -> 'DockingAnalysisConfig':
+        provided_args = (self.combined_topologies is not None, self.protein is not None, self.ligands is not None)
+        if provided_args not in [(True, False, False), (False, True, True)]:
+            raise ValueError('Must provide `protein` and `ligands` keys, or only `combined_topologies`')
+        return self
 
     def build_ensemble(self) -> Ensemble:
         return self._build_ensemble(combined_topologies=self.combined_topologies,
@@ -253,12 +269,12 @@ class DockingAnalysisConfig(BaseModel):
         """Fails if the wrong types of arguments are provided."""
         if combined_topologies is not None and (protein, ligands) == (None, None):
             return Ensemble.build_from_files(
-                [top.path for top in combined_topologies.get_individual_topologies()]
+                [top.path for top in get_individual_topologies(combined_topologies)]
             )
 
         if combined_topologies is None and None not in (protein, ligands):
             ens: Ensemble = Ensemble.build_from_files([top.path for top
-                                                       in ligands.get_individual_topologies()])
+                                                       in get_individual_topologies(ligands)])
             protein_sys: mda.Universe = mda.Universe(str(protein.path))
             protein_mol: mda.AtomGroup = protein_sys.select_atoms("protein")
             ens = ens.merge(protein_mol)
@@ -290,7 +306,7 @@ def load_from_yaml_file(path: Union[str, PathLike]) -> Config:
     """
     with Path(path).open('r', encoding='utf8') as file:
         try:
-            return Config(**yaml.safe_load(file))
+            return Config.model_validate(yaml.safe_load(file))
         except ValidationError as err:
             logger.exception("Error while loading config from %r", path)
             raise err

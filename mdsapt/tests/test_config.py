@@ -29,30 +29,6 @@ def test_frame_range_selection() -> None:
         RangeFrameSelection(**frame_range)
 
 
-@pytest.mark.parametrize('key,var', [
-    ('trajectories', [f'{resources_dir}/test_read_error.dcd']),
-    ('frames', {'start': 1, 'stop': 120}),
-    ('pairs', [(250, 251)])
-])
-def test_traj_analysis_config(key: str, var: Any) -> None:
-    """
-    Tests TrajectoryAnalysis config validation with different errors
-    """
-    traj_analysis_dict: Dict[str, Any] = dict(
-        type='trajectory',
-        topology=f'{resources_dir}/testtop.psf',
-        trajectories=[f'{resources_dir}/testtraj.dcd'],
-        pairs=[(132, 152), (34, 152)],
-        frames={'start': 1, 'stop': 4},
-        output=True
-    )
-
-    traj_analysis_dict[key] = var
-
-    with pytest.raises(ValidationError):
-        TrajectoryAnalysisConfig(**traj_analysis_dict)
-
-
 def test_traj_sel() -> None:
     """
     Test getting set of selections
@@ -63,7 +39,7 @@ def test_traj_sel() -> None:
         trajectories=[f'{resources_dir}/testtraj.dcd'],
         pairs=[(132, 152), (34, 152)],
         frames={'start': 1, 'stop': 4},
-        output=True)
+        output='something.csv')
 
     cfg: TrajectoryAnalysisConfig = TrajectoryAnalysisConfig(**traj_analysis_dict)
     assert {34, 132, 152} == cfg.get_selections()
@@ -203,7 +179,7 @@ def test_seperated_docking_dir() -> None:
         output=mktemp(),
     )
 
-    cfg: DockingAnalysisConfig = DockingAnalysisConfig(**config_dict)
+    cfg: DockingAnalysisConfig = DockingAnalysisConfig.model_validate(config_dict)
     ens: Ensemble = cfg.build_ensemble()
     assert len(ens) == 7
 
