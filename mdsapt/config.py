@@ -9,18 +9,15 @@ r"""
 # pylint: disable=no-self-argument
 
 import dataclasses
-from dataclasses import dataclass
 from enum import Enum
 from os import PathLike
-import os
 from pathlib import Path
-from typing import List, Dict, Tuple, Literal, Optional, \
+from typing import Annotated, List, Dict, Tuple, Literal, Optional, \
     Union, Any, Set, Iterable
 
 import logging
 
-import pydantic
-from pydantic import BaseModel, TypeAdapter, conint, Field, model_validator, root_validator, \
+from pydantic import BaseModel, Field, model_validator, \
     FilePath, ValidationError, DirectoryPath
 import yaml
 
@@ -58,7 +55,7 @@ class SysLimitsConfig(BaseModel):
     """
     Resource limits for your system.
     """
-    ncpus: conint(ge=1)
+    ncpus: Annotated[int, Field(strict=True, ge=1)]
     memory: str
 
 
@@ -124,9 +121,9 @@ class RangeFrameSelection(BaseModel):
         stop: the last frame to use, inclusive.
         step: step between frames.
     """
-    start: Optional[conint(ge=0)]
-    stop: Optional[conint(ge=0)]
-    step: Optional[conint(ge=1)] = 1
+    start: Optional[Annotated[int, Field(strict=True, ge=0)]]
+    stop: Optional[Annotated[int, Field(strict=True, ge=0)]]
+    step: Optional[Annotated[int, Field(strict=True, ge=1)]] = 1
 
     @model_validator(mode='after')
     def _check_start_before_stop(self) -> 'RangeFrameSelection':
@@ -158,7 +155,8 @@ class TrajectoryAnalysisConfig(BaseModel):
     type: Literal['trajectory']
     topology: TopologySelection
     trajectories: List[FilePath]
-    pairs: List[Tuple[conint(ge=0), conint(ge=0)]]
+    pairs: List[Tuple[Annotated[int, Field(strict=True, ge=0)], Annotated[int, Field(strict=True, ge=0)]
+                      ]]
     frames: RangeFrameSelection
     output: str
 
@@ -183,7 +181,8 @@ def get_invalid_residue_selections(residues: Iterable[int], unv: mda.Universe) -
     ]
 
 
-DockingElement = Union[Literal['L'], conint(ge=-1)]
+DockingElement = Union[Literal['L'], Annotated[int, Field(strict=True, ge=-1)]
+                       ]
 """
 A single element to analyze in docking.
 
@@ -199,8 +198,10 @@ In a YAML config, this may either be a path to a flat directory full of topologi
 or a list of :obj:`TopologySelection`s.
 """
 
+
 def get_individual_topologies(sel: TopologyGroupSelection) -> List[TopologySelection]:
-    if isinstance(sel, list): return sel
+    if isinstance(sel, list):
+        return sel
 
     return [
         TopologySelection(path=f)
