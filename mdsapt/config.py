@@ -83,8 +83,7 @@ class SimulationConfig(BaseModel):
     charge_guesser: ChargeGuesser
 
 
-@dataclass
-class TopologySelection:
+class TopologySelection(BaseModel):
     """
     A configuration item for selecting a single topology. To successfully import a topology,
     it must be supported by MDAnalysis.

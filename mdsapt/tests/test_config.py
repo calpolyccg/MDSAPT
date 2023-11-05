@@ -41,7 +41,7 @@ def test_traj_sel() -> None:
         frames={'start': 1, 'stop': 4},
         output='something.csv')
 
-    cfg: TrajectoryAnalysisConfig = TrajectoryAnalysisConfig(**traj_analysis_dict)
+    cfg: TrajectoryAnalysisConfig = TrajectoryAnalysisConfig.model_validate(traj_analysis_dict)
     assert {34, 132, 152} == cfg.get_selections()
 
 
@@ -118,7 +118,7 @@ def test_topology_selection_parses_from_string() -> None:
     Test topology selection parses
     """
     data: str = str(resources_dir / 'test_input.yaml')
-    result = pydantic.parse_obj_as(TopologySelection, data)
+    result = TopologySelection.model_validate(data)
 
     assert result.path == resources_dir / 'test_input.yaml'
     assert result.charge_overrides == {}
@@ -129,7 +129,7 @@ def test_topology_selection_parses_from_obj_with_overrides() -> None:
     Test alternative topology selection
     """
     data = {'path': str(resources_dir / 'test_input.yaml'), 'charge_overrides': {'13': 3}}
-    result = pydantic.parse_obj_as(TopologySelection, data)
+    result = TopologySelection.model_validate(data)
 
     assert result.path == resources_dir / 'test_input.yaml'
     assert result.charge_overrides == {13: 3}
@@ -140,7 +140,7 @@ def test_topology_selection_parses_from_obj_without_overrides() -> None:
     Tests no charge overrides topology selection
     """
     data = {'path': str(resources_dir / 'test_input.yaml')}
-    result = pydantic.parse_obj_as(TopologySelection, data)
+    result = TopologySelection.model_validate(data)
 
     assert result.path == resources_dir / 'test_input.yaml'
     assert result.charge_overrides == {}
