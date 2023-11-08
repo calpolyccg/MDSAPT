@@ -2,14 +2,14 @@
 
 name: mdsapt
 channels:
-  - psi4
   - conda-forge
+  - conda-forge/label/libint_dev # needed for psi4 1.8.1
   - defaults
 dependencies:
   # This must be specified FIRST to avoid packaging errors.
-  - psi4>=1.6.1,<1.7
+  - psi4=1.8.1=*_2 # pydantic update, for more info see https://github.com/psi4/psi4/issues/2991
 
-  - mdanalysis>=2.2.0,<2.3
+  - mdanalysis
   - click
   - numpy
   - openmm
