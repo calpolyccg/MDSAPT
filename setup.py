@@ -30,7 +30,7 @@ setup(
     long_description_content_type="text/markdown",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    license='GPL-3.0',
+    license='GPL-3.0-or-later',
 
     # Register the CLI entrypoint
     entry_points = {

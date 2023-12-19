@@ -9,7 +9,7 @@ source:
 
 about:
   home: https://github.com/ALescoulie/MDSAPT
-  license: GPL-3.0
+  license: GPL-3.0-or-later
   license_file: LICENSE
   license_family: GPL3
   summary: SAPT Calculations for MDAnalysis
