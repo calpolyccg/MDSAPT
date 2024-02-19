@@ -1,54 +1,57 @@
-# This file is used in conda-build.
+{% set name = "mdsapt" %}
+{% set version = "2.0.3" %}
 
 package:
-  name: mdsapt
-  version: "{{ GIT_DESCRIBE_TAG }}"
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
-  git_url: ./
+  path: .
+
+build:
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv
+  number: 0
+
+requirements:
+  host:
+    - python >=3.8
+    - pip
+  run:
+    - python >=3.8
+    - psi4 =>1.9.1
+    - mdanalysis >=2.7.0
+    - rdkit >=2023.09.5
+    - openmm >=8.1.1
+    - pdbfixer >=1.9
+    - numpy
+    - click
+    - pandas
+    - pyarrow # needed for pandas
+    - pyyaml
+
+test:
+  source_files:
+    - mdsapt
+  requires:
+    - pip
+    - pytest
+    - nglview
+    - notebook
+  commands:
+    - pip check
+    - pytest -p no:warnings -vvv mdsapt
 
 about:
-  home: https://github.com/ALescoulie/MDSAPT
+  home: https://github.com/calpolyccg/MDSAPT
   license: GPL-3.0-or-later
   license_file: LICENSE
   license_family: GPL3
   summary: SAPT Calculations for MDAnalysis
   doc_url: https://mdsapt.readthedocs.io/
-  dev_url: https://github.com/ALescoulie/MDSAPT
-
-requirements:
-  host:
-    - python
-    - pip
-  run:
-    - psi4
-    - mdanalysis
-    - numpy
-    - openmm
-    - pandas
-    - pdbfixer
-    - python
-    - pyyaml
-    - rdkit
-
-test:
-  imports:
-    - mdsapt
-    - mdsapt.tests
-  requires:
-    - pip
-    - pytest
-    - nglview
-  commands:
-    - pip check
-    # This is currently disabled because it does not work.
-    # However, tests pass when not building.
-    # - pytest -v .
+  dev_url: https://github.com/calpolyccg/MDSAPT
 
 extra:
-  maintainers:
-   - ALescoulie
-   - astralbijection
   recipe-maintainers:
    - ALescoulie
-   - astralbijection
+   - ifd3f

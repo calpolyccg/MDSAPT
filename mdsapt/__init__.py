@@ -33,3 +33,6 @@ def log_banner() -> None:
 
 logger = create_logger()
 log_banner()
+
+from . import _version
+__version__ = _version.get_versions()['version']
