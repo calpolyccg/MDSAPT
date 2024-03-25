@@ -12,7 +12,7 @@ An MDAnalysis-kit for calculating SAPT of molecular dynamics trajectories in psi
 
 ### Copyright
 
-Copyright (c) 2021, ALescoulie
+Copyright (c) 2021-2024, Alia Lescoulie
 
 #### Acknowledgements
 
