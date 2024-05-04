@@ -37,7 +37,7 @@ Symmetry Adapted Perturbation Theory (SAPT), decomposes the interaction energy o
 The molecular mechanics methods used in MD simulations do not characterize noncovalent interactions at the same level of detail as quantum mechanical methods, but allow simulations of large biomolecular systems [@lipkowitz].
 In this work, we present a workflow tool to utilize ab initio methods as a post-processing technique on MD data, offering detailed insight into the strength and type of noncovalent interactions interactions.
 MD-SAPT automates this process in a reproducible way.
-It is released as an open source Python library, and distributed using Anaconda on the psi4 conda channel.
+It is released as an open source Python library, and distributed using Anaconda on the conda-forge channel.
 It supports macOS and Linux, and can be used as a CLI tool, in an interactive Jupyter Notebook, or as an importable Python library. 
 
 MD-SAPT automates the process of applying SAPT calculations to structures generated from molecular dynamics simulations.  It combines multiple workflow tasks, including selecting the specific residues for the QM calculation, adding protons where the residues were bound to the polypeptide chain, determining the formal charge, passing the charge and coordinates into psi4 (the QM calculation program), and saving the results. 
