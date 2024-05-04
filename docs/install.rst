@@ -5,7 +5,7 @@ MD-SAPT can be installed from the psi4 Conda repo like so:
 
 .. code-block:: bash
 
-    conda install -c psi4/label/dev -c conda-forge mdsapt
+    conda install -c conda-forge mdsapt
 
 Alternatively, it can be installed by cloning the GitHub repository.
 
