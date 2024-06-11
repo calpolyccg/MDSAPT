@@ -7,7 +7,10 @@ psi4:
   basis: 'jun-cc-pvdz'
   # set to true to save Psi4 output files
   save_output: true
+  # Additional Psi4 settings see https://psicode.org for more psi4 specific documentation
   settings:
+    # The reference wave function type eg: RHF, ROHF, UHF, CUHF, RKS, UKS
+    # See https://psicode.org/psi4manual/master/autodir_options_c/scf__reference.html for more information
     reference: 'rhf'
 
 simulation:
