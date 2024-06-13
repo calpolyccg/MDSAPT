@@ -88,18 +88,22 @@
         #  });
         #};
 
-        devEnv = pkgs.poetry2nix.mkPoetryEnv {
+        poetryEnv = pkgs.poetry2nix.mkPoetryEnv {
           projectDir = ./.;
-          #extraPackages = (ps: [ pkgs.qchem.psi4 pkgs.qchem.openmm ]);
           python = python;
           overrides = [ p2n-overrides unfuckScipy unfuckNumpy ]; #unfuckScipy ];
+        };
+
+        devEnv = pkgs.mkShell {
+          propagatedBuildInputs = [ poetryEnv];
+          buildInputs = with pkgs; [pkgs.qchem.psi4 pkgs.qchem.openmm ];
         };
 
         # DON'T FORGET TO PUT YOUR PACKAGE NAME HERE, REMOVING `throw`
         packageName = "MD-SAPT";
 
       in {
-        devShells.default = devEnv.env;
+        devShells.default = devEnv;
       });
 }
 
