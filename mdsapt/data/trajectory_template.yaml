@@ -1,18 +1,32 @@
 psi4:
-  method: 'sapt'
+  # The sapt theory level eg: SAPT0, SAPT2, SAPT2+, SAPT2+3
+  # See https://psicode.org/psi4manual/master/sapt.html#sapt-level for more information
+  method: 'sapt0'
+  # Basis set for Psi4 SAPT calculation
+  # See https://psicode.org/psi4manual/master/basissets_byelement.html#apdx-basiselement for complete list
   basis: 'jun-cc-pvdz'
+  # set to true to save Psi4 output files
   save_output: true
+  # Additional Psi4 settings see https://psicode.org for more psi4 specific documentation
   settings:
+    # The reference wave function type eg: RHF, ROHF, UHF, CUHF, RKS, UKS
+    # See https://psicode.org/psi4manual/master/autodir_options_c/scf__reference.html for more information
     reference: 'rhf'
+
 simulation:
   ph: 7.0
+  # pH of simulated system, it informs how protons are replaced when ballencing spin state before Psi4 calculations
   charge_guesser: 'standard'
   # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+
 system_limits:
+  # Integer number of cpu cores to use in Psi4 calculation
   ncpus:
+  # Given memory form `"{number_of_gigabytes}GB"`
   memory:
+
 analysis:
-  ### This section is for running TrajectorySAPT. To run other types of analyses, see below.
+  # This section is for running TrajectorySAPT. To run other types of analyses, see below.
   type: 'trajectory'
 
   topology: 'your/file/path.pdb'
@@ -25,29 +39,19 @@ analysis:
   trajectories:
     - 'your/trajectory/path.dcd'
   pairs:
+    # List the pairs of residues to calculate interaction energy between based on residue ids in topology file
     - [132, 152]
     - [34, 152]
   frames:
+    # Starting frame
     start: 10
-    stop: 30
-    #step: 2
 
+    # Stop frame
+    stop: 30
+
+    # frames per calculation step
+    step: 1
+
+  # Name of outputed csv file
   output: 'output.csv'
 
-#  ### For running DockingSAPT
-#  type: 'docking'
-#  mode: 'protein-ligand'
-#  topologies:
-#    - 'one/topology.pdb'
-#    - 'another/topology.pdb'
-#    - 'a/glob/of/topologies/*.pdb'
-#    - 'a/directory/full/of/topologies'
-#    - path: 'one/specific/topology/with/weird/charges.pdb'
-#      charge_overrides:
-#        145: -4
-#
-#  pairs:
-#    - [132, 152]
-#    - [34, 152]
-#
-#  output: 'output.csv'

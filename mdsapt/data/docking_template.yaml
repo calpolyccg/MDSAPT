@@ -1,18 +1,42 @@
-topology_directory: ''
-selection_resid_num:
-  -
-int_pairs:
-  # Place pair names defined above in list in a list
-  - []
-system_settings:
-  ncpus:
-  memory:
-  time:
-opt_settings:
-  pH: 7.0
-sapt_settings:
-  method: 'sapt'
+psi4:
+  # The sapt theory level eg: SAPT0, SAPT2, SAPT2+, SAPT2+3
+  # See https://psicode.org/psi4manual/master/sapt.html#sapt-level for more information
+  method: 'sapt0'
+  # Basis set for Psi4 SAPT calculation
+  # See https://psicode.org/psi4manual/master/basissets_byelement.html#apdx-basiselement for complete list
   basis: 'jun-cc-pvdz'
+  # set to true to save Psi4 output files
+  save_output: true
+  # Additional Psi4 settings see https://psicode.org for more psi4 specific documentation
   settings:
+    # The reference wave function type eg: RHF, ROHF, UHF, CUHF, RKS, UKS
+    # See https://psicode.org/psi4manual/master/autodir_options_c/scf__reference.html for more information
     reference: 'rhf'
-  save_psi4_output: true
+
+simulation:
+  ph: 7.0
+  # pH of simulated system, it informs how protons are replaced when ballencing spin state before Psi4 calculations
+  charge_guesser: 'standard'
+  # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+
+system_limits:
+  # Integer number of cpu cores to use in Psi4 calculation
+  ncpus:
+  # Given memory form `"{number_of_gigabytes}GB"`
+  memory:
+
+analysis:
+  type: 'docking'
+  # MD-SAPT analysis type (in this case docking)
+  topology_directory: 'mek/docking'
+  # The set of topology files for docking analysis
+  pairs:
+  # Place pair names defined above in list in a list
+  - [15, 132]
+
+system_limits:
+  # Integer number of cpu cores to use in Psi4 calculation
+  ncpus:
+  # Given memory form `"{number_of_gigabytes}GB"`
+  memory:
+

@@ -27,24 +27,29 @@ The following steps describe how to set up the input YAML file.
 
  4. Specify the pairs of residues from the numbers in step 3
 
- 5. Specify trajectory, optimization, and SAPT settings
+ 5. Specify trajectory, optimization, `SAPT method <https://psicode.org/psi4manual/master/sapt.html#sapt-level>`_, `basis set <https://psicode.org/psi4manual/master/basissets_byelement.html#apdx-basiselement>`_ , and Psi4 settings (see `psi4 documentation <https://psicode.org/psi4manual/master/index.html>`_ for more information)
+
 
 Here is an example of a filled-out YAML file:
 
 .. code-block:: yaml
+
     psi4:
       method: "sapt0"
       basis: "jun-cc-pvdz"
       settings:
         reference: "rhf"
       save_output: true
+
     simulation:
       ph: 7.0
       charge_guesser: "standard"
       # charge_guesser: 'rdkit'  # to use rdkit. Make sure it is installed first.
+
     system_limits:
       ncpus: 32
       memory: "80GB"
+
     analysis:
       ### This section is for running TrajectorySAPT. To run other types of analyses, see below.
       type: "trajectory"
@@ -81,6 +86,7 @@ This mode is suited for:
 With the input done MD-SAPT is ready to be run. Simply execute
 
 .. code-block:: bash
+
    mdsapt run [filename] [output]
 
 and it will run SAPT on your trajectory using the parameters specified in your input file.

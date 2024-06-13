@@ -2,6 +2,15 @@ r"""
 :mod:`mdsapt.config` -- Reads input file and saves configuration
 ================================================================
 
+
+.. autoclass:: Config
+    :members:
+    :inherited-members:
+
+.. autoclass:: DockingAnalysisConfig
+    :members:
+    :inherited-members:
+
 """
 
 # There's lots of implicit class methods because pydantic decorators are stupid.

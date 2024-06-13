@@ -1,5 +1,5 @@
 MD-SAPT Documentation
-=========================================================
+=====================
 
 **MD-SAPT** is a Python package and `MDAnalysis <https://www.mdanalysis.org>`_ Kit for preforming
 Symmetry Adapted Perturbation Theory (SAPT) calculations on molecular dynamics (MD) simulation
@@ -14,13 +14,12 @@ For the poster we presented at ACS Spring 2022, `click here <./_static/mdsapt_po
 
 
 .. toctree::
-   :maxdepth: 4
-   :numbered:
+   :maxdepth: 2
    :hidden:
 
    install
    quick
+   config
    sapt
-   optimizer
-   reader
-   viewer
+   repair
+

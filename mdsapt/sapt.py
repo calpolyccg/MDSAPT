@@ -5,7 +5,7 @@ r"""
 Sets up and runs `SAPT <https://psicode.org/psi4manual/master/sapt.html>`_
 calculations between the residues selected in the input file.
 
-.. autofunction:: build_psi4_imput_str
+.. autofunction:: build_psi4_input_str
 
 .. autofunction:: calc_sapt
 

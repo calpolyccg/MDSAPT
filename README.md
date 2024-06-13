@@ -10,11 +10,36 @@ SAPT Calculations for MDAnalysis
 
 An MDAnalysis-kit for calculating SAPT of molecular dynamics trajectories in psi4. [Click here for a demo!](https://mybinder.org/v2/gh/calpolyccg/MDSAPT_demo/master?labpath=MD-SAPT_demo.ipynb)
 
+### Installation
+
+Installing with Conda on Python version 3.9 to 3.11 using the command:
+
+``` bash
+conda install -c conda-forge mdsapt
+```
+
+MD-SAPT can also be installed from source:
+
+``` bash
+git clone https://github.com/calpolyccg/MDSAPT.git
+pip install ./MDSAPT
+```
+
+A development environment can also be created using nix:
+
+``` bash 
+git clone https://github.com/calpolyccg/MDSAPT.git
+
+cd MDSAPT
+
+nix develop
+```
+
 ### Copyright
 
 Copyright (c) 2021-2024, Alia Lescoulie
 
-#### Acknowledgements
+#### Acknowledgments
 
 This work was supported by the Bill and Linda Frost Fund at Cal Poly San Luis Obispo.
 

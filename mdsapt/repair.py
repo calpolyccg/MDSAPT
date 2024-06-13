@@ -1,5 +1,5 @@
 r"""
-:mod:`mdsapt.optimizer` -- Prepare residues for SAPT calculations
+:mod:`mdsapt.repair` -- Prepare residues for SAPT calculations
 =================================================================
 
 Prepares residues for SAPT calculations by adding protons and replacing missing atoms
