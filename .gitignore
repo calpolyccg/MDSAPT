@@ -117,3 +117,8 @@ ENV/
 # MDSAPT-generated files
 timer.dat
 input.yaml
+*.out
+
+# Direnv files
+.direnv/
+
