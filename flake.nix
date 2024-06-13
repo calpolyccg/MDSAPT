@@ -99,9 +99,7 @@
         packageName = "MD-SAPT";
 
       in {
-        test.cython = cython;
-        test.python = python;
-        devShells.default = devEnv;
+        devShells.default = devEnv.env;
       });
 }
 
