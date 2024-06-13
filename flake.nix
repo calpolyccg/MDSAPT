@@ -2,7 +2,7 @@
   description = "SAPT energy calculator built using MDAnalysis and Psi4 ";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     poetry2nix.url = "github:nix-community/poetry2nix";
     qchem.url = "github:Nix-QChem/NixOS-QChem";
@@ -22,7 +22,8 @@
         };
 
         # Version overrides for scipy 
-        cython = with pkgs.python311Packages; cython_3.overrideAttrs (oldAttrs: rec {
+        /*
+        cython = with pkgs.python311Packages; cython.overrideAttrs (oldAttrs: rec {
           version = "3.0.10";
           src = fetchPypi {
             pname = "Cython";
@@ -30,6 +31,7 @@
             hash = "sha256-3MlnOTMfuFTc9QP5RgdXbP6EiAZsYcpQ39VYNvEy3pk=";
           };
         });
+        */
 
 
 
@@ -63,8 +65,6 @@
         );
 
         unfuckScipy = final: prev: {
-          cython = cython;
-          cython_3 = cython;
           /*
           scipy = prev.scipy.overridePythonAttrs (old: {
             nativeBuildInputs = with final; [cython_3];
