@@ -20,15 +20,16 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'MD-SAPT'
-copyright = ("2021, Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald. Cal Poly Computational Chemistry Group. Project structure based on the "
+copyright = ("2021-2024, Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald. Cal Poly Computational Chemistry Group. Project structure based on the "
              "Computational Molecular Science Python Cookiecutter version 1.6")
 author = 'Alia Lescoulie'
 
-# The short X.Y version
-version = '1.1'
-# The full version, including alpha/beta/rc tags
-release = '1.1.0'
 
+# The version under title on sidebar
+version = "2.0"
+
+# The full version, including alpha/beta/rc tags
+release = "2.0.4"
 
 # -- General configuration ---------------------------------------------------
 
@@ -71,7 +72,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
