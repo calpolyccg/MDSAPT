@@ -21,28 +21,6 @@
           ];
         };
 
-        # Version overrides for scipy 
-        /*
-        cython = with pkgs.python311Packages; cython.overrideAttrs (oldAttrs: rec {
-          version = "3.0.10";
-          src = fetchPypi {
-            pname = "Cython";
-            inherit version;
-            hash = "sha256-3MlnOTMfuFTc9QP5RgdXbP6EiAZsYcpQ39VYNvEy3pk=";
-          };
-        });
-        */
-
-
-
-        #pybind11-212 = with pkgs.python311Packages; pybind11.overrideAttrs (oldAttrs: rec {
-        #  version = "2.12.0";
-        #  src = fetchPypi {
-        #    pname = "pybind11";
-        #    inherit version;
-        #    hash = "sha256-XjxVeoSwa5aSR2MEB/xNmFvtFXtCU7ExU7jo4WXgw9w=";
-        #  };
-        #});
 
         # Build dependencies for pacakges
         pypkgs-build-reqs = {
@@ -65,12 +43,6 @@
         );
 
         unfuckScipy = final: prev: {
-          /*
-          scipy = prev.scipy.overridePythonAttrs (old: {
-            nativeBuildInputs = with final; [cython_3];
-            buildInputs = old.buildInputs ++ (with final; [ cython_3 setuptools wheel pythran pybind11 ]);
-          });
-          */
           scipy = pkgs.python311Packages.scipy;
         };
 
@@ -82,13 +54,6 @@
           packageOverrides = unfuckScipy;
         };
         
-        #unfuckMatPlotLib = final: prev: {
-        #  pybind11 = pybind11-212;
-        #  matplotlib = prev.matplotlib.overridePythonAttrs (old: {
-        #    buildInputs = old.buildInputs ++(with final; [ pybind11 ]);
-        #  });
-        #};
-
         poetryEnv = pkgs.poetry2nix.mkPoetryEnv {
           projectDir = ./.;
           python = python;
