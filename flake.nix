@@ -49,6 +49,7 @@
           mmtf-python = [ "setuptools" ];
           mrcfile = [ "setuptools" ];
           griddataformats = [ "setuptools" ];
+          pyright = [ "setuptools" ];
           #matplotlib = [ "pybind11" ];
           #scipy = [ "setuptools" "wheel" "pybind11" "pythran" ];
         };
@@ -96,7 +97,7 @@
 
         devEnv = pkgs.mkShell {
           propagatedBuildInputs = [ poetryEnv];
-          buildInputs = with pkgs; [pkgs.qchem.psi4 pkgs.qchem.openmm ];
+          buildInputs = with pkgs; [pkgs.qchem.psi4 pkgs.qchem.openmm pkgs.qchem.pdbfixer ];
         };
 
         # DON'T FORGET TO PUT YOUR PACKAGE NAME HERE, REMOVING `throw`

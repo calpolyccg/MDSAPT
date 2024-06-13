@@ -12,6 +12,15 @@ python = ">3.9 <=3.12"
 mdanalysis = "^2.7"
 click = "^8.1.7"
 rdkit = "^2023.9.6"
+pandas = "^2.2.2"
+sphinx = "^7.3.7"
+sphinx-rtd-theme = "^2.0.0"
+pylint = "^3.2.3"
+pytest = "^8.2.2"
+pyright = "^1.1.367"
+pytest-cov = "^5.0.0"
+autopep8 = "^2.2.0"
+pydantic = "^2.7.4"
 
 
 
