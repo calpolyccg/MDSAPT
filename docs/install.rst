@@ -33,3 +33,22 @@ To ensure it's been installed correctly, run `mdsapt` or `python3 -m mdsapt`.
     Commands:
       generate  Generate a template input file at filename.
       run       Run a SAPT calculation using the configuration in in_file.
+
+
+Creating a Development Environment
+__________________________________
+
+Using Nix
+^^^^^^^^^
+
+Make sure you have the `nix package manager <https://nixos.wiki/wiki/Nix_package_manager>`_ installed and clone the repository.
+The development shell can be entered with the following commands, but note that the initial build it will take a long time to complete.
+
+.. code-block:: bash
+
+   git clone https://github.com/calpolyccg/MDSAPT.git
+   cd MDSAPT
+   nix develop
+
+Alternatively if you have `direnv <https://direnv.net/>`_ you will simply be promoted to approve the directory, then the environment will be built, this method has the advantage of being automatically applied when you enter the MDSAPT directory
+
