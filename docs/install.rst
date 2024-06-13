@@ -1,7 +1,7 @@
 Installation
 ============
 
-MD-SAPT can be installed from the psi4 Conda repo like so:
+MD-SAPT can be installed using Conda with the following:
 
 .. code-block:: bash
 
