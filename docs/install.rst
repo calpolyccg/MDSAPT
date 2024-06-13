@@ -16,7 +16,8 @@ Alternatively, it can be installed by cloning the GitHub repository.
 
 To ensure it's been installed correctly, run `mdsapt` or `python3 -m mdsapt`.
 
-.. code-block::
+.. code-block:: bash
+
     Warning: importing 'simtk.openmm' is deprecated.  Import 'openmm' instead.
     2022-03-30 09:32:50,071 mdsapt       INFO     MDSAPT 1.2.0 starting
     2022-03-30 09:32:50,071 mdsapt       INFO     Copyright (c) 2021 Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald

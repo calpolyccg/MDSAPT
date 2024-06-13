@@ -32,6 +32,7 @@ The following steps describe how to set up the input YAML file.
 Here is an example of a filled-out YAML file:
 
 .. code-block:: yaml
+
     psi4:
       method: "sapt0"
       basis: "jun-cc-pvdz"
@@ -81,6 +82,7 @@ This mode is suited for:
 With the input done MD-SAPT is ready to be run. Simply execute
 
 .. code-block:: bash
+
    mdsapt run [filename] [output]
 
 and it will run SAPT on your trajectory using the parameters specified in your input file.
