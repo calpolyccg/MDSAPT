@@ -21,8 +21,8 @@
           ];
         };
 
-      
-        cython = with pkgs.python3Packages; cython_3.overrideAttrs (oldAttrs: rec {
+        # Version overrides for scipy 
+        cython = with pkgs.python311Packages; cython_3.overrideAttrs (oldAttrs: rec {
           version = "3.0.10";
           src = fetchPypi {
             pname = "Cython";
@@ -31,12 +31,26 @@
           };
         });
 
+
+
+        #pybind11-212 = with pkgs.python311Packages; pybind11.overrideAttrs (oldAttrs: rec {
+        #  version = "2.12.0";
+        #  src = fetchPypi {
+        #    pname = "pybind11";
+        #    inherit version;
+        #    hash = "sha256-XjxVeoSwa5aSR2MEB/xNmFvtFXtCU7ExU7jo4WXgw9w=";
+        #  };
+        #});
+
+        # Build dependencies for pacakges
         pypkgs-build-reqs = {
           mdanalysis = [ "setuptools" ];
           mda-xdrlib = [ "setuptools" ];
           mmtf-python = [ "setuptools" ];
           mrcfile = [ "setuptools" ];
-          scipy = [ "setuptools" "wheel" "pybind11" "pythran" ];
+          griddataformats = [ "setuptools" ];
+          #matplotlib = [ "pybind11" ];
+          #scipy = [ "setuptools" "wheel" "pybind11" "pythran" ];
         };
 
         p2n-overrides = pkgs.poetry2nix.defaultPoetryOverrides.extend (final: prev:
@@ -50,21 +64,35 @@
         unfuckScipy = final: prev: {
           cython = cython;
           cython_3 = cython;
+          /*
           scipy = prev.scipy.overridePythonAttrs (old: {
-            buildInputs = old.buildInputs ++(with final; [ cython setuptools wheel pythran pybind11 ]);
+            nativeBuildInputs = with final; [cython_3];
+            buildInputs = old.buildInputs ++ (with final; [ cython_3 setuptools wheel pythran pybind11 ]);
           });
+          */
+          scipy = pkgs.python311Packages.scipy;
         };
+
+        unfuckNumpy = final: prev: {
+          numpy = pkgs.python311Packages.numpy;
+        };
+
+        python = pkgs.python311.override {
+          packageOverrides = unfuckScipy;
+        };
+        
+        #unfuckMatPlotLib = final: prev: {
+        #  pybind11 = pybind11-212;
+        #  matplotlib = prev.matplotlib.overridePythonAttrs (old: {
+        #    buildInputs = old.buildInputs ++(with final; [ pybind11 ]);
+        #  });
+        #};
 
         devEnv = pkgs.poetry2nix.mkPoetryEnv {
           projectDir = ./.;
-          extraPackages = (ps: [ pkgs.qchem.psi4 pkgs.qchem.openmm ]);
-          python = pkgs.python311.override {
-            packageOverrides = pfinal: pprev: {
-              cython = cython;
-              cython_3 = cython;
-            };
-          };
-          overrides = [p2n-overrides unfuckScipy ];
+          #extraPackages = (ps: [ pkgs.qchem.psi4 pkgs.qchem.openmm ]);
+          python = python;
+          overrides = [ p2n-overrides unfuckScipy unfuckNumpy ]; #unfuckScipy ];
         };
 
         # DON'T FORGET TO PUT YOUR PACKAGE NAME HERE, REMOVING `throw`
@@ -72,6 +100,7 @@
 
       in {
         test.cython = cython;
+        test.python = python;
         devShells.default = devEnv;
       });
 }

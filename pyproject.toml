@@ -7,8 +7,8 @@ license = "GPL-3.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-cython = "^3.0.8"
+python = ">3.9 <=3.12"
+#numpy = "1.26.1"
 mdanalysis = "^2.7"
 click = "^8.1.7"
 rdkit = "^2023.9.6"
