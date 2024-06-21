@@ -169,13 +169,13 @@ class TrajectoryAnalysisConfig(BaseModel):
     topology: TopologySelection
     trajectories: List[FilePath]
     pairs: List[
-            Tuple[
-                Annotated[
-                    int,
-                    Field(strict=True, ge=0)],
-                    Annotated[int, Field(strict=True, ge=0)]
-                ]
-            ]
+        Tuple[
+            Annotated[
+                int,
+                Field(strict=True, ge=0)],
+            Annotated[int, Field(strict=True, ge=0)]
+        ]
+    ]
     frames: RangeFrameSelection
     output: str
 
@@ -184,9 +184,9 @@ class TrajectoryAnalysisConfig(BaseModel):
         Loads a universe from the given topology and trajectory
         """
         return self.topology.create_universe(
-                [str(p) for p in self.trajectories],
-                **universe_kwargs
-            )
+            [str(p) for p in self.trajectories],
+            **universe_kwargs
+        )
 
     def get_selections(self) -> Set[int]:
         """
@@ -278,15 +278,15 @@ class DockingAnalysisConfig(BaseModel):
         Checks that arguments are correct
         """
         provided_args = (
-                self.combined_topologies is not None,
-                self.protein is not None,
-                self.ligands is not None
-                )
+            self.combined_topologies is not None,
+            self.protein is not None,
+            self.ligands is not None
+        )
 
         if provided_args not in [(True, False, False), (False, True, True)]:
             raise ValueError(
-                    'Must provide `protein` and `ligands` keys, or only `combined_topologies`'
-                    )
+                'Must provide `protein` and `ligands` keys, or only `combined_topologies`'
+            )
 
         return self
 
@@ -324,8 +324,8 @@ class DockingAnalysisConfig(BaseModel):
             return ens
 
         raise ValueError(
-                'Must provide `protein` and `ligands` keys, or only `combined_topologies`'
-                )
+            'Must provide `protein` and `ligands` keys, or only `combined_topologies`'
+        )
 
     def get_selections(self) -> Set[int]:
         """

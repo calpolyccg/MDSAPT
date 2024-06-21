@@ -59,6 +59,7 @@ def generate(filename: str, template: str, force: bool):
     logger.info('Generated template input file %s', filename)
     # pylint: enable=fixme
 
+
 @cli.command()
 @click.argument(
     'in_file',

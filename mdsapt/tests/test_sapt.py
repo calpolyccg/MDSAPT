@@ -12,11 +12,12 @@ traj_settings = load_from_yaml_file(
     os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
 
 dock_settings = load_from_yaml_file(
-            os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'docking_in.yaml'))
+    os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'docking_in.yaml'))
 
 unv = traj_settings.analysis.create_universe()
 elements = guess_types(unv.atoms.names)
 unv.add_TopologyAttr('elements', elements)
+
 
 class TestSAPT:
     """

@@ -210,7 +210,6 @@ class DockingSAPT:
     _key_names: Dict[str, str]
     results: pd.DataFrame
 
-
     def __init__(self, config: Config) -> None:
         """
         Sets up ligand topology systems.
