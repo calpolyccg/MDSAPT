@@ -5,7 +5,6 @@ from pathlib import Path
 from tempfile import mktemp
 from typing import Dict, Any
 
-import pydantic
 import pytest
 
 from pydantic import ValidationError

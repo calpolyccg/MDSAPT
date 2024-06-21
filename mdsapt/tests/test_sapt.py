@@ -3,10 +3,9 @@ Tests for the SAPT analysis objects
 """
 import os
 
-import MDAnalysis
 from MDAnalysis.topology.guessers import guess_types
 
-from ..config import Config, load_from_yaml_file
+from ..config import load_from_yaml_file
 from ..sapt import TrajectorySAPT, DockingSAPT
 
 traj_settings = load_from_yaml_file(

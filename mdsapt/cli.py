@@ -1,9 +1,9 @@
+# pylint: disable=missing-module-docstring
 import logging
 import os
 import sys
 
 import click
-from mdsapt.config import RangeFrameSelection
 
 # Note that we do not import MDSAPT. This is a speed optimization; it is imported later.
 
@@ -16,11 +16,13 @@ _dir_path = os.path.dirname(os.path.realpath(__file__))
 
 @click.group()
 def cli():
+    # pylint: disable=line-too-long
     """
     MDSAPT - Molecular Dynamics Symmetry-Adapted Perturbation Theory, by Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald.
 
     This command-line interface lets you easily do common MDSAPT-related tasks.
     """
+    # pylint: disable=line-too-long
 
 
 @cli.command()
@@ -43,18 +45,19 @@ def generate(filename: str, template: str, force: bool):
     """
     Generate a template input file at filename.
     """
+    # pylint: disable=fixme
     ensure_safe_to_overwrite(filename, force)
 
     # TODO: make a wizard for these templates
     template_path = os.path.join(_dir_path, 'data', f'{template}_template.yaml')
 
-    with open(template_path, 'r') as template:
+    with open(template_path, 'r', encoding='utf-8') as template:
         template_data = template.read()
-    with open(filename, 'w') as new_file:
+    with open(filename, 'w', encoding='utf-8') as new_file:
         new_file.write(template_data)
 
-    logger.info(f'Generated template input file {filename}')
-
+    logger.info('Generated template input file %s', filename)
+    # pylint: enable=fixme
 
 @cli.command()
 @click.argument(
@@ -75,7 +78,7 @@ def run(in_file: str, out_file: str, force: bool):
     Run a SAPT calculation using the configuration in in_file. Outputs will be written to
     out_file.
     """
-    import mdsapt
+    import mdsapt  # pylint: disable=import-outside-toplevel
 
     ensure_safe_to_overwrite(out_file, force)
 
