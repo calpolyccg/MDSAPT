@@ -70,15 +70,6 @@
 
       in {
         devShells.default = devEnv;
-        
-        test-ci = pkgs.runCommand "test-ci" {} ''
-          act
-        '';
-
-        test-mdsapt = pkgs.runCommand "test-mdsapt" {} ''
-          pytest -v ./mdsapt --cov=mdsapt --cov-report=xml
-        '';
-
       });
 }
 

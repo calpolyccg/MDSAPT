@@ -22,15 +22,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [macOS-latest, ubuntu-latest]
-        python-version: ["3.8", "3.9"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # Cache our conda packages.
     # More info: https://github.com/conda-incubator/setup-miniconda#caching-packages
     - name: Cache conda environment
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 0
@@ -41,11 +41,12 @@ jobs:
 
     # More info on options: https://github.com/conda-incubator/setup-miniconda
     - name: Set up Anaconda environment
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
+      
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: environment.yml
-        channels: psi4,conda-forge,defaults
+        channels: conda-forge,defaults
         activate-environment: mdsapt
         auto-update-conda: false
         auto-activate-base: false
@@ -84,7 +85,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [macOS-latest, ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
         include:
           - os: macOS-latest
             output-folder: osx-64
