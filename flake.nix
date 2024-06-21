@@ -62,7 +62,7 @@
 
         devEnv = pkgs.mkShell {
           propagatedBuildInputs = [ poetryEnv];
-          buildInputs = with pkgs; [pkgs.qchem.psi4 pkgs.qchem.openmm pkgs.qchem.pdbfixer ];
+          buildInputs = with pkgs; [pkgs.qchem.psi4 pkgs.qchem.openmm pkgs.qchem.pdbfixer pkgs.act ];
         };
 
         # DON'T FORGET TO PUT YOUR PACKAGE NAME HERE, REMOVING `throw`
@@ -70,6 +70,15 @@
 
       in {
         devShells.default = devEnv;
+        
+        test-ci = pkgs.runCommand "test-ci" {} ''
+          act
+        '';
+
+        test-mdsapt = pkgs.runCommand "test-mdsapt" {} ''
+          pytest -v ./mdsapt --cov=mdsapt --cov-report=xml
+        '';
+
       });
 }
 
