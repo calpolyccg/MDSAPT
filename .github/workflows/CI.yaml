@@ -50,7 +50,7 @@ jobs:
         activate-environment: mdsapt
         auto-update-conda: false
         auto-activate-base: false
-        use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+          #use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
     
     # TODO: make pyright happier someday in the future
     # - name: Type-check
@@ -117,7 +117,7 @@ jobs:
         activate-environment: mdsapt-build
         auto-update-conda: false
         auto-activate-base: false
-        use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+          #use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
 
     - name: Build MDSAPT conda package
       # conda requires this special shell
