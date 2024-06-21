@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-latest, ubuntu-latest]
+        os: [macOS-latest, ubuntu-latest, macOS-13]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
@@ -42,7 +42,6 @@ jobs:
     # More info on options: https://github.com/conda-incubator/setup-miniconda
     - name: Set up Anaconda environment
       uses: conda-incubator/setup-miniconda@v3
-      
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: environment.yml
@@ -84,7 +83,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [macOS-latest, ubuntu-latest]
+        os: [macOS-13, ubuntu-latest]
         python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
         include:
           - os: macOS-latest
