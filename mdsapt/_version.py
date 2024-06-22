@@ -1,4 +1,3 @@
-
 # This file helps to compute a version number in source trees obtained from
 # git-archive tarball (such as those provided by githubs download-from-tag
 # feature). Distribution tarballs (built by setup.py sdist) and build
@@ -18,6 +17,9 @@ import subprocess
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import functools
+
+# pylint: disable=consider-using-f-string
+# pylint: disable=invalid-name
 
 
 def get_keywords() -> Dict[str, str]:
@@ -162,7 +164,7 @@ def git_get_keywords(versionfile_abs: str) -> Dict[str, str]:
     # _version.py.
     keywords: Dict[str, str] = {}
     try:
-        with open(versionfile_abs, "r") as fobj:
+        with open(versionfile_abs, "r") as fobj:  # pylint: disable=unspecified-encoding
             for line in fobj:
                 if line.strip().startswith("git_refnames ="):
                     mo = re.search(r'=\s*"(.*)"', line)

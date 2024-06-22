@@ -1,5 +1,6 @@
 # pylint: skip-file
 """An MDA-kit for calcuating quantum interactions in psi4."""
+from . import _version
 import logging
 
 from . import log
@@ -34,5 +35,4 @@ def log_banner() -> None:
 logger = create_logger()
 log_banner()
 
-from . import _version
 __version__ = _version.get_versions()['version']

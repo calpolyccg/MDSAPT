@@ -62,7 +62,7 @@
 
         devEnv = pkgs.mkShell {
           propagatedBuildInputs = [ poetryEnv];
-          buildInputs = with pkgs; [pkgs.qchem.psi4 pkgs.qchem.openmm pkgs.qchem.pdbfixer ];
+          buildInputs = with pkgs; [pkgs.qchem.psi4 pkgs.qchem.openmm pkgs.qchem.pdbfixer pkgs.act ];
         };
 
         # DON'T FORGET TO PUT YOUR PACKAGE NAME HERE, REMOVING `throw`

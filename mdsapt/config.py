@@ -43,7 +43,8 @@ class Psi4Config(BaseModel):
     Attributes:
         method:
             The SAPT method to use.
-            NOTE: You can use any valid Psi4 method, but it might fail if you don't use a SAPT method.
+            NOTE: You can use any valid Psi4 method, but it might fail
+            if you don't use a SAPT method.
         basis:
             The basis to use.
             NOTE: We do not verify if this is a valid basis set or not.
@@ -51,7 +52,8 @@ class Psi4Config(BaseModel):
             Whether to save the raw output of Psi4. May be useful for debugging.
         settings:
             Other Psi4 settings you would like to provide. These will be passed into
-            `psi4.set_options <https://psicode.org/psi4manual/master/api/psi4.driver.set_options.html>`_.
+            `psi4.set_options 
+            <https://psicode.org/psi4manual/master/api/psi4.driver.set_options.html>`_.
     """
 
     method: str
@@ -97,10 +99,12 @@ class TopologySelection(BaseModel):
     Attributes:
         path: Where the topology file is located.
         topology_format: If specified, overrides the format to import with.
-        charge_overrides: An optional dictionary, where keys are atom numbers and values are their charges.
+        charge_overrides: An optional dictionary, where keys are atom numbers and 
+        values are their charges.
 
     .. seealso::
-        `List of topology formats that MDAnalysis supports <https://docs.mdanalysis.org/1.1.1/documentation_pages/topology/init.html>`_
+        `List of topology formats that MDAnalysis supports 
+        <https://docs.mdanalysis.org/1.1.1/documentation_pages/topology/init.html>`_
     """
 
     path: Path
@@ -164,8 +168,14 @@ class TrajectoryAnalysisConfig(BaseModel):
     type: Literal['trajectory']
     topology: TopologySelection
     trajectories: List[FilePath]
-    pairs: List[Tuple[Annotated[int, Field(strict=True, ge=0)], Annotated[int, Field(strict=True, ge=0)]
-                      ]]
+    pairs: List[
+        Tuple[
+            Annotated[
+                int,
+                Field(strict=True, ge=0)],
+            Annotated[int, Field(strict=True, ge=0)]
+        ]
+    ]
     frames: RangeFrameSelection
     output: str
 
@@ -173,7 +183,10 @@ class TrajectoryAnalysisConfig(BaseModel):
         """
         Loads a universe from the given topology and trajectory
         """
-        return self.topology.create_universe([str(p) for p in self.trajectories], **universe_kwargs)
+        return self.topology.create_universe(
+            [str(p) for p in self.trajectories],
+            **universe_kwargs
+        )
 
     def get_selections(self) -> Set[int]:
         """
@@ -209,6 +222,10 @@ or a list of :obj:`TopologySelection`s.
 
 
 def get_individual_topologies(sel: TopologyGroupSelection) -> List[TopologySelection]:
+    """
+    Gets a list of :class:`mdsapt.config.TopolgoySelections` from a 
+    :class:`mdsapt.config.TopologyGroupSelection`
+    """
     if isinstance(sel, list):
         return sel
 
@@ -257,12 +274,27 @@ class DockingAnalysisConfig(BaseModel):
 
     @model_validator(mode='after')
     def ensure_presence_of_args(self) -> 'DockingAnalysisConfig':
-        provided_args = (self.combined_topologies is not None, self.protein is not None, self.ligands is not None)
+        """
+        Checks that arguments are correct
+        """
+        provided_args = (
+            self.combined_topologies is not None,
+            self.protein is not None,
+            self.ligands is not None
+        )
+
         if provided_args not in [(True, False, False), (False, True, True)]:
-            raise ValueError('Must provide `protein` and `ligands` keys, or only `combined_topologies`')
+            raise ValueError(
+                'Must provide `protein` and `ligands` keys, or only `combined_topologies`'
+            )
+
         return self
 
     def build_ensemble(self) -> Ensemble:
+        """
+        Creates an Ensemble containing the set of topologies used to analyze docking.
+
+        """
         return self._build_ensemble(combined_topologies=self.combined_topologies,
                                     protein=self.protein,
                                     ligands=self.ligands)
@@ -275,7 +307,9 @@ class DockingAnalysisConfig(BaseModel):
             protein: Optional[TopologySelection],
             ligands: Optional[TopologyGroupSelection],
     ) -> Ensemble:
-        """Fails if the wrong types of arguments are provided."""
+        """
+        Fails if the wrong types of arguments are provided.
+        """
         if combined_topologies is not None and (protein, ligands) == (None, None):
             return Ensemble.build_from_files(
                 [top.path for top in get_individual_topologies(combined_topologies)]
@@ -289,7 +323,9 @@ class DockingAnalysisConfig(BaseModel):
             ens = ens.merge(protein_mol)
             return ens
 
-        raise ValueError('Must provide `protein` and `ligands` keys, or only `combined_topologies`')
+        raise ValueError(
+            'Must provide `protein` and `ligands` keys, or only `combined_topologies`'
+        )
 
     def get_selections(self) -> Set[int]:
         """

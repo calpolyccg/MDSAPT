@@ -206,6 +206,10 @@ class DockingSAPT:
         'SAPT DISP ENERGY'
     ]
 
+    _res_dict: Dict[str, List[float]]
+    _key_names: Dict[str, str]
+    results: pd.DataFrame
+
     def __init__(self, config: Config) -> None:
         """
         Sets up ligand topology systems.
@@ -247,7 +251,7 @@ class DockingSAPT:
 
             coords = xyz_dict[pair[0]] + '\n--\n' + xyz_dict[pair[1]] + '\nunits angstrom'
 
-            logger.info(f'Starting SAPT for {pair}')
+            logger.info(f'Starting SAPT for {pair}')  # pylint: disable=logging-fstring-interpolation
 
             if self._cfg.psi4.save_output:
                 outfile = f'sapt_{self._key_names[self._key]}_{self._pair_names[pair]}.out'

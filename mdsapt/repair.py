@@ -57,6 +57,9 @@ def get_spin_multiplicity(molecule: Chem.Mol) -> int:
 
 
 def is_amino(unv: mda.Universe, resid: int) -> bool:
+    """
+    Checks resnames aganst list of anmino acids, returns boolean if its in the list.
+    """
     std_resids: Set[str] = {
         'ALA',
         'ARG',
@@ -80,7 +83,7 @@ def is_amino(unv: mda.Universe, resid: int) -> bool:
         'VAL'
     }
 
-    resname_atr = unv._topology.resnames
+    resname_atr = unv._topology.resnames  # pylint: disable=protected-access
     return resname_atr.values[resid - 1] in std_resids
 
 

@@ -3,21 +3,21 @@ Tests for the SAPT analysis objects
 """
 import os
 
-import MDAnalysis
 from MDAnalysis.topology.guessers import guess_types
 
-from ..config import Config, load_from_yaml_file
+from ..config import load_from_yaml_file
 from ..sapt import TrajectorySAPT, DockingSAPT
 
 traj_settings = load_from_yaml_file(
     os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'test_input.yaml'))
 
 dock_settings = load_from_yaml_file(
-            os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'docking_in.yaml'))
+    os.path.join(os.getcwd(), 'mdsapt', 'tests', 'testing_resources', 'docking_in.yaml'))
 
 unv = traj_settings.analysis.create_universe()
 elements = guess_types(unv.atoms.names)
 unv.add_TopologyAttr('elements', elements)
+
 
 class TestSAPT:
     """
