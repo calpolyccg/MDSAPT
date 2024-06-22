@@ -3,8 +3,8 @@ MD-SAPT
 SAPT Calculations for MDAnalysis
 
 [//]: # (Badges)
-[![GitHub Actions Build Status](https://github.com/calpolyccg/MDSAPT/workflows/CI/badge.svg)](https://github.com/alescolie/MDSAPT/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/calpolyccg/MDSAPT/branch/master/graph/badge.svg)](https://codecov.io/gh/alescoulie/MDSAPT/branch/master)
+[![GitHub Actions Build Status](https://github.com/calpolyccg/MDSAPT/workflows/CI/badge.svg)](https://github.com/calpolyccg/MDSAPT/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/calpolyccg/MDSAPT/branch/master/graph/badge.svg)](https://codecov.io/gh/calpolyccg/MDSAPT/branch/master)
 [![Documentation Status](https://readthedocs.org/projects/mdsapt/badge/?version=latest)](https://mdsapt.readthedocs.io/en/latest/?badge=latest)
 [![Launch binder demo](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/calpolyccg/MDSAPT_demo/master?labpath=MD-SAPT_demo.ipynb)
 
