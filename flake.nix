@@ -30,8 +30,6 @@
           mrcfile = [ "setuptools" ];
           griddataformats = [ "setuptools" ];
           pyright = [ "setuptools" ];
-          #matplotlib = [ "pybind11" ];
-          #scipy = [ "setuptools" "wheel" "pybind11" "pythran" ];
         };
 
         p2n-overrides = pkgs.poetry2nix.defaultPoetryOverrides.extend (final: prev:
@@ -60,16 +58,35 @@
           overrides = [ p2n-overrides unfuckScipy unfuckNumpy ]; #unfuckScipy ];
         };
 
+        nonPoetryPkgs = final: prev: {
+          psi4 = pkgs.qchem.psi4;
+          openmm = pkgs.qchem.openmm;
+          pdbfixer = pkgs.qchem.pdbfixer;
+        };
+
         devEnv = pkgs.mkShell {
-          propagatedBuildInputs = [ poetryEnv];
+          propagatedBuildInputs = [ poetryEnv ];
           buildInputs = with pkgs; [pkgs.qchem.psi4 pkgs.qchem.openmm pkgs.qchem.pdbfixer pkgs.act ];
         };
+
 
         # DON'T FORGET TO PUT YOUR PACKAGE NAME HERE, REMOVING `throw`
         packageName = "MD-SAPT";
 
+
+        app = pkgs.poetry2nix.mkPoetryApplication {
+          projectDir = ./.;
+          python = python;
+          overrides = [ p2n-overrides nonPoetryPkgs unfuckScipy unfuckNumpy ];
+
+        };
+
+
       in {
+        packages.${packageName} = app;
+        packages.default = self.packages.${system}.${packageName};
         devShells.default = devEnv;
+
       });
 }
 

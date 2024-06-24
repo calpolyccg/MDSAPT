@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "mdsapt"
-version = "2.0.3"
+version = "2.0.4"
 description = "SAPT energy calculator built using MDAnalysis and Psi4"
-authors = ["Alia Lescoulie <alia.lescoulie@gmail.com>"]
+authors = [
+    "Alia Lescoulie <alia.lescoulie@gmail.com>",
+    "Astrid Yu <astrid@astrid.tech",
+    "Ashley Ringer McDonald <armcdona@calpoly.edu"]
 license = "GPL-3.0"
 readme = "README.md"
 
@@ -22,8 +25,9 @@ pytest-cov = "^5.0.0"
 autopep8 = "^2.2.0"
 pydantic = "^2.7.4"
 
-
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+mdsapt = "mdsapt:cli"
