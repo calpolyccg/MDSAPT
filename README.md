@@ -12,7 +12,7 @@ An MDAnalysis-kit for calculating SAPT of molecular dynamics trajectories in psi
 
 ### Installation
 
-Installing with Conda on Python version 3.9 to 3.11 using the command:
+Installing with Conda on Python version 3.9 to 3.11 on either MacOS (arm or x86) or Linux using the command:
 
 ``` bash
 conda install -c conda-forge mdsapt
@@ -25,7 +25,18 @@ git clone https://github.com/calpolyccg/MDSAPT.git
 pip install ./MDSAPT
 ```
 
-A development environment can also be created using nix:
+If you use [nix](https://nixos.wiki/) MD-SAPT can be also be build with:
+
+```
+git clone https://github.com/calpolyccg/MDSAPT.git
+cd MDSAPT
+nix build
+```
+
+You can also incorporate it to a project managed with nix by adding it to the imports of your `flake.nix` or `shell.nix`.
+
+### Contributing
+A development environment can be created using nix:
 
 ``` bash 
 git clone https://github.com/calpolyccg/MDSAPT.git
