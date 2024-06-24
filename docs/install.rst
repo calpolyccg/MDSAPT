@@ -14,6 +14,16 @@ Alternatively, it can be installed by cloning the GitHub repository.
     git clone https://github.com/calpolyccg/MDSAPT.git
     pip install ./MDSAPT
 
+If you use [nix](https://nixos.wiki/) MD-SAPT can be also be build with:
+
+```
+git clone https://github.com/calpolyccg/MDSAPT.git
+cd MDSAPT
+nix build
+```
+
+You can also incorporate it to a project managed with nix by adding it to the imports of your `flake.nix` or `shell.nix`.
+
 To ensure it's been installed correctly, run `mdsapt` or `python3 -m mdsapt`.
 
 .. code-block:: bash
