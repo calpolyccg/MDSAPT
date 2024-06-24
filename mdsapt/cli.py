@@ -18,7 +18,9 @@ _dir_path = os.path.dirname(os.path.realpath(__file__))
 def cli():
     # pylint: disable=line-too-long
     """
-    MDSAPT - Molecular Dynamics Symmetry-Adapted Perturbation Theory, by Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald.
+    MDSAPT - Molecular Dynamics Symmetry-Adapted Perturbation Theory
+
+    by Alia Lescoulie, Astrid Yu, and Ashley Ringer McDonald.
 
     This command-line interface lets you easily do common MDSAPT-related tasks.
     """
@@ -76,8 +78,8 @@ def generate(filename: str, template: str, force: bool):
 )
 def run(in_file: str, out_file: str, force: bool):
     """
-    Run a SAPT calculation using the configuration in in_file. Outputs will be written to
-    out_file.
+    Run a SAPT calculation using the configuration in in_file.
+    Outputs will be written to out_file.
     """
     import mdsapt  # pylint: disable=import-outside-toplevel
 
@@ -98,8 +100,8 @@ def run(in_file: str, out_file: str, force: bool):
 
 def ensure_safe_to_overwrite(path: str, force: bool):
     """
-    Helper function to ensure that it's safe to overwrite the given file, and
-    halts the program if not.
+    Helper function to ensure that it's safe to overwrite the given file,
+    and halts the program if not.
     """
     if not os.path.exists(path):
         return
