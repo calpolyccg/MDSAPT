@@ -22,6 +22,7 @@ Required Input:
 
 from typing import Set, Union
 
+
 import logging
 
 import numpy as np
@@ -33,9 +34,10 @@ from MDAnalysis.topology.guessers import guess_types, guess_atom_element
 from rdkit import Chem
 
 from pdbfixer import PDBFixer
-from simtk.openmm.app import PDBFile
 
-logger = logging.getLogger('mdsapt.optimizer')
+from openmm.app import PDBFile
+
+logger = logging.getLogger('mdsapt.repair')
 
 
 def get_spin_multiplicity(molecule: Chem.Mol) -> int:
