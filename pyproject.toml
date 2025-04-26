@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mdsapt"
-version = "2.0.6-rc1"
+version = "2.0.6_rc1"
 description = "SAPT energy calculator built using MDAnalysis and Psi4"
 authors = [
     "Alia Lescoulie <alia.lescoulie@gmail.com>",
